@@ -120,30 +120,30 @@ public static ByteBuf compress(ByteBuf buffer) { }  // ✓ Tracked
 
 See [STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md) for details.
 
-### Constructor Tracking
+### Wrapper Object Tracking
 
-**Opt-in feature** - Enable constructor tracking for specific wrapper classes to maintain continuous flow when ByteBuf is wrapped in custom objects.
+**Important for real applications** - When ByteBuf is wrapped in custom objects (Message, Request, Event), tracking breaks by default.
+
+**Enable constructor tracking** for your wrapper classes to maintain continuous flow:
 
 ```bash
 -javaagent:tracker.jar=trackConstructors=com.example.Message,com.example.Request
 ```
 
+**Combine with manual tracking** for methods receiving wrappers:
+
 ```java
 public class Message {
     public Message(ByteBuf data) { }  // ✓ Tracked with trackConstructors
 }
+
+public void processMessage(Message msg) {
+    ByteBuf buf = msg.getData();
+    tracker.recordMethodCall(buf, "Handler", "processMessage", buf.refCnt());  // Manual tracking needed
+}
 ```
 
-See [CONSTRUCTOR_TRACKING.md](CONSTRUCTOR_TRACKING.md) for configuration and usage.
-
-### Wrapped Object Tracking
-
-When ByteBuf is wrapped in custom objects, tracking may break. Solutions include:
-- Enable constructor tracking (recommended)
-- Use manual tracking for methods receiving wrapper objects
-- Combine both for complete continuous flow
-
-See [WRAPPED_OBJECT_TRACKING.md](WRAPPED_OBJECT_TRACKING.md) for limitations and solutions.
+See [WRAPPER_TRACKING.md](WRAPPER_TRACKING.md) for complete guide, configuration, and examples.
 
 ---
 
@@ -556,7 +556,7 @@ This maintains continuous flow when ByteBuf is wrapped in custom objects:
 allocate → prepareBuffer → Message.<init> → processMessage → cleanup
 ```
 
-See [CONSTRUCTOR_TRACKING.md](CONSTRUCTOR_TRACKING.md) for details.
+See [WRAPPER_TRACKING.md](WRAPPER_TRACKING.md) for details.
 
 **Recommendations:**
 - Start narrow (specific packages)
@@ -671,8 +671,7 @@ String summary = renderer.renderSummary();
 
 **Feature Guides:**
 - **[STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md)** - Static method tracking (enabled by default)
-- **[CONSTRUCTOR_TRACKING.md](CONSTRUCTOR_TRACKING.md)** - Opt-in constructor tracking for wrapper classes
-- **[WRAPPED_OBJECT_TRACKING.md](WRAPPED_OBJECT_TRACKING.md)** - Handling ByteBuf wrapped in custom objects
+- **[WRAPPER_TRACKING.md](WRAPPER_TRACKING.md)** - Tracking ByteBuf wrapped in custom objects (Message, Request, Event)
 
 **Module Documentation:**
 - **[Library README](bytebuf-flow-tracker/README.md)** - API documentation, architecture

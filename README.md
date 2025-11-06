@@ -2,164 +2,227 @@
 
 A lightweight, efficient ByteBuddy-based tool for tracking ByteBuf flows through your application using a Trie data structure.
 
-## Key Features
+## 🎯 Project Overview
+
+This project provides a reusable Java agent that can track Netty ByteBuf objects as they flow through your application, helping you:
+
+- **Detect memory leaks**: Find ByteBufs that aren't properly released
+- **Understand flow patterns**: See how ByteBufs move through your code
+- **Identify anomalies**: Spot unusual reference count patterns
+- **Optimize performance**: Find hot paths and bottlenecks
+
+## 📦 Project Structure
+
+This is a multi-module Maven project:
+
+```
+bytebuddy-bytebuf-tracer/
+├── pom.xml                          # Parent POM
+├── bytebuf-flow-tracker/            # Module 1: Reusable library
+│   ├── src/                         # Tracker implementation + agent
+│   ├── pom.xml                      # Library dependencies & build
+│   └── README.md                    # Library documentation
+└── bytebuf-flow-example/            # Module 2: Usage example
+    ├── src/                         # Demo application
+    ├── pom.xml                      # Shows how to use the tracker
+    └── README.md                    # Example documentation
+```
+
+### Module 1: `bytebuf-flow-tracker`
+
+The **reusable library** that can be pulled into any project:
+
+- Core tracking logic and data structures
+- ByteBuddy Java agent for instrumentation
+- JMX monitoring interface
+- Multiple output formats (tree, flat, CSV, JSON)
+- Comprehensive unit tests
+
+**Use this module as a dependency in your projects.**
+
+### Module 2: `bytebuf-flow-example`
+
+A **complete working example** showing how to integrate the tracker:
+
+- Sample application with ByteBuf usage patterns
+- Demonstrates normal flows, error handling, and leaks
+- Shows Maven configuration for the agent
+- Example of programmatic access to tracking data
+
+**Use this as a template for integrating into your own projects.**
+
+## 🚀 Quick Start
+
+### Build Everything
+
+```bash
+mvn clean install
+```
+
+This builds both modules:
+- `bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar` - The Java agent
+- `bytebuf-flow-example/target/bytebuf-flow-example-1.0.0-SNAPSHOT.jar` - Example application
+
+### Run the Example
+
+```bash
+cd bytebuf-flow-example
+mvn exec:java
+```
+
+You'll see the tracker in action, showing:
+- Flow analysis of ByteBuf movements
+- Detection of memory leaks
+- Summary statistics
+
+## 📚 Key Features
 
 - **Zero allocation overhead**: No stack trace collection or allocation site tracking
 - **First-touch root**: The first method that handles a ByteBuf becomes the Trie root
-- **Memory efficient**: Trie structure shares common prefixes, minimizing memory usage
-- **Clean separation**: Pure data structure (Trie) with separate rendering/viewing
+- **Memory efficient**: Trie structure shares common prefixes
 - **Real-time monitoring**: JMX MBean for runtime analysis
 - **Multiple output formats**: Tree, flat paths, CSV, JSON
+- **Configurable**: Include/exclude packages via agent arguments
 
-## Architecture
+## 🔧 Using in Your Project
 
-The system uses a simplified approach where:
-1. The first method to touch a ByteBuf becomes the root in the Trie
-2. Subsequent method calls build the tree structure
-3. Reference counts are tracked at each node
-4. Leaf nodes with non-zero refCount indicate leaks
+### 1. Add as a Maven Dependency
 
-## Usage
-
-### 1. Build the Agent JAR
-
-```bash
-javac -cp byte-buddy-1.14.9.jar:netty-all-4.1.x.jar *.java
-jar cvfm bytebuf-tracker.jar MANIFEST.MF *.class
+```xml
+<dependency>
+    <groupId>com.example.bytebuf</groupId>
+    <artifactId>bytebuf-flow-tracker</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
 ```
 
-### 2. Run Your Application with the Agent
+### 2. Run with the Java Agent
 
 ```bash
-java -javaagent:bytebuf-tracker.jar=include=com.example;exclude=com.example.legacy \
-     -Dcom.sun.management.jmxremote \
-     -Dcom.sun.management.jmxremote.port=9999 \
-     -Dcom.sun.management.jmxremote.authenticate=false \
-     -Dcom.sun.management.jmxremote.ssl=false \
+java -javaagent:bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany \
      -jar your-application.jar
 ```
 
 ### 3. Monitor via JMX
 
-Connect to JMX port 9999 and access the `com.example:type=ByteBufFlowTracker` MBean.
+```bash
+# Enable JMX
+java -javaagent:bytebuf-flow-tracker-agent.jar=include=com.yourcompany \
+     -Dcom.sun.management.jmxremote \
+     -Dcom.sun.management.jmxremote.port=9999 \
+     -Dcom.sun.management.jmxremote.authenticate=false \
+     -Dcom.sun.management.jmxremote.ssl=false \
+     -jar your-application.jar
 
-Available operations:
-- `getTreeView()` - Hierarchical tree view
-- `getFlatView()` - Flat root-to-leaf paths
-- `getCsvView()` - CSV format for analysis
-- `getJsonView()` - JSON for programmatic processing
-- `getSummary()` - Statistics and summary
-- `exportToFile(filepath, format)` - Export to file
-- `reset()` - Clear all tracking data
-
-### 4. Analyze Output
-
-## Example Output
-
-### Tree View
-```
-ROOT: FrameDecoder.decode [count=15234]
-├── MessageHandler.handle [ref=1, count=14156]
-│   ├── BusinessService.process [ref=1, count=14156]
-│   │   └── DataStore.save [ref=0, count=14156]
-│   └── ErrorHandler.handleError [ref=1, count=1078]
-│       └── Logger.logError [ref=1, count=1078] ⚠️ LEAK
-
-ROOT: HttpHandler.handleRequest [count=8923]
-└── RequestParser.parse [ref=1, count=8923]
-    ├── Validator.validate [ref=2, count=7234]
-    │   └── ResponseBuilder.build [ref=0, count=7234]
-    └── Validator.validate [ref=1, count=1689]
-        └── ResponseBuilder.build [ref=0, count=1689]
+# Connect with JConsole
+jconsole localhost:9999
 ```
 
-### What to Look For
+Navigate to MBean: `com.example:type=ByteBufFlowTracker`
 
-1. **Leaks**: Leaf nodes with `ref != 0`
-   - Example: `Logger.logError [ref=1]` is a leaf but didn't release
+## 📖 Documentation
 
-2. **Anomalies**: Same path with different refCounts
-   - Example: `Validator.validate` appears twice with `ref=2` and `ref=1`
+- **[Library README](bytebuf-flow-tracker/README.md)** - Detailed API documentation, architecture, and usage
+- **[Example README](bytebuf-flow-example/README.md)** - Integration guide and best practices
+- **[EXAMPLE_OUTPUT.md](EXAMPLE_OUTPUT.md)** - Sample output showing what the tracker produces
 
-3. **Hot Paths**: High traversal counts indicate common flows
-   - Example: `BusinessService.process [count=14156]`
+## 🔍 How It Works
 
-## Configuration
+1. **ByteBuddy Instrumentation**: The agent intercepts all public/protected methods in specified packages
+2. **First Touch = Root**: The first method to handle a ByteBuf becomes its root in the Trie
+3. **Path Building**: Each subsequent method call adds a node to the tree
+4. **RefCount Tracking**: Each node records the ByteBuf's reference count at that point
+5. **Leak Detection**: Leaf nodes with non-zero refCount indicate memory leaks
+
+### Example Output
+
+```
+=== ByteBuf Flow Summary ===
+Total Root Methods: 2
+Total Traversals: 9
+Unique Paths: 3
+Leak Paths: 1
+
+=== Flow Tree ===
+ROOT: DemoApplication.handleNormalRequest [count=5]
+└── MessageProcessor.process [ref=1, count=5]
+    └── MessageProcessor.validate [ref=1, count=5]
+        └── MessageProcessor.parseContent [ref=1, count=5]
+            └── MessageProcessor.store [ref=0, count=5]
+
+ROOT: DemoApplication.createLeak [count=1]
+└── LeakyService.forgetsToRelease [ref=1, count=1]
+    └── LeakyService.processData [ref=1, count=1] ⚠️ LEAK
+```
+
+## 🛠️ Configuration
 
 Agent arguments format: `include=package1,package2;exclude=package3,package4`
 
 Examples:
-- Track everything in com.example: `include=com.example`
-- Track multiple packages: `include=com.example,com.myapp,org.custom`
-- Exclude legacy code: `include=com.example;exclude=com.example.legacy`
+- `include=com.example` - Track everything in com.example
+- `include=com.example,com.myapp` - Track multiple packages
+- `include=com.example;exclude=com.example.legacy` - Exclude specific packages
 
-## Implementation Details
+## 🧪 Testing
 
-### How It Works
+Run the library tests:
 
-1. **ByteBuddy Instrumentation**: Intercepts all public/protected methods in specified packages
-2. **First Touch = Root**: First method to handle a ByteBuf becomes the Trie root
-3. **Path Building**: Each subsequent method call adds a node to the tree
-4. **RefCount Tracking**: Each node records the ByteBuf's reference count
-5. **Leak Detection**: When refCount reaches 0, the flow is complete; non-zero leaf nodes are leaks
+```bash
+cd bytebuf-flow-tracker
+mvn test
+```
 
-### Memory Efficiency
+Tests cover:
+- Simple flow tracking
+- Leak detection
+- RefCount anomalies
+- High-volume scenarios
+- CSV/JSON export
 
-- No stack traces collected (40x memory reduction)
-- Trie structure shares common prefixes
-- Only tracks active ByteBufs
-- Completed flows are aggregated in the Trie
+## 🎨 Extending for Custom Objects
 
-### Performance Impact
+While designed for ByteBuf, the tracker can monitor any object:
+
+1. Modify `ByteBufTrackingAdvice` to detect your objects
+2. Extract appropriate "refCount" equivalent (or other metric)
+3. The Trie structure and rendering remain the same
+
+See the library README for details.
+
+## 📈 Performance Impact
 
 - Minimal overhead: ~5-10% in high-throughput scenarios
 - No allocation overhead (no stack traces)
 - Lock-free concurrent data structures
 - JIT-friendly implementation
+- Can be disabled in production by not loading the agent
 
-## Troubleshooting
+## 🤝 Contributing
 
-### No data appearing
-- Verify the include packages match your application
-- Check that ByteBufs are actually being used
-- Ensure the agent is loaded (check stdout for confirmation)
+This project demonstrates a clean separation between:
+1. **Reusable library** (`bytebuf-flow-tracker`) - Can be published to Maven repos
+2. **Example usage** (`bytebuf-flow-example`) - Shows integration patterns
 
-### Too much data
-- Narrow the include packages
-- Add exclude patterns for noisy components
-- Use sampling (implement in ByteBufTrackingAdvice)
+To contribute:
+1. Library changes go in `bytebuf-flow-tracker/`
+2. Example changes go in `bytebuf-flow-example/`
+3. Keep the two modules independent (example depends on library, not vice versa)
 
-### JMX connection issues
-- Verify JMX ports are open
-- Check firewall settings
-- Use jconsole locally first to verify
-
-## Advanced Usage
-
-### Custom Object Tracking
-
-While designed for ByteBuf, the system can track any object:
-
-1. Modify `ByteBufTrackingAdvice` to detect your objects
-2. Extract appropriate "refCount" equivalent
-3. The Trie structure remains the same
-
-### Programmatic Access
-
-```java
-ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
-TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
-
-// Get tree view
-String tree = renderer.renderIndentedTree();
-
-// Get CSV for analysis
-String csv = renderer.renderCsv();
-
-// Get statistics
-String summary = renderer.renderSummary();
-```
-
-## License
+## 📄 License
 
 Apache License 2.0
+
+## 🔗 Additional Resources
+
+- [ByteBuddy Documentation](https://bytebuddy.net/)
+- [Netty ByteBuf Guide](https://netty.io/wiki/reference-counted-objects.html)
+- [Java Agents Tutorial](https://www.baeldung.com/java-instrumentation)
+
+---
+
+**Need help?** Check the README files in each module for detailed documentation.
+
+**Found a bug?** Please open an issue with a reproducible example.
+
+**Have a question?** See the example module for common integration patterns.

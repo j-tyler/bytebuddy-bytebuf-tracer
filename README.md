@@ -51,80 +51,408 @@ A **complete working example** showing how to integrate the tracker:
 
 **Use this as a template for integrating into your own projects.**
 
-## 🚀 Quick Start
+---
 
-### Build Everything
+## 🚀 Integration Guide: Using This Project in Your Codebase
+
+This guide provides detailed, step-by-step instructions for integrating the ByteBuf Flow Tracker into your existing Java project. Follow these instructions to add ByteBuf tracking capabilities to your application.
+
+### Prerequisites
+
+Before integrating, ensure you have:
+
+1. **Java 8 or higher** installed
+2. **Maven 3.6+** or **Gradle 6+** as your build tool
+3. **Netty ByteBuf** usage in your application
+4. **Git** (if using git submodule approach)
+
+### Integration Method 1: Local Build + Maven Dependency (Recommended)
+
+This method builds the tracker locally and installs it to your local Maven repository.
+
+#### Step 1: Clone and Build the Tracker
 
 ```bash
+# Clone this repository
+git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
+cd bytebuddy-bytebuf-tracer
+
+# Build and install to local Maven repository
 mvn clean install
 ```
 
-This builds both modules:
-- `bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar` - The Java agent
-- `bytebuf-flow-example/target/bytebuf-flow-example-1.0.0-SNAPSHOT.jar` - Example application
+This creates:
+- `~/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar` (library)
+- `~/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar` (agent with dependencies)
 
-### Run the Example
+#### Step 2: Add Dependency to Your Project's pom.xml
 
+In your project's `pom.xml`, add the dependency:
+
+```xml
+<dependencies>
+    <!-- Existing dependencies -->
+
+    <!-- ByteBuf Flow Tracker -->
+    <dependency>
+        <groupId>com.example.bytebuf</groupId>
+        <artifactId>bytebuf-flow-tracker</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+</dependencies>
+```
+
+#### Step 3: Configure the Java Agent
+
+**Option A: Maven Exec Plugin (Development)**
+
+Add to your `pom.xml`:
+
+```xml
+<build>
+    <plugins>
+        <!-- Existing plugins -->
+
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.1.0</version>
+            <configuration>
+                <mainClass>com.yourcompany.yourapp.Main</mainClass>
+                <arguments>
+                    <argument>-javaagent:${settings.localRepository}/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany</argument>
+                </arguments>
+                <systemProperties>
+                    <!-- Optional: Enable JMX monitoring -->
+                    <systemProperty>
+                        <key>com.sun.management.jmxremote</key>
+                        <value>true</value>
+                    </systemProperty>
+                    <systemProperty>
+                        <key>com.sun.management.jmxremote.port</key>
+                        <value>9999</value>
+                    </systemProperty>
+                    <systemProperty>
+                        <key>com.sun.management.jmxremote.authenticate</key>
+                        <value>false</value>
+                    </systemProperty>
+                    <systemProperty>
+                        <key>com.sun.management.jmxremote.ssl</key>
+                        <value>false</value>
+                    </systemProperty>
+                </systemProperties>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+**Important**: Replace `com.yourcompany.yourapp.Main` with your actual main class, and `com.yourcompany` with your package prefix to track.
+
+Run with:
 ```bash
-cd bytebuf-flow-example
 mvn exec:java
 ```
 
-You'll see the tracker in action, showing:
-- Flow analysis of ByteBuf movements
-- Detection of memory leaks
-- Summary statistics
+**Option B: Maven Surefire Plugin (Testing)**
 
-## 📚 Key Features
-
-- **Zero allocation overhead**: No stack trace collection or allocation site tracking
-- **First-touch root**: The first method that handles a ByteBuf becomes the Trie root
-- **Memory efficient**: Trie structure shares common prefixes
-- **Real-time monitoring**: JMX MBean for runtime analysis
-- **Multiple output formats**: Tree, flat paths, CSV, JSON
-- **Configurable**: Include/exclude packages via agent arguments
-
-## 🔧 Using in Your Project
-
-### 1. Add as a Maven Dependency
+To enable tracking during tests, add to your `pom.xml`:
 
 ```xml
-<dependency>
-    <groupId>com.example.bytebuf</groupId>
-    <artifactId>bytebuf-flow-tracker</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-</dependency>
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0</version>
+            <configuration>
+                <argLine>
+                    -javaagent:${settings.localRepository}/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany
+                </argLine>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
 ```
 
-### 2. Run with the Java Agent
-
+Run tests with:
 ```bash
-java -javaagent:bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany \
-     -jar your-application.jar
+mvn test
 ```
 
-### 3. Monitor via JMX
+**Option C: Manual Java Command (Production)**
+
+Copy the agent JAR to your deployment:
 
 ```bash
-# Enable JMX
-java -javaagent:bytebuf-flow-tracker-agent.jar=include=com.yourcompany \
+# Copy agent JAR to your project
+cp ~/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar \
+   /path/to/your/project/lib/
+```
+
+Run your application with:
+
+```bash
+java -javaagent:/path/to/your/project/lib/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany \
      -Dcom.sun.management.jmxremote \
      -Dcom.sun.management.jmxremote.port=9999 \
      -Dcom.sun.management.jmxremote.authenticate=false \
      -Dcom.sun.management.jmxremote.ssl=false \
      -jar your-application.jar
+```
 
-# Connect with JConsole
+#### Step 4: Configure Package Filtering
+
+The agent argument format is: `include=package1,package2;exclude=package3,package4`
+
+**Examples:**
+
+- Track everything in your company's packages:
+  ```
+  include=com.yourcompany
+  ```
+
+- Track multiple package trees:
+  ```
+  include=com.yourcompany,org.yourdomain
+  ```
+
+- Exclude specific packages (like test or legacy code):
+  ```
+  include=com.yourcompany;exclude=com.yourcompany.legacy,com.yourcompany.test
+  ```
+
+**Recommendations:**
+- Start narrow (specific packages) and widen if needed
+- Exclude packages that don't use ByteBufs to reduce overhead
+- Exclude third-party libraries unless debugging their ByteBuf usage
+
+#### Step 5: Access Tracking Data
+
+**Programmatic Access:**
+
+Add this code to your application to print tracking data:
+
+```java
+import com.example.bytebuf.tracker.ByteBufFlowTracker;
+import com.example.bytebuf.tracker.view.TrieRenderer;
+
+public class YourClass {
+    public void printByteBufAnalysis() {
+        ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+
+        // Print summary
+        System.out.println(renderer.renderSummary());
+
+        // Print tree view
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(renderer.renderIndentedTree());
+
+        // Print flat paths (shows leaks clearly)
+        System.out.println("\n=== Flat Paths ===");
+        System.out.println(renderer.renderFlatPaths());
+    }
+}
+```
+
+**JMX Access:**
+
+If you enabled JMX (see Option C above), connect with JConsole:
+
+```bash
 jconsole localhost:9999
 ```
 
-Navigate to MBean: `com.example:type=ByteBufFlowTracker`
+Navigate to: `MBeans` → `com.example` → `ByteBufFlowTracker`
+
+Available operations:
+- `getTreeView()` - Hierarchical tree view
+- `getFlatView()` - Flat root-to-leaf paths
+- `getCsvView()` - CSV format
+- `getJsonView()` - JSON format
+- `getSummary()` - Statistics
+- `reset()` - Clear tracking data
+
+#### Step 6: Verify Integration
+
+Run your application and check for these indicators:
+
+1. **Agent loaded successfully:**
+   ```
+   [ByteBufFlowAgent] Starting with config: AgentConfig{...}
+   [ByteBufFlowAgent] Instrumentation installed successfully
+   [ByteBufFlowAgent] JMX MBean registered
+   ```
+
+2. **ByteBuf operations are tracked:**
+   - Run your application normally
+   - Call the tracking API or check JMX
+   - You should see method calls and flow trees
+
+3. **Look for leaks:**
+   - Leaf nodes with `⚠️ LEAK` indicate ByteBufs not released
+   - These show as `[ref=N]` where N > 0 at leaf positions
+
+### Integration Method 2: Git Submodule
+
+Use this method to keep the tracker code within your repository.
+
+#### Step 1: Add as Git Submodule
+
+```bash
+# From your project root
+cd your-project/
+git submodule add https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git lib/bytebuddy-bytebuf-tracer
+git submodule update --init --recursive
+```
+
+#### Step 2: Build the Tracker
+
+```bash
+cd lib/bytebuddy-bytebuf-tracer
+mvn clean install
+cd ../..
+```
+
+#### Step 3: Update Your Project POM
+
+Add the local repository reference in your `pom.xml`:
+
+```xml
+<repositories>
+    <repository>
+        <id>local-bytebuf-tracker</id>
+        <url>file://${project.basedir}/lib/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.example.bytebuf</groupId>
+        <artifactId>bytebuf-flow-tracker</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+</dependencies>
+```
+
+#### Step 4: Configure Agent
+
+Use relative path to agent JAR in your exec plugin:
+
+```xml
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.1.0</version>
+    <configuration>
+        <mainClass>com.yourcompany.yourapp.Main</mainClass>
+        <arguments>
+            <argument>-javaagent:${project.basedir}/lib/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany</argument>
+        </arguments>
+    </configuration>
+</plugin>
+```
+
+### Integration Method 3: Copy Source Code
+
+Use this method to fully embed the tracker in your project.
+
+#### Step 1: Copy the Library Module
+
+```bash
+# From your project root
+cp -r /path/to/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker your-project/modules/
+```
+
+#### Step 2: Add Module to Your Parent POM
+
+In your project's parent `pom.xml`:
+
+```xml
+<modules>
+    <module>your-existing-module</module>
+    <!-- Add this: -->
+    <module>modules/bytebuf-flow-tracker</module>
+</modules>
+```
+
+#### Step 3: Add Dependency
+
+In the module where you want to use the tracker:
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>com.example.bytebuf</groupId>
+        <artifactId>bytebuf-flow-tracker</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+</dependencies>
+```
+
+#### Step 4: Configure Agent
+
+Reference the module's target directory:
+
+```xml
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.1.0</version>
+    <configuration>
+        <mainClass>com.yourcompany.yourapp.Main</mainClass>
+        <arguments>
+            <argument>-javaagent:${project.parent.basedir}/modules/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany</argument>
+        </arguments>
+    </configuration>
+</plugin>
+```
+
+### Gradle Integration
+
+If your project uses Gradle instead of Maven:
+
+#### build.gradle
+
+```groovy
+dependencies {
+    // Add this dependency (after running mvn install)
+    implementation 'com.example.bytebuf:bytebuf-flow-tracker:1.0.0-SNAPSHOT'
+}
+
+// Configure agent for running
+task runWithAgent(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.yourcompany.yourapp.Main'
+
+    jvmArgs = [
+        "-javaagent:${System.getProperty('user.home')}/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany",
+        "-Dcom.sun.management.jmxremote",
+        "-Dcom.sun.management.jmxremote.port=9999",
+        "-Dcom.sun.management.jmxremote.authenticate=false",
+        "-Dcom.sun.management.jmxremote.ssl=false"
+    ]
+}
+
+// Configure agent for tests
+test {
+    jvmArgs "-javaagent:${System.getProperty('user.home')}/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany"
+}
+```
+
+Run with:
+```bash
+gradle runWithAgent
+```
+
+---
 
 ## 📖 Documentation
 
 - **[Library README](bytebuf-flow-tracker/README.md)** - Detailed API documentation, architecture, and usage
 - **[Example README](bytebuf-flow-example/README.md)** - Integration guide and best practices
-- **[EXAMPLE_OUTPUT.md](EXAMPLE_OUTPUT.md)** - Sample output showing what the tracker produces
+- **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Project restructuring documentation
 
 ## 🔍 How It Works
 
@@ -180,6 +508,74 @@ Tests cover:
 - High-volume scenarios
 - CSV/JSON export
 
+## 🔧 Troubleshooting
+
+### Problem: Agent not loading
+
+**Symptoms:** No startup messages, tracking doesn't work
+
+**Solutions:**
+1. Verify agent JAR path is correct
+2. Check that `-javaagent` comes before `-jar` in command line
+3. Ensure the agent JAR was built with `mvn install`
+
+### Problem: No data appearing
+
+**Symptoms:** Agent loads but no tracking data
+
+**Solutions:**
+1. Verify `include` packages match your code (check your package structure)
+2. Ensure ByteBufs are actually being used in tracked packages
+3. Add debug logging to see which classes are being instrumented
+4. Start with a broader include (e.g., `include=com,org`) to test
+
+### Problem: Too much data
+
+**Symptoms:** Overwhelming amount of tracking output
+
+**Solutions:**
+1. Narrow the `include` packages to only your application code
+2. Add `exclude` patterns for noisy packages
+3. Exclude test and utility packages
+4. Consider adding sampling logic to `ByteBufTrackingAdvice`
+
+### Problem: JMX connection fails
+
+**Symptoms:** Cannot connect via JConsole
+
+**Solutions:**
+1. Verify JMX port is not in use: `netstat -an | grep 9999`
+2. Check firewall settings
+3. Try connecting locally first: `jconsole localhost:9999`
+4. Ensure all JMX system properties are set
+
+### Problem: Build fails with Maven
+
+**Symptoms:** Cannot resolve dependency
+
+**Solutions:**
+1. Run `mvn clean install` in the tracker project first
+2. Check your `~/.m2/repository/com/example/bytebuf/` directory exists
+3. Verify version numbers match (1.0.0-SNAPSHOT)
+4. Try `mvn dependency:purge-local-repository` to refresh
+
+### Problem: ClassNotFoundException at runtime
+
+**Symptoms:** Agent loads but crashes with missing classes
+
+**Solutions:**
+1. Use the `-agent.jar` (fat JAR) not the regular JAR
+2. Verify all ByteBuddy dependencies are included
+3. Check that Netty is in your application's classpath
+
+## 📈 Performance Impact
+
+- Minimal overhead: ~5-10% in high-throughput scenarios
+- No allocation overhead (no stack traces)
+- Lock-free concurrent data structures
+- JIT-friendly implementation
+- Can be disabled in production by not loading the agent
+
 ## 🎨 Extending for Custom Objects
 
 While designed for ByteBuf, the tracker can monitor any object:
@@ -189,14 +585,6 @@ While designed for ByteBuf, the tracker can monitor any object:
 3. The Trie structure and rendering remain the same
 
 See the library README for details.
-
-## 📈 Performance Impact
-
-- Minimal overhead: ~5-10% in high-throughput scenarios
-- No allocation overhead (no stack traces)
-- Lock-free concurrent data structures
-- JIT-friendly implementation
-- Can be disabled in production by not loading the agent
 
 ## 🤝 Contributing
 
@@ -218,6 +606,25 @@ Apache License 2.0
 - [ByteBuddy Documentation](https://bytebuddy.net/)
 - [Netty ByteBuf Guide](https://netty.io/wiki/reference-counted-objects.html)
 - [Java Agents Tutorial](https://www.baeldung.com/java-instrumentation)
+
+---
+
+## 📋 Quick Reference: Integration Checklist
+
+Use this checklist when integrating into a new project:
+
+- [ ] Clone or download this repository
+- [ ] Run `mvn clean install` to build locally
+- [ ] Add Maven dependency to your `pom.xml`
+- [ ] Configure exec plugin or surefire plugin with `-javaagent` argument
+- [ ] Set `include=` to match your package structure
+- [ ] Run your application with `mvn exec:java` or `mvn test`
+- [ ] Verify agent startup messages appear
+- [ ] Add code to print tracking data or enable JMX
+- [ ] Test with a simple ByteBuf operation
+- [ ] Verify tracking data appears correctly
+- [ ] Tune `include`/`exclude` packages as needed
+- [ ] Document the integration in your project's README
 
 ---
 

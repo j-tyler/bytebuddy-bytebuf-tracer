@@ -411,6 +411,115 @@ public class ByteBufFlowTrackerTest {
         }
     }
 
+    @Test
+    public void testContinuousFlowWithConstructorTracking() {
+        System.out.println("\n=== Continuous Flow with Constructor Tracking Test ===");
+
+        // This test demonstrates the EXPECTED behavior when constructor tracking
+        // is enabled via: trackConstructors=TrackedMessage
+        // Since we're in a unit test without the agent, we manually track to simulate it.
+
+        // Step 1: Allocate ByteBuf
+        ByteBuf buffer = Unpooled.buffer(256);
+        buffer.writeBytes("Continuous flow test".getBytes());
+        tracker.recordMethodCall(buffer, "TestClient", "allocate", buffer.refCnt());
+
+        // Step 2: Pass to method that will wrap it
+        prepareMessage(buffer);
+
+        // Step 3: Pass to constructor (would be auto-tracked with trackConstructors config)
+        TrackedMessage message = new TrackedMessage(buffer);
+
+        // Step 4: Pass wrapped object to another method
+        processTrackedMessage(message);
+
+        // Step 5: Validate wrapped object
+        validateTrackedMessage(message);
+
+        // Step 6: Extract and release
+        ByteBuf extracted = message.getBuffer();
+        extracted.release();
+        tracker.recordMethodCall(extracted, "TestClient", "cleanup", extracted.refCnt());
+
+        // Verify continuous flow
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+        String flatPaths = renderer.renderFlatPaths();
+
+        System.out.println("\n=== Flow Tree (Continuous) ===");
+        System.out.println(tree);
+
+        System.out.println("\n=== Flat Paths ===");
+        System.out.println(flatPaths);
+
+        // Verify all steps are present
+        assertTrue("allocate should be tracked", tree.contains("allocate"));
+        assertTrue("prepareMessage should be tracked", tree.contains("prepareMessage"));
+        assertTrue("TrackedMessage.<init> should be tracked", tree.contains("TrackedMessage") || tree.contains("<init>"));
+        assertTrue("processTrackedMessage should be tracked", tree.contains("processTrackedMessage"));
+        assertTrue("validateTrackedMessage should be tracked", tree.contains("validateTrackedMessage"));
+        assertTrue("cleanup should be tracked", tree.contains("cleanup"));
+
+        // Verify it's a single continuous path (no multiple roots)
+        String summary = renderer.renderSummary();
+        System.out.println("\n=== Summary ===");
+        System.out.println(summary);
+
+        // Should have 1 root (the first method that touched the ByteBuf)
+        assertTrue("Should have exactly 1 root for continuous flow", summary.contains("Total Root Methods: 1"));
+
+        System.out.println("\n✓ Continuous flow verified: ByteBuf -> method -> constructor -> method -> cleanup");
+    }
+
+    /**
+     * Test class that represents a wrapper with constructor tracking
+     */
+    public static class TrackedMessage {
+        private final ByteBuf buffer;
+        private final String messageId;
+
+        public TrackedMessage(ByteBuf buffer) {
+            this.buffer = buffer;
+            this.messageId = "MSG-" + System.currentTimeMillis();
+
+            // Simulates what the agent would do when trackConstructors is enabled
+            ByteBufFlowTracker.getInstance().recordMethodCall(
+                buffer, "TrackedMessage", "<init>", buffer.refCnt());
+        }
+
+        public ByteBuf getBuffer() {
+            return buffer;
+        }
+
+        public String getMessageId() {
+            return messageId;
+        }
+    }
+
+    /**
+     * Helper method to prepare a message
+     */
+    public void prepareMessage(ByteBuf buffer) {
+        tracker.recordMethodCall(buffer, "TestHelper", "prepareMessage", buffer.refCnt());
+    }
+
+    /**
+     * Process a tracked message (wrapper object)
+     */
+    public void processTrackedMessage(TrackedMessage message) {
+        // Extract ByteBuf and track
+        ByteBuf buffer = message.getBuffer();
+        tracker.recordMethodCall(buffer, "TestHelper", "processTrackedMessage", buffer.refCnt());
+    }
+
+    /**
+     * Validate a tracked message
+     */
+    public void validateTrackedMessage(TrackedMessage message) {
+        ByteBuf buffer = message.getBuffer();
+        tracker.recordMethodCall(buffer, "TestHelper", "validateTrackedMessage", buffer.refCnt());
+    }
+
     /**
      * Example of how to use the tracker in production code
      */

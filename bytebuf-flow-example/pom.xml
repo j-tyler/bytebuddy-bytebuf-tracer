@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.example.bytebuf</groupId>
+        <artifactId>bytebuf-flow-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>bytebuf-flow-example</artifactId>
+    <packaging>jar</packaging>
+
+    <name>ByteBuf Flow Tracker Example</name>
+    <description>Example application demonstrating how to use ByteBuf Flow Tracker in your project</description>
+
+    <dependencies>
+        <!-- ByteBuf Flow Tracker - This is how external projects would use it -->
+        <dependency>
+            <groupId>com.example.bytebuf</groupId>
+            <artifactId>bytebuf-flow-tracker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Netty for ByteBuf usage -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compile -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Package application JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.example.demo.DemoApplication</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!--
+                Example of running with the agent during development.
+                This shows how external projects would integrate the tracker.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.example.demo.DemoApplication</mainClass>
+                    <commandlineArgs>
+                        -javaagent:${project.parent.basedir}/bytebuf-flow-tracker/target/bytebuf-flow-tracker-${project.version}-agent.jar=include=com.example.demo
+                    </commandlineArgs>
+                </configuration>
+            </plugin>
+
+            <!--
+                Alternative: Use Maven Surefire to run with agent during tests
+                This demonstrates testing with the agent enabled
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>
+                        -javaagent:${project.parent.basedir}/bytebuf-flow-tracker/target/bytebuf-flow-tracker-${project.version}-agent.jar=include=com.example.demo
+                        -Dcom.sun.management.jmxremote
+                        -Dcom.sun.management.jmxremote.port=9999
+                        -Dcom.sun.management.jmxremote.authenticate=false
+                        -Dcom.sun.management.jmxremote.ssl=false
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

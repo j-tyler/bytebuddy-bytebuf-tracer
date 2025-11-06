@@ -1,0 +1,77 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example.bytebuf.tracker'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // ByteBuddy for instrumentation
+    implementation 'net.bytebuddy:byte-buddy:1.14.9'
+    implementation 'net.bytebuddy:byte-buddy-agent:1.14.9'
+
+    // Netty for ByteBuf
+    implementation 'io.netty:netty-all:4.1.100.Final'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Main class configuration
+application {
+    mainClass = 'com.example.bytebuf.tracker.ByteBufFlowExample'
+}
+
+// Task to build the agent JAR
+task agentJar(type: Jar) {
+    archiveBaseName = 'bytebuf-tracker-agent'
+    archiveClassifier = 'agent'
+
+    from sourceSets.main.output
+
+    manifest {
+        attributes(
+            'Premain-Class': 'com.example.bytebuf.tracker.agent.ByteBufFlowAgent',
+            'Agent-Class': 'com.example.bytebuf.tracker.agent.ByteBufFlowAgent',
+            'Can-Redefine-Classes': 'true',
+            'Can-Retransform-Classes': 'true',
+            'Boot-Class-Path': ''
+        )
+    }
+
+    // Include dependencies in the agent JAR
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Make build depend on agentJar
+build.dependsOn agentJar
+
+// Task to run the example
+task runExample(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.bytebuf.tracker.ByteBufFlowExample'
+
+    // Optionally enable instrumentation
+    // jvmArgs = ["-javaagent:build/libs/bytebuf-tracker-agent-${version}-agent.jar"]
+}
+
+// Default run task
+run {
+    // Standard output settings
+    standardOutput = System.out
+    errorOutput = System.err
+}

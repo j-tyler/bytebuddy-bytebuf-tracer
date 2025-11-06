@@ -1,45 +1,47 @@
 package com.example.bytebuf.tracker.agent;
 
 import com.example.bytebuf.tracker.ByteBufFlowTracker;
-import io.netty.buffer.ByteBuf;
+import com.example.bytebuf.tracker.ObjectTrackerHandler;
+import com.example.bytebuf.tracker.ObjectTrackerRegistry;
 import net.bytebuddy.asm.Advice;
 
 /**
- * ByteBuddy advice for tracking ByteBuf flow through methods.
- * Applied to all methods that might handle ByteBufs.
+ * ByteBuddy advice for tracking object flow through methods.
+ * Originally designed for ByteBuf, but now supports any object via ObjectTrackerHandler.
  */
 public class ByteBufTrackingAdvice {
-    
+
     /**
-     * Method entry advice - tracks ByteBufs in parameters
+     * Method entry advice - tracks objects in parameters
      */
     @Advice.OnMethodEnter
     public static void onMethodEnter(
             @Advice.Origin Class<?> clazz,
             @Advice.Origin("#m") String methodName,
             @Advice.AllArguments Object[] arguments) {
-        
+
         if (arguments == null || arguments.length == 0) {
             return;
         }
-        
+
+        ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
-        
+
         for (Object arg : arguments) {
-            if (arg instanceof ByteBuf) {
-                ByteBuf buf = (ByteBuf) arg;
+            if (handler.shouldTrack(arg)) {
+                int metric = handler.getMetric(arg);
                 tracker.recordMethodCall(
-                    buf,
+                    arg,
                     clazz.getSimpleName(),
                     methodName,
-                    buf.refCnt()
+                    metric
                 );
             }
         }
     }
-    
+
     /**
-     * Method exit advice - tracks ByteBufs in return values and final state
+     * Method exit advice - tracks objects in return values and final state
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
@@ -48,33 +50,34 @@ public class ByteBufTrackingAdvice {
             @Advice.AllArguments Object[] arguments,
             @Advice.Return Object returnValue,
             @Advice.Thrown Throwable thrown) {
-        
+
+        ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
-        
-        // Check if any ByteBufs in parameters have changed refCount
+
+        // Check if any tracked objects in parameters have changed state
         if (arguments != null) {
             for (Object arg : arguments) {
-                if (arg instanceof ByteBuf) {
-                    ByteBuf buf = (ByteBuf) arg;
+                if (handler.shouldTrack(arg)) {
+                    int metric = handler.getMetric(arg);
                     // Record the exit state
                     tracker.recordMethodCall(
-                        buf,
+                        arg,
                         clazz.getSimpleName(),
                         methodName + "_exit",
-                        buf.refCnt()
+                        metric
                     );
                 }
             }
         }
-        
-        // Track ByteBuf return values
-        if (returnValue instanceof ByteBuf) {
-            ByteBuf buf = (ByteBuf) returnValue;
+
+        // Track return values
+        if (handler.shouldTrack(returnValue)) {
+            int metric = handler.getMetric(returnValue);
             tracker.recordMethodCall(
-                buf,
+                returnValue,
                 clazz.getSimpleName(),
                 methodName + "_return",
-                buf.refCnt()
+                metric
             );
         }
     }

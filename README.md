@@ -592,15 +592,298 @@ Tests cover:
 - JIT-friendly implementation
 - Can be disabled in production by not loading the agent
 
-## 🎨 Extending for Custom Objects
+## 🎨 Tracking Custom Objects (Not Just ByteBuf)
 
-While designed for ByteBuf, the tracker can monitor any object:
+While designed for ByteBuf, **the tracker can monitor ANY object type** in your codebase. This section explains how to track your own objects.
 
-1. Modify `ByteBufTrackingAdvice` to detect your objects
-2. Extract appropriate "refCount" equivalent (or other metric)
-3. The Trie structure and rendering remain the same
+### Quick Example: Track Database Connections
 
-See the library README for details.
+```java
+// 1. Implement the ObjectTrackerHandler interface
+public class ConnectionTracker implements ObjectTrackerHandler {
+    public boolean shouldTrack(Object obj) {
+        return obj instanceof Connection;
+    }
+
+    public int getMetric(Object obj) {
+        Connection conn = (Connection) obj;
+        return conn.isClosed() ? 0 : 1;  // 0 = closed, 1 = open
+    }
+
+    public String getObjectType() {
+        return "DatabaseConnection";
+    }
+}
+
+// 2. Set your handler at application startup (before agent starts tracking)
+public static void main(String[] args) {
+    ObjectTrackerRegistry.setHandler(new ConnectionTracker());
+    // ... rest of your application
+}
+```
+
+That's it! The tracker will now monitor database connections instead of ByteBufs.
+
+### How It Works
+
+The tracker uses an **ObjectTrackerHandler** interface with three methods:
+
+1. **`shouldTrack(Object)`** - Is this object something to track?
+2. **`getMetric(Object)`** - Extract an integer metric from it
+3. **`getObjectType()`** - What's the name for reports?
+
+By default, it tracks ByteBuf objects using their reference count. You can replace this with your own handler.
+
+### Detailed Integration Steps
+
+#### Step 1: Create Your Handler Class
+
+Create a class implementing `ObjectTrackerHandler`:
+
+```java
+package com.yourcompany.tracking;
+
+import com.example.bytebuf.tracker.ObjectTrackerHandler;
+import java.io.RandomAccessFile;
+
+public class FileHandleTracker implements ObjectTrackerHandler {
+
+    @Override
+    public boolean shouldTrack(Object obj) {
+        // Track RandomAccessFile instances
+        return obj instanceof RandomAccessFile;
+    }
+
+    @Override
+    public int getMetric(Object obj) {
+        if (obj instanceof RandomAccessFile) {
+            RandomAccessFile file = (RandomAccessFile) obj;
+            try {
+                file.getFD();  // Throws if closed
+                return 1;  // File is open
+            } catch (Exception e) {
+                return 0;  // File is closed
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public String getObjectType() {
+        return "FileHandle";
+    }
+}
+```
+
+#### Step 2: Set Your Handler at Startup
+
+**Option A: Programmatically (Recommended)**
+
+Set it in your main() method or static initializer BEFORE any tracked objects are created:
+
+```java
+import com.example.bytebuf.tracker.ObjectTrackerRegistry;
+
+public class YourApplication {
+    public static void main(String[] args) {
+        // Set custom handler FIRST
+        ObjectTrackerRegistry.setHandler(new FileHandleTracker());
+
+        // Then run your application
+        startApplication();
+    }
+}
+```
+
+**Option B: Via System Property**
+
+Pass the handler class name as a system property:
+
+```bash
+java -javaagent:bytebuf-flow-tracker-agent.jar=include=com.yourcompany \
+     -Dobject.tracker.handler=com.yourcompany.tracking.FileHandleTracker \
+     -jar your-application.jar
+```
+
+Or in Maven pom.xml:
+
+```xml
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <configuration>
+        <mainClass>com.yourcompany.Main</mainClass>
+        <systemProperties>
+            <systemProperty>
+                <key>object.tracker.handler</key>
+                <value>com.yourcompany.tracking.FileHandleTracker</value>
+            </systemProperty>
+        </systemProperties>
+    </configuration>
+</plugin>
+```
+
+#### Step 3: Run with Agent
+
+Use the same agent setup as before, just with your custom handler:
+
+```bash
+mvn exec:java
+```
+
+The tracker will now monitor your custom objects!
+
+### Choosing the Right Metric
+
+The `getMetric()` method should return an integer representing the object's state:
+
+**Common Patterns:**
+
+| Object Type | Metric | Meaning |
+|-------------|--------|---------|
+| ByteBuf | `refCnt()` | Reference count (0 = released) |
+| Connection | `isClosed() ? 0 : 1` | 0 = closed, 1 = open |
+| FileHandle | `isOpen() ? 1 : 0` | 0 = closed, 1 = open |
+| SocketChannel | `isOpen() ? 1 : 0` | 0 = closed, 1 = open |
+| Semaphore | `availablePermits()` | Number of available permits |
+| AtomicInteger | `get()` | Current value |
+
+**Leak Detection Rule:**
+- Leaf nodes with **metric = 0** → Properly released ✅
+- Leaf nodes with **metric > 0** → Leaked resource ⚠️
+
+### Complete Example: File Handle Tracking
+
+See the example module for a complete working example:
+- `FileHandleTracker.java` - Tracks RandomAccessFile
+- `DatabaseConnectionTracker.java` - Tracks JDBC Connections
+- `CustomObjectExample.java` - Demo application
+
+Run it:
+
+```bash
+cd bytebuf-flow-example
+mvn exec:java -Dexec.mainClass="com.example.demo.custom.CustomObjectExample"
+```
+
+### Advanced: Track Multiple Object Types
+
+You can track multiple object types in a single handler:
+
+```java
+public class MultiObjectTracker implements ObjectTrackerHandler {
+
+    @Override
+    public boolean shouldTrack(Object obj) {
+        return obj instanceof Connection ||
+               obj instanceof RandomAccessFile ||
+               obj instanceof SocketChannel;
+    }
+
+    @Override
+    public int getMetric(Object obj) {
+        if (obj instanceof Connection) {
+            return ((Connection) obj).isClosed() ? 0 : 1;
+        } else if (obj instanceof RandomAccessFile) {
+            try {
+                ((RandomAccessFile) obj).getFD();
+                return 1;
+            } catch (Exception e) {
+                return 0;
+            }
+        } else if (obj instanceof SocketChannel) {
+            return ((SocketChannel) obj).isOpen() ? 1 : 0;
+        }
+        return 0;
+    }
+
+    @Override
+    public String getObjectType() {
+        return "ManagedResource";
+    }
+}
+```
+
+### Performance Considerations
+
+- **Keep `shouldTrack()` fast** - Called for every parameter/return value
+- **Use `instanceof` checks** - They're fast and JIT-optimized
+- **Avoid complex logic** - The handler is called very frequently
+- **Consider filtering** - Track only critical objects to reduce overhead
+
+### Real-World Use Cases
+
+**Database Connection Pools:**
+```java
+// Track connections to find leaks in connection pool usage
+public class ConnectionPoolTracker implements ObjectTrackerHandler {
+    public boolean shouldTrack(Object obj) {
+        return obj instanceof PooledConnection;
+    }
+    // ... track open/closed state
+}
+```
+
+**File Descriptors:**
+```java
+// Track file handles to find unclosed files
+public class FileDescriptorTracker implements ObjectTrackerHandler {
+    public boolean shouldTrack(Object obj) {
+        return obj instanceof FileInputStream ||
+               obj instanceof FileOutputStream;
+    }
+    // ... track open/closed state
+}
+```
+
+**Network Channels:**
+```java
+// Track socket channels to find connection leaks
+public class ChannelTracker implements ObjectTrackerHandler {
+    public boolean shouldTrack(Object obj) {
+        return obj instanceof SocketChannel;
+    }
+    // ... track connected/disconnected state
+}
+```
+
+**Custom Objects:**
+```java
+// Track your own resource classes
+public class MyResourceTracker implements ObjectTrackerHandler {
+    public boolean shouldTrack(Object obj) {
+        return obj instanceof MyResource;
+    }
+
+    public int getMetric(Object obj) {
+        MyResource res = (MyResource) obj;
+        return res.isActive() ? 1 : 0;
+    }
+}
+```
+
+### Troubleshooting Custom Trackers
+
+**Problem: Handler not being used**
+
+Check:
+1. Is `setHandler()` called BEFORE any tracked objects are created?
+2. Is system property spelled correctly if using `-Dobject.tracker.handler`?
+3. Check console for `[ObjectTrackerRegistry]` log messages
+
+**Problem: No objects being tracked**
+
+Check:
+1. Is `shouldTrack()` returning true for your objects?
+2. Are the objects actually being passed through instrumented methods?
+3. Add debug logging to your `shouldTrack()` method
+
+**Problem: Incorrect metrics**
+
+Check:
+1. Is `getMetric()` throwing exceptions? (Wrap in try-catch)
+2. Is the metric actually changing? Print values to verify
+3. Does metric follow the pattern: 0 = released, >0 = active?
 
 ## 🤝 Contributing
 

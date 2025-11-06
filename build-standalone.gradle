@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example.bytebuf.tracker'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Standalone build without external dependencies
+// Compile only the core tracking and example code
+sourceSets {
+    main {
+        java {
+            // Include only files that don't require external dependencies
+            srcDirs = ['src/main/java']
+            exclude 'com/example/bytebuf/tracker/agent/**'
+        }
+    }
+    test {
+        java {
+            srcDirs = []
+        }
+    }
+}
+
+// Main class configuration
+application {
+    mainClass = 'com.example.bytebuf.tracker.ByteBufFlowExample'
+}
+
+// Standard run task
+run {
+    standardOutput = System.out
+    errorOutput = System.err
+}

@@ -57,6 +57,8 @@ A **complete working example** showing how to integrate the tracker:
 
 This guide provides detailed, step-by-step instructions for integrating the ByteBuf Flow Tracker into your existing Java project. Follow these instructions to add ByteBuf tracking capabilities to your application.
 
+**Important Note:** This project is not published to Maven Central or any public Maven repository. You must build it from source and integrate it into your project using one of the methods below.
+
 ### Prerequisites
 
 Before integrating, ensure you have:
@@ -66,9 +68,9 @@ Before integrating, ensure you have:
 3. **Netty ByteBuf** usage in your application
 4. **Git** (if using git submodule approach)
 
-### Integration Method 1: Local Build + Maven Dependency (Recommended)
+### Integration Method 1: Local Build + Local Maven Repository
 
-This method builds the tracker locally and installs it to your local Maven repository.
+This method builds the tracker locally and installs it to your local Maven repository (`~/.m2/repository`).
 
 #### Step 1: Clone and Build the Tracker
 
@@ -93,7 +95,7 @@ In your project's `pom.xml`, add the dependency:
 <dependencies>
     <!-- Existing dependencies -->
 
-    <!-- ByteBuf Flow Tracker -->
+    <!-- ByteBuf Flow Tracker (built locally, not from Maven Central) -->
     <dependency>
         <groupId>com.example.bytebuf</groupId>
         <artifactId>bytebuf-flow-tracker</artifactId>
@@ -101,6 +103,8 @@ In your project's `pom.xml`, add the dependency:
     </dependency>
 </dependencies>
 ```
+
+**Note:** This dependency resolves from your local Maven repository (`~/.m2/repository`) after running `mvn clean install` in Step 1.
 
 #### Step 3: Configure the Java Agent
 
@@ -294,9 +298,9 @@ Run your application and check for these indicators:
    - Leaf nodes with `⚠️ LEAK` indicate ByteBufs not released
    - These show as `[ref=N]` where N > 0 at leaf positions
 
-### Integration Method 2: Git Submodule
+### Integration Method 2: Git Submodule (Recommended for Claude Code)
 
-Use this method to keep the tracker code within your repository.
+Use this method to keep the tracker code within your repository and build it as part of your project's build. **This is the recommended approach for Claude Code projects.**
 
 #### Step 1: Add as Git Submodule
 
@@ -315,18 +319,18 @@ mvn clean install
 cd ../..
 ```
 
-#### Step 3: Update Your Project POM
+#### Step 3: Include as Multi-Module Build
 
-Add the local repository reference in your `pom.xml`:
+Add the tracker as a module in your parent `pom.xml`:
 
 ```xml
-<repositories>
-    <repository>
-        <id>local-bytebuf-tracker</id>
-        <url>file://${project.basedir}/lib/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target</url>
-    </repository>
-</repositories>
+<modules>
+    <module>your-existing-module</module>
+    <!-- Add the tracker module -->
+    <module>lib/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker</module>
+</modules>
 
+<!-- In your application module's pom.xml -->
 <dependencies>
     <dependency>
         <groupId>com.example.bytebuf</groupId>
@@ -335,6 +339,8 @@ Add the local repository reference in your `pom.xml`:
     </dependency>
 </dependencies>
 ```
+
+**Note:** This makes the tracker part of your project's build. Running `mvn clean install` at the root builds everything in one command.
 
 #### Step 4: Configure Agent
 
@@ -354,9 +360,9 @@ Use relative path to agent JAR in your exec plugin:
 </plugin>
 ```
 
-### Integration Method 3: Copy Source Code
+### Integration Method 3: Copy Source Code Directly
 
-Use this method to fully embed the tracker in your project.
+Use this method to fully embed the tracker in your project without git submodule.
 
 #### Step 1: Copy the Library Module
 
@@ -411,13 +417,20 @@ Reference the module's target directory:
 
 ### Gradle Integration
 
-If your project uses Gradle instead of Maven:
+If your project uses Gradle instead of Maven, you'll need to first build the tracker with Maven, then reference it:
 
-#### build.gradle
+#### Step 1: Build the Tracker
+
+```bash
+cd /path/to/bytebuddy-bytebuf-tracer
+mvn clean install
+```
+
+#### Step 2: Configure build.gradle
 
 ```groovy
 dependencies {
-    // Add this dependency (after running mvn install)
+    // Reference from local Maven repository (after mvn install above)
     implementation 'com.example.bytebuf:bytebuf-flow-tracker:1.0.0-SNAPSHOT'
 }
 
@@ -445,6 +458,8 @@ Run with:
 ```bash
 gradle runWithAgent
 ```
+
+**Note:** Gradle will resolve the dependency from your local Maven repository. You must run `mvn clean install` in the tracker project before the first Gradle build.
 
 ---
 
@@ -590,13 +605,15 @@ See the library README for details.
 ## 🤝 Contributing
 
 This project demonstrates a clean separation between:
-1. **Reusable library** (`bytebuf-flow-tracker`) - Can be published to Maven repos
+1. **Reusable library** (`bytebuf-flow-tracker`) - Core tracking functionality
 2. **Example usage** (`bytebuf-flow-example`) - Shows integration patterns
 
 To contribute:
 1. Library changes go in `bytebuf-flow-tracker/`
 2. Example changes go in `bytebuf-flow-example/`
 3. Keep the two modules independent (example depends on library, not vice versa)
+
+**Note:** This project is not currently published to Maven Central. Users must build from source.
 
 ## 📄 License
 

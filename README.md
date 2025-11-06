@@ -104,6 +104,49 @@ ROOT: DemoApplication.createLeak [count=1]
 - **`TrieRenderer`**: Formats Trie data into tree, flat, CSV, JSON views
 - **`ByteBufFlowMBean`**: JMX interface for runtime monitoring
 
+---
+
+## Tracking Capabilities
+
+The tracker automatically instruments methods with ByteBuf parameters/returns. Additional features are available for advanced tracking scenarios:
+
+### Static Method Tracking
+
+**Enabled by default** - Static methods are automatically tracked.
+
+```java
+public static ByteBuf compress(ByteBuf buffer) { }  // ✓ Tracked
+```
+
+See [STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md) for details.
+
+### Constructor Tracking
+
+**Opt-in feature** - Enable constructor tracking for specific wrapper classes to maintain continuous flow when ByteBuf is wrapped in custom objects.
+
+```bash
+-javaagent:tracker.jar=trackConstructors=com.example.Message,com.example.Request
+```
+
+```java
+public class Message {
+    public Message(ByteBuf data) { }  // ✓ Tracked with trackConstructors
+}
+```
+
+See [CONSTRUCTOR_TRACKING.md](CONSTRUCTOR_TRACKING.md) for configuration and usage.
+
+### Wrapped Object Tracking
+
+When ByteBuf is wrapped in custom objects, tracking may break. Solutions include:
+- Enable constructor tracking (recommended)
+- Use manual tracking for methods receiving wrapper objects
+- Combine both for complete continuous flow
+
+See [WRAPPED_OBJECT_TRACKING.md](WRAPPED_OBJECT_TRACKING.md) for limitations and solutions.
+
+---
+
 ### Extensibility
 
 Track ANY object type by implementing `ObjectTrackerHandler`:
@@ -626,8 +669,16 @@ String summary = renderer.renderSummary();
 
 ### Documentation
 
+**Feature Guides:**
+- **[STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md)** - Static method tracking (enabled by default)
+- **[CONSTRUCTOR_TRACKING.md](CONSTRUCTOR_TRACKING.md)** - Opt-in constructor tracking for wrapper classes
+- **[WRAPPED_OBJECT_TRACKING.md](WRAPPED_OBJECT_TRACKING.md)** - Handling ByteBuf wrapped in custom objects
+
+**Module Documentation:**
 - **[Library README](bytebuf-flow-tracker/README.md)** - API documentation, architecture
 - **[Example README](bytebuf-flow-example/README.md)** - Integration patterns, best practices
+
+**Integration Guides:**
 - **[CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md)** - Claude Code specific guide (multi-module builds)
 - **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Project restructuring history
 

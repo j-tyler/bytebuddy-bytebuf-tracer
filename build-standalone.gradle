@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example.bytebuf.tracker'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    // Netty for ByteBuf - using local JARs
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // JUnit 5 for testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Standalone build - compile core tracking and example code
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+            exclude 'com/example/bytebuf/tracker/agent/**'
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
+    }
+}
+
+// Main class configuration
+application {
+    mainClass = 'com.example.bytebuf.tracker.ByteBufFlowExample'
+}
+
+// Standard run task
+run {
+    standardOutput = System.out
+    errorOutput = System.err
+}

@@ -210,33 +210,124 @@ public class TrieRenderer {
     }
     
     /**
-     * Render summary statistics
+     * Render in LLM-optimized format for automated analysis.
+     * Structured text format with clear sections for easy parsing.
      */
-    public String renderSummary() {
+    public String renderForLLM() {
         StringBuilder sb = new StringBuilder();
-        sb.append("=== ByteBuf Flow Summary ===\n");
-        sb.append("Total Root Methods: ").append(trie.getRootCount()).append("\n");
-        
+
+        // Metadata section
         long totalTraversals = 0;
         int totalPaths = 0;
         int leakPaths = 0;
-        
+
         for (TrieNode root : trie.getRoots().values()) {
             PathStats stats = calculatePathStats(root);
             totalTraversals += root.getTraversalCount();
             totalPaths += stats.pathCount;
             leakPaths += stats.leakCount;
         }
-        
+
+        sb.append("METADATA:\n");
+        sb.append("total_roots=").append(trie.getRootCount()).append("\n");
+        sb.append("total_traversals=").append(totalTraversals).append("\n");
+        sb.append("total_paths=").append(totalPaths).append("\n");
+        sb.append("leak_paths=").append(leakPaths).append("\n");
+        if (totalPaths > 0) {
+            double leakPercentage = (leakPaths * 100.0) / totalPaths;
+            sb.append(String.format("leak_percentage=%.2f%%\n", leakPercentage));
+        }
+        sb.append("\n");
+
+        // Leak summary section
+        sb.append("LEAKS:\n");
+        if (leakPaths == 0) {
+            sb.append("none\n");
+        } else {
+            for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
+                collectLeaks(sb, entry.getKey(), entry.getValue(), new ArrayList<>());
+            }
+        }
+        sb.append("\n");
+
+        // Complete flows section
+        sb.append("FLOWS:\n");
+        for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
+            collectFlowsForLLM(sb, entry.getKey(), entry.getValue(), new ArrayList<>());
+        }
+
+        return sb.toString();
+    }
+
+    private void collectLeaks(StringBuilder sb, String root, TrieNode node, List<String> currentPath) {
+        currentPath.add(formatNodeForLLM(node));
+
+        if (node.isLeaf()) {
+            if (node.getRefCount() != 0) {
+                sb.append("leak|root=").append(root);
+                sb.append("|final_ref=").append(node.getRefCount());
+                sb.append("|path=").append(String.join(" -> ", currentPath));
+                sb.append("\n");
+            }
+        } else {
+            for (TrieNode child : node.getChildren().values()) {
+                collectLeaks(sb, root, child, new ArrayList<>(currentPath));
+            }
+        }
+    }
+
+    private void collectFlowsForLLM(StringBuilder sb, String root, TrieNode node, List<String> currentPath) {
+        currentPath.add(formatNodeForLLM(node));
+
+        if (node.isLeaf()) {
+            sb.append("flow|root=").append(root);
+            sb.append("|final_ref=").append(node.getRefCount());
+            sb.append("|is_leak=").append(node.getRefCount() != 0);
+            sb.append("|path=").append(String.join(" -> ", currentPath));
+            sb.append("\n");
+        } else {
+            for (TrieNode child : node.getChildren().values()) {
+                collectFlowsForLLM(sb, root, child, new ArrayList<>(currentPath));
+            }
+        }
+    }
+
+    private String formatNodeForLLM(TrieNode node) {
+        return String.format("%s.%s[ref=%d,count=%d]",
+            node.getClassName(),
+            node.getMethodName(),
+            node.getRefCount(),
+            node.getTraversalCount());
+    }
+
+    /**
+     * Render summary statistics
+     */
+    public String renderSummary() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== ByteBuf Flow Summary ===\n");
+        sb.append("Total Root Methods: ").append(trie.getRootCount()).append("\n");
+
+        long totalTraversals = 0;
+        int totalPaths = 0;
+        int leakPaths = 0;
+
+        for (TrieNode root : trie.getRoots().values()) {
+            PathStats stats = calculatePathStats(root);
+            totalTraversals += root.getTraversalCount();
+            totalPaths += stats.pathCount;
+            leakPaths += stats.leakCount;
+        }
+
         sb.append("Total Traversals: ").append(totalTraversals).append("\n");
         sb.append("Unique Paths: ").append(totalPaths).append("\n");
         sb.append("Leak Paths: ").append(leakPaths).append("\n");
-        
+
         if (totalPaths > 0) {
             double leakPercentage = (leakPaths * 100.0) / totalPaths;
             sb.append(String.format("Leak Percentage: %.2f%%\n", leakPercentage));
         }
-        
+
         return sb.toString();
     }
     

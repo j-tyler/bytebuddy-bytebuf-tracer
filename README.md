@@ -4,26 +4,12 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 
 ---
 
-## Overview
-
-### What It Does
-
-This project provides a reusable Java agent that tracks objects (ByteBuf by default) as they flow through your application:
-
-- **Detect memory leaks**: Find objects that aren't properly released
-- **Understand flow patterns**: See how objects move through your code
-- **Identify anomalies**: Spot unusual reference count patterns
-- **Track custom objects**: Monitor database connections, file handles, sockets, or any resource
-
-### Key Features
-
-- **Zero allocation overhead**: No stack trace collection
-- **First-touch tracking**: First method becomes the Trie root
-- **Memory efficient**: Trie structure shares common prefixes
-- **Multiple output formats**: Tree, flat paths, CSV, JSON
-- **JMX monitoring**: Real-time analysis via JMX
-- **Extensible**: Track ANY object type, not just ByteBuf
-- **Configurable**: Include/exclude packages via agent arguments
+- **Zero allocation overhead**: No stack trace collection or allocation site tracking
+- **First-touch root**: The first method that handles a ByteBuf becomes the Trie root
+- **Memory efficient**: Trie structure shares common prefixes, minimizing memory usage
+- **Clean separation**: Pure data structure (Trie) with separate rendering/viewing
+- **Real-time monitoring**: JMX MBean for runtime analysis
+- **Dual output formats**: Human-readable tree view and LLM-optimized structured format
 
 ### Prerequisites
 
@@ -313,35 +299,13 @@ Run your application and check for:
 4. **Objects tracked**: Call tracking API or check JMX - should see method calls
 5. **Leaks detected**: Leaf nodes with `⚠️ LEAK` or `[ref=N]` where N > 0
 
----
+## Output Formats
 
-## Tracking Custom Objects
+The tracker provides two output formats optimized for different use cases:
 
-### Quick Start
+### 1. Human-Readable Format: Visual Tree
 
-Track database connections instead of ByteBuf:
-
-```java
-// 1. Implement ObjectTrackerHandler
-public class ConnectionTracker implements ObjectTrackerHandler {
-    public boolean shouldTrack(Object obj) {
-        return obj instanceof Connection;
-    }
-
-    public int getMetric(Object obj) {
-        return ((Connection) obj).isClosed() ? 0 : 1;
-    }
-
-    public String getObjectType() {
-        return "DatabaseConnection";
-    }
-}
-
-// 2. Register in main() BEFORE any tracked objects are created
-public static void main(String[] args) {
-    ObjectTrackerRegistry.setHandler(new ConnectionTracker());
-    // ... rest of application
-}
+A clean tree visualization with summary statistics, perfect for manual analysis:
 ```
 
 That's it! The tracker now monitors database connections for leaks.
@@ -396,7 +360,62 @@ Or in Maven:
 </systemProperty>
 ```
 
-### Real-World Examples
+### 2. LLM-Optimized Format: Structured Analysis
+
+Structured text format designed for automated analysis and LLM parsing:
+
+```
+METADATA:
+total_roots=6
+total_traversals=210
+total_paths=8
+leak_paths=3
+leak_percentage=37.50%
+
+LEAKS:
+leak|root=LeakyExample.allocate|final_ref=1|path=LeakyExample.allocate[ref=1,count=2] -> ErrorDecoder.decode[ref=1,count=1] -> Logger.logError[ref=1,count=0]
+
+FLOWS:
+flow|root=DirectExample.allocate|final_ref=0|is_leak=false|path=DirectExample.allocate[ref=1,count=2] -> Decoder.decode[ref=1,count=1] -> DirectExample.cleanup[ref=0,count=0]
+flow|root=LeakyExample.allocate|final_ref=1|is_leak=true|path=LeakyExample.allocate[ref=1,count=2] -> ErrorDecoder.decode[ref=1,count=1] -> Logger.logError[ref=1,count=0]
+```
+
+**Format Details:**
+- **METADATA section**: Key-value pairs with overall statistics
+- **LEAKS section**: Pipe-delimited leak records with root, final_ref, and full path
+- **FLOWS section**: All flows with leak status and complete paths
+- Each node shows: `ClassName.methodName[ref=N,count=N]`
+
+## Building and Testing
+
+### Build the Project
+
+```bash
+# Build with Gradle
+gradle -b build-standalone.gradle build
+
+# Run the example
+gradle -b build-standalone.gradle run
+```
+
+### Run Unit Tests
+
+```bash
+# Run all tests
+gradle -b build-standalone.gradle test
+
+# Run with verbose output
+gradle -b build-standalone.gradle test --info
+```
+
+The test suite uses **JUnit 5** and includes:
+- Empty tracker validation
+- Single and multiple flow tracking
+- Leak detection verification
+- Output format validation
+- Reset functionality testing
+
+## Configuration
 
 **File Handles:**
 
@@ -566,29 +585,14 @@ Format: `include=package1,package2;exclude=package3,package4`
 
 **Symptoms**: Cannot connect via JConsole
 
-**Solutions**:
-1. Verify JMX port not in use: `netstat -an | grep 9999`
-2. Check firewall settings
-3. Try local connection first: `jconsole localhost:9999`
-4. Ensure all JMX system properties are set
+// Get human-readable tree view
+String tree = renderer.renderIndentedTree();
 
----
+// Get LLM-optimized format
+String llmFormat = renderer.renderForLLM();
 
-## Reference
-
-### Performance Impact
-
-- **Overhead**: ~5-10% in high-throughput scenarios
-- **Memory**: No allocation overhead (no stack traces)
-- **Concurrency**: Lock-free concurrent data structures
-- **JIT**: JIT-friendly implementation
-- **Production**: Can be disabled by not loading agent
-
-### Testing
-
-```bash
-cd bytebuf-flow-tracker
-mvn test
+// Get summary statistics
+String summary = renderer.renderSummary();
 ```
 
 **Test coverage**: Simple flow tracking, leak detection, refCount anomalies, high-volume scenarios, CSV/JSON export.

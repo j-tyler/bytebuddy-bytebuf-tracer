@@ -162,17 +162,60 @@ public class ByteBufFlowTrackerTest {
         assertTrue(csv.contains("false")); // not a leak
     }
     
+    @Test
+    public void testStaticMethodTracking() {
+        // Create a ByteBuf
+        ByteBuf buffer = Unpooled.buffer(256);
+
+        // Pass to instance method
+        StaticMethodExample.processWithInstance(buffer);
+
+        // Pass to static method
+        StaticMethodExample.processWithStatic(buffer);
+
+        // Release the buffer
+        buffer.release();
+        tracker.recordMethodCall(buffer, "StaticMethodExample", "cleanup", buffer.refCnt());
+
+        // Verify the tree structure includes static method
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+
+        System.out.println("\nStatic Method Tracking Test:");
+        System.out.println(tree);
+
+        // Both instance and static methods should be tracked
+        assertTrue("Instance method should be tracked", tree.contains("processWithInstance"));
+        assertTrue("Static method should be tracked", tree.contains("processWithStatic"));
+    }
+
+    /**
+     * Helper class to test static method tracking
+     */
+    public static class StaticMethodExample {
+
+        public void processWithInstance(ByteBuf buffer) {
+            ByteBufFlowTracker.getInstance().recordMethodCall(
+                buffer, getClass().getSimpleName(), "processWithInstance", buffer.refCnt());
+        }
+
+        public static void processWithStatic(ByteBuf buffer) {
+            ByteBufFlowTracker.getInstance().recordMethodCall(
+                buffer, "StaticMethodExample", "processWithStatic", buffer.refCnt());
+        }
+    }
+
     /**
      * Example of how to use the tracker in production code
      */
     public static class ProductionExample {
-        
+
         private final ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
-        
+
         public void handleMessage(ByteBuf message) {
             // Track entry into this method
             tracker.recordMethodCall(message, getClass().getSimpleName(), "handleMessage", message.refCnt());
-            
+
             try {
                 // Process the message
                 processInternal(message);
@@ -182,7 +225,7 @@ public class ByteBufFlowTrackerTest {
                 tracker.recordMethodCall(message, getClass().getSimpleName(), "handleMessage_exit", message.refCnt());
             }
         }
-        
+
         private void processInternal(ByteBuf message) {
             tracker.recordMethodCall(message, getClass().getSimpleName(), "processInternal", message.refCnt());
             // ... actual processing ...

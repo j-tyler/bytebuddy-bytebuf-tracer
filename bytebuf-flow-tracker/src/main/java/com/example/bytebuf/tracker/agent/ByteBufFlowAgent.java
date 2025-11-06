@@ -69,11 +69,10 @@ public class ByteBufFlowAgent {
             
             return builder
                 .method(
-                    // Match methods that might handle ByteBufs
+                    // Match methods that might handle ByteBufs (including static methods)
                     isPublic()
                     .or(isProtected())
                     .and(not(isConstructor()))
-                    .and(not(isStatic()))
                 )
                 .intercept(Advice.to(ByteBufTrackingAdvice.class));
         }

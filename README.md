@@ -104,6 +104,49 @@ ROOT: DemoApplication.createLeak [count=1]
 - **`TrieRenderer`**: Formats Trie data into tree, flat, CSV, JSON views
 - **`ByteBufFlowMBean`**: JMX interface for runtime monitoring
 
+---
+
+## Tracking Capabilities
+
+The tracker automatically instruments methods with ByteBuf parameters/returns. Additional features are available for advanced tracking scenarios:
+
+### Static Method Tracking
+
+**Enabled by default** - Static methods are automatically tracked.
+
+```java
+public static ByteBuf compress(ByteBuf buffer) { }  // ✓ Tracked
+```
+
+See [STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md) for details.
+
+### Wrapper Object Tracking
+
+**Important for real applications** - When ByteBuf is wrapped in custom objects (Message, Request, Event), tracking breaks by default.
+
+**Enable constructor tracking** for your wrapper classes to maintain continuous flow:
+
+```bash
+-javaagent:tracker.jar=trackConstructors=com.example.Message,com.example.Request
+```
+
+**Combine with manual tracking** for methods receiving wrappers:
+
+```java
+public class Message {
+    public Message(ByteBuf data) { }  // ✓ Tracked with trackConstructors
+}
+
+public void processMessage(Message msg) {
+    ByteBuf buf = msg.getData();
+    tracker.recordMethodCall(buf, "Handler", "processMessage", buf.refCnt());  // Manual tracking needed
+}
+```
+
+See [WRAPPER_TRACKING.md](WRAPPER_TRACKING.md) for complete guide, configuration, and examples.
+
+---
+
 ### Extensibility
 
 Track ANY object type by implementing `ObjectTrackerHandler`:
@@ -471,7 +514,12 @@ See `bytebuf-flow-example/src/main/java/com/example/demo/custom/` for complete e
 
 ### Agent Arguments
 
-Format: `include=package1,package2;exclude=package3,package4`
+Format: `include=package1,package2;exclude=package3,package4;trackConstructors=class1,class2`
+
+**Parameters:**
+- `include` - Packages to instrument (required)
+- `exclude` - Packages to skip (optional)
+- `trackConstructors` - Classes to enable constructor tracking (optional)
 
 **Examples:**
 
@@ -487,13 +535,35 @@ Format: `include=package1,package2;exclude=package3,package4`
 
 # Exclude third-party
 -javaagent:tracker.jar=include=com.example;exclude=org.apache,io.netty
+
+# Enable constructor tracking for wrapper classes
+-javaagent:tracker.jar=include=com.example;trackConstructors=com.example.Message,com.example.Request
+
+# Use wildcards for constructor tracking
+-javaagent:tracker.jar=include=com.example;trackConstructors=com.example.dto.*
 ```
+
+**Constructor Tracking:**
+
+By default, constructors are NOT tracked. Enable selectively for wrapper classes:
+
+```bash
+trackConstructors=com.example.Message,com.example.HttpRequest
+```
+
+This maintains continuous flow when ByteBuf is wrapped in custom objects:
+```
+allocate → prepareBuffer → Message.<init> → processMessage → cleanup
+```
+
+See [WRAPPER_TRACKING.md](WRAPPER_TRACKING.md) for details.
 
 **Recommendations:**
 - Start narrow (specific packages)
 - Widen if needed
 - Exclude packages without tracked objects
 - Exclude third-party unless debugging them
+- Enable constructor tracking only for wrapper classes that hold ByteBuf
 
 ### System Properties
 
@@ -599,8 +669,15 @@ String summary = renderer.renderSummary();
 
 ### Documentation
 
+**Feature Guides:**
+- **[STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md)** - Static method tracking (enabled by default)
+- **[WRAPPER_TRACKING.md](WRAPPER_TRACKING.md)** - Tracking ByteBuf wrapped in custom objects (Message, Request, Event)
+
+**Module Documentation:**
 - **[Library README](bytebuf-flow-tracker/README.md)** - API documentation, architecture
 - **[Example README](bytebuf-flow-example/README.md)** - Integration patterns, best practices
+
+**Integration Guides:**
 - **[CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md)** - Claude Code specific guide (multi-module builds)
 - **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Project restructuring history
 

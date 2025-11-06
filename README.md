@@ -452,6 +452,7 @@ gradle runWithAgent
 
 - **[Library README](bytebuf-flow-tracker/README.md)** - Detailed API documentation, architecture, and usage
 - **[Example README](bytebuf-flow-example/README.md)** - Integration guide and best practices
+- **[CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md)** - **Specific guide for Claude Code projects** (build from source strategy)
 - **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Project restructuring documentation
 
 ## 🔍 How It Works

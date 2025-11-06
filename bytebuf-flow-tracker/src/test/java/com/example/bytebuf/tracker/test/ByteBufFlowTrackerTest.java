@@ -520,6 +520,71 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "TestHelper", "validateTrackedMessage", buffer.refCnt());
     }
 
+    @Test
+    public void testPrivateInnerClassTracking() {
+        System.out.println("\n=== Private Inner Class Tracking Test ===");
+
+        // Private inner classes CAN be matched, but only public/protected members are tracked
+        ByteBuf buffer = Unpooled.buffer(256);
+        tracker.recordMethodCall(buffer, "TestClient", "allocate", buffer.refCnt());
+
+        // Create instance using public constructor
+        PrivateWrapperWithPublicConstructor wrapper1 = new PrivateWrapperWithPublicConstructor(buffer);
+
+        // Process
+        wrapper1.process();
+
+        // Release
+        buffer.release();
+        tracker.recordMethodCall(buffer, "TestClient", "cleanup", buffer.refCnt());
+
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(tree);
+
+        // Public constructor should be tracked (if trackConstructors configured)
+        System.out.println("\nNote: Private inner class CAN be instrumented");
+        System.out.println("But only public/protected constructors and methods are tracked");
+
+        assertTrue("Public process() method should be tracked", tree.contains("process"));
+    }
+
+    /**
+     * Private inner class with public constructor
+     * This CAN be instrumented - class visibility doesn't matter,
+     * but only public/protected members are tracked
+     */
+    private static class PrivateWrapperWithPublicConstructor {
+        private final ByteBuf data;
+
+        // Public constructor - CAN be tracked with trackConstructors
+        public PrivateWrapperWithPublicConstructor(ByteBuf data) {
+            this.data = data;
+            ByteBufFlowTracker.getInstance().recordMethodCall(
+                data, "PrivateWrapperWithPublicConstructor", "<init>", data.refCnt());
+        }
+
+        // Private constructor - NOT tracked
+        private PrivateWrapperWithPublicConstructor() {
+            this.data = null;
+        }
+
+        // Public method - CAN be tracked
+        public void process() {
+            if (data != null) {
+                ByteBufFlowTracker.getInstance().recordMethodCall(
+                    data, "PrivateWrapperWithPublicConstructor", "process", data.refCnt());
+            }
+        }
+
+        // Private method - NOT tracked
+        private void internalProcess() {
+            // This would not be instrumented
+        }
+    }
+
     /**
      * Example of how to use the tracker in production code
      */

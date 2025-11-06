@@ -78,7 +78,26 @@ trackConstructors=com.yourcompany.Message,com.yourcompany.dto.* \
 
 ## What Gets Tracked
 
+### Class Visibility
+
+**Important:** Class visibility does NOT matter - private inner classes CAN be instrumented:
+
+```java
+// ✓ Private inner class CAN be matched and instrumented
+private class InternalWrapper {
+    private final ByteBuf data;
+
+    // ✓ Public constructor tracked (with trackConstructors)
+    public InternalWrapper(ByteBuf data) { this.data = data; }
+
+    // ✗ Private constructor NOT tracked
+    private InternalWrapper() { }
+}
+```
+
 ### With Constructor Tracking Enabled
+
+Only **public and protected** constructors are tracked:
 
 ```java
 public class Message {
@@ -95,7 +114,7 @@ public class Message {
         this.id = id;
     }
 
-    // ✗ Private constructors excluded
+    // ✗ Private constructors excluded (even if class is tracked)
     private Message() { }
 }
 ```

@@ -136,7 +136,7 @@ gradle -b build-standalone.gradle test
 gradle -b build-standalone.gradle test --info
 ```
 
-The test suite includes:
+The test suite uses **JUnit 5** and includes:
 - Empty tracker validation
 - Single and multiple flow tracking
 - Leak detection verification

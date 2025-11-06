@@ -6,17 +6,27 @@ plugins {
 group = 'com.example.bytebuf.tracker'
 version = '1.0-SNAPSHOT'
 
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    // Netty for ByteBuf - using local JARs
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// Standalone build without external dependencies
-// Compile only the core tracking and example code
+// Standalone build - compile core tracking and example code
 sourceSets {
     main {
         java {
-            // Include only files that don't require external dependencies
             srcDirs = ['src/main/java']
             exclude 'com/example/bytebuf/tracker/agent/**'
         }

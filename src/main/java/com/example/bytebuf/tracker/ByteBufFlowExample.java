@@ -1,9 +1,11 @@
 package com.example.bytebuf.tracker;
 
 import com.example.bytebuf.tracker.view.TrieRenderer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
- * Example demonstrating ByteBuf flow tracking.
+ * Example demonstrating ByteBuf flow tracking using real Netty ByteBuf.
  *
  * This example shows:
  * 1. Direct ByteBuf allocation and passing through static methods
@@ -17,54 +19,18 @@ import com.example.bytebuf.tracker.view.TrieRenderer;
 public class ByteBufFlowExample {
 
     /**
-     * Simple mock ByteBuf for demonstration
-     * In production, this would be io.netty.buffer.ByteBuf
-     */
-    static class MockByteBuf {
-        private int refCnt;
-        private final int id;
-        private static int nextId = 1;
-
-        public MockByteBuf() {
-            this.refCnt = 1;
-            this.id = nextId++;
-        }
-
-        public int refCnt() {
-            return refCnt;
-        }
-
-        public MockByteBuf retain() {
-            refCnt++;
-            return this;
-        }
-
-        public boolean release() {
-            if (refCnt > 0) {
-                refCnt--;
-            }
-            return refCnt == 0;
-        }
-
-        @Override
-        public String toString() {
-            return "ByteBuf#" + id + "[refCnt=" + refCnt + "]";
-        }
-    }
-
-    /**
      * Wrapper object that holds a ByteBuf
      */
     static class MessageWrapper {
-        private final MockByteBuf buffer;
+        private final ByteBuf buffer;
         private final String metadata;
 
-        public MessageWrapper(MockByteBuf buffer, String metadata) {
+        public MessageWrapper(ByteBuf buffer, String metadata) {
             this.buffer = buffer;
             this.metadata = metadata;
         }
 
-        public MockByteBuf getBuffer() {
+        public ByteBuf getBuffer() {
             return buffer;
         }
 
@@ -80,7 +46,7 @@ public class ByteBufFlowExample {
     static void directFlow_ProperCleanup() {
         System.out.println("\n=== Scenario 1: Direct Flow with Proper Cleanup ===");
 
-        MockByteBuf buf = new MockByteBuf();
+        ByteBuf buf = Unpooled.buffer(256);
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
         // Root: allocate
@@ -102,15 +68,15 @@ public class ByteBufFlowExample {
         System.out.println("✓ Buffer properly released");
     }
 
-    static void decode(MockByteBuf buf) {
+    static void decode(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "Decoder", "decode", buf.refCnt());
     }
 
-    static void handle(MockByteBuf buf) {
+    static void handle(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "Handler", "handle", buf.refCnt());
     }
 
-    static void process(MockByteBuf buf) {
+    static void process(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "Processor", "process", buf.refCnt());
     }
 
@@ -121,7 +87,7 @@ public class ByteBufFlowExample {
     static void directFlow_WithLeak() {
         System.out.println("\n=== Scenario 2: Direct Flow with LEAK ===");
 
-        MockByteBuf buf = new MockByteBuf();
+        ByteBuf buf = Unpooled.buffer(256);
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
         // Root: allocate
@@ -138,15 +104,15 @@ public class ByteBufFlowExample {
         System.out.println("⚠️  Buffer NOT released - LEAK!");
     }
 
-    static void errorDecode(MockByteBuf buf) {
+    static void errorDecode(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "ErrorDecoder", "decode", buf.refCnt());
     }
 
-    static void errorHandle(MockByteBuf buf) {
+    static void errorHandle(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "ErrorHandler", "handleError", buf.refCnt());
     }
 
-    static void logError(MockByteBuf buf) {
+    static void logError(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "Logger", "logError", buf.refCnt());
     }
 
@@ -157,7 +123,7 @@ public class ByteBufFlowExample {
     static void directFlow_WithRetain() {
         System.out.println("\n=== Scenario 3: Direct Flow with Retain/Release ===");
 
-        MockByteBuf buf = new MockByteBuf();
+        ByteBuf buf = Unpooled.buffer(256);
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
         // Root: allocate
@@ -180,7 +146,7 @@ public class ByteBufFlowExample {
         System.out.println("✓ Buffer properly released after retain");
     }
 
-    static void validateWithRetain(MockByteBuf buf) {
+    static void validateWithRetain(ByteBuf buf) {
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
         tracker.recordMethodCall(buf, "Validator", "validate", buf.refCnt());
 
@@ -189,7 +155,7 @@ public class ByteBufFlowExample {
         tracker.recordMethodCall(buf, "Validator", "afterRetain", buf.refCnt());
     }
 
-    static void asyncProcess(MockByteBuf buf) {
+    static void asyncProcess(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "AsyncProcessor", "processAsync", buf.refCnt());
     }
 
@@ -200,7 +166,7 @@ public class ByteBufFlowExample {
     static void wrapperFlow_ProperCleanup() {
         System.out.println("\n=== Scenario 4: Wrapper Object with Proper Cleanup ===");
 
-        MockByteBuf buf = new MockByteBuf();
+        ByteBuf buf = Unpooled.buffer(256);
         MessageWrapper wrapper = new MessageWrapper(buf, "important-message");
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
@@ -245,7 +211,7 @@ public class ByteBufFlowExample {
     static void wrapperFlow_WithLeak() {
         System.out.println("\n=== Scenario 5: Wrapper Object with LEAK ===");
 
-        MockByteBuf buf = new MockByteBuf();
+        ByteBuf buf = Unpooled.buffer(256);
         MessageWrapper wrapper = new MessageWrapper(buf, "failed-message");
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
@@ -284,7 +250,7 @@ public class ByteBufFlowExample {
 
         // Simulate multiple requests taking different paths
         for (int i = 0; i < 100; i++) {
-            MockByteBuf buf = new MockByteBuf();
+            ByteBuf buf = Unpooled.buffer(256);
 
             // Root: HTTP handler
             tracker.recordMethodCall(buf, "HttpHandler", "handleRequest", buf.refCnt());
@@ -316,26 +282,26 @@ public class ByteBufFlowExample {
         System.out.println("✓ Processed 100 requests with multiple paths");
     }
 
-    static void httpParse(MockByteBuf buf) {
+    static void httpParse(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "RequestParser", "parse", buf.refCnt());
     }
 
-    static void httpValidate(MockByteBuf buf, boolean success) {
+    static void httpValidate(ByteBuf buf, boolean success) {
         // Simulate validation retaining buffer
         buf.retain();
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "Validator", "validate", buf.refCnt());
         buf.release(); // Validation done
     }
 
-    static void httpBuildResponse(MockByteBuf buf) {
+    static void httpBuildResponse(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "ResponseBuilder", "build", buf.refCnt());
     }
 
-    static void httpBuildErrorResponse(MockByteBuf buf) {
+    static void httpBuildErrorResponse(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "ErrorResponseBuilder", "buildError", buf.refCnt());
     }
 
-    static void httpException(MockByteBuf buf) {
+    static void httpException(ByteBuf buf) {
         ByteBufFlowTracker.getInstance().recordMethodCall(buf, "ExceptionHandler", "handleException", buf.refCnt());
     }
 

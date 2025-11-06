@@ -147,4 +147,188 @@ public class ByteBufFlowTrackerTest {
         assertTrue(llmOutput.contains("total_paths="), "Metadata should have total_paths field");
         assertTrue(llmOutput.contains("leak_paths="), "Metadata should have leak_paths field");
     }
+
+    // ========================================================================
+    // Scenario-based tests with full output verification
+    // ========================================================================
+
+    /**
+     * Test: ByteBuf allocated -> passed to method -> released
+     * Verify complete trace output shows proper flow
+     */
+    @Test
+    public void testDirectByteBufFlowWithRelease() {
+        // Simulate: ByteBuf buf = Unpooled.buffer(256);
+        Object buf = new Object();
+
+        // Allocate
+        tracker.recordMethodCall(buf, "Allocator", "allocate", 1);
+
+        // Pass to method
+        tracker.recordMethodCall(buf, "DataHandler", "processData", 1);
+
+        // Release
+        tracker.recordMethodCall(buf, "DataHandler", "release", 0);
+
+        // Get and verify tree output
+        String tree = renderer.renderIndentedTree();
+        assertNotNull(tree, "Tree output should not be null");
+        assertTrue(tree.contains("ROOT: Allocator.allocate"), "Tree should show allocate as root");
+        assertTrue(tree.contains("DataHandler.processData"), "Tree should show processData method");
+        assertTrue(tree.contains("DataHandler.release"), "Tree should show release method");
+        assertTrue(tree.contains("ref=0"), "Tree should show final ref count of 0");
+
+        // Get and verify LLM output
+        String llmOutput = renderer.renderForLLM();
+        assertTrue(llmOutput.contains("total_roots=1"), "Should have 1 root");
+        assertTrue(llmOutput.contains("leak_paths=0"), "Should have no leaks");
+        assertTrue(llmOutput.contains("LEAKS:\nnone"), "Leaks section should show none");
+        assertTrue(llmOutput.contains("final_ref=0"), "Final ref should be 0");
+        assertTrue(llmOutput.contains("is_leak=false"), "Should not be marked as leak");
+        assertTrue(llmOutput.contains("Allocator.allocate"), "Flow should include allocate");
+        assertTrue(llmOutput.contains("DataHandler.processData"), "Flow should include processData");
+        assertTrue(llmOutput.contains("DataHandler.release"), "Flow should include release");
+
+        // Verify no active flows remaining
+        assertEquals(0, tracker.getActiveFlowCount(), "Should have no active flows after release");
+    }
+
+    /**
+     * Test: ByteBuf allocated -> passed to wrapper constructor -> wrapper passed to method -> released
+     * Verify complete trace output shows wrapper flow
+     */
+    @Test
+    public void testWrapperByteBufFlowWithRelease() {
+        // Simulate: ByteBuf buf = Unpooled.buffer(256);
+        Object buf = new Object();
+
+        // Allocate
+        tracker.recordMethodCall(buf, "Allocator", "allocate", 1);
+
+        // Pass to wrapper constructor (wrapper holds the ByteBuf)
+        tracker.recordMethodCall(buf, "MessageWrapper", "<init>", 1);
+
+        // Wrapper passed to method (still tracking same ByteBuf)
+        tracker.recordMethodCall(buf, "MessageProcessor", "processMessage", 1);
+
+        // Another method call
+        tracker.recordMethodCall(buf, "MessageSerializer", "serialize", 1);
+
+        // Release from wrapper
+        tracker.recordMethodCall(buf, "MessageWrapper", "release", 0);
+
+        // Get and verify tree output
+        String tree = renderer.renderIndentedTree();
+        assertNotNull(tree, "Tree output should not be null");
+        assertTrue(tree.contains("ROOT: Allocator.allocate"), "Tree should show allocate as root");
+        assertTrue(tree.contains("MessageWrapper.<init>"), "Tree should show wrapper constructor");
+        assertTrue(tree.contains("MessageProcessor.processMessage"), "Tree should show processMessage");
+        assertTrue(tree.contains("MessageSerializer.serialize"), "Tree should show serialize");
+        assertTrue(tree.contains("MessageWrapper.release"), "Tree should show wrapper release");
+        assertTrue(tree.contains("ref=0"), "Tree should show final ref count of 0");
+
+        // Get and verify LLM output
+        String llmOutput = renderer.renderForLLM();
+        assertTrue(llmOutput.contains("total_roots=1"), "Should have 1 root");
+        assertTrue(llmOutput.contains("leak_paths=0"), "Should have no leaks");
+        assertTrue(llmOutput.contains("LEAKS:\nnone"), "Leaks section should show none");
+        assertTrue(llmOutput.contains("final_ref=0"), "Final ref should be 0");
+        assertTrue(llmOutput.contains("is_leak=false"), "Should not be marked as leak");
+        assertTrue(llmOutput.contains("MessageWrapper.<init>"), "Flow should include wrapper init");
+        assertTrue(llmOutput.contains("MessageProcessor.processMessage"), "Flow should include processMessage");
+        assertTrue(llmOutput.contains("MessageSerializer.serialize"), "Flow should include serialize");
+        assertTrue(llmOutput.contains("MessageWrapper.release"), "Flow should include wrapper release");
+
+        // Verify no active flows remaining
+        assertEquals(0, tracker.getActiveFlowCount(), "Should have no active flows after release");
+    }
+
+    /**
+     * Test: ByteBuf allocated -> passed to method -> NOT released (LEAK)
+     * Verify trace output correctly identifies the leak
+     */
+    @Test
+    public void testDirectByteBufFlowWithLeak() {
+        // Simulate: ByteBuf buf = Unpooled.buffer(256);
+        Object buf = new Object();
+
+        // Allocate
+        tracker.recordMethodCall(buf, "Allocator", "allocate", 1);
+
+        // Pass to method
+        tracker.recordMethodCall(buf, "LeakyHandler", "processData", 1);
+
+        // INTENTIONALLY DO NOT RELEASE - This is a leak!
+
+        // Get and verify tree output
+        String tree = renderer.renderIndentedTree();
+        assertNotNull(tree, "Tree output should not be null");
+        assertTrue(tree.contains("ROOT: Allocator.allocate"), "Tree should show allocate as root");
+        assertTrue(tree.contains("LeakyHandler.processData"), "Tree should show processData method");
+        assertTrue(tree.contains("⚠️ LEAK"), "Tree should show LEAK indicator");
+        assertTrue(tree.contains("ref=1"), "Tree should show non-zero ref count");
+
+        // Get and verify LLM output
+        String llmOutput = renderer.renderForLLM();
+        assertTrue(llmOutput.contains("total_roots=1"), "Should have 1 root");
+        assertTrue(llmOutput.contains("leak_paths=1"), "Should have 1 leak");
+        assertFalse(llmOutput.contains("LEAKS:\nnone"), "Leaks section should not show none");
+        assertTrue(llmOutput.contains("leak|"), "Should have leak entry");
+        assertTrue(llmOutput.contains("final_ref=1"), "Final ref should be 1 (not released)");
+        assertTrue(llmOutput.contains("is_leak=true"), "Should be marked as leak");
+        assertTrue(llmOutput.contains("Allocator.allocate"), "Flow should include allocate");
+        assertTrue(llmOutput.contains("LeakyHandler.processData"), "Flow should include processData");
+
+        // Verify active flow still tracked (not released)
+        assertEquals(1, tracker.getActiveFlowCount(), "Should have 1 active flow (leak)");
+    }
+
+    /**
+     * Test: ByteBuf allocated -> wrapper constructor -> wrapper to method -> NOT released (LEAK)
+     * Verify trace output correctly identifies the wrapper leak
+     */
+    @Test
+    public void testWrapperByteBufFlowWithLeak() {
+        // Simulate: ByteBuf buf = Unpooled.buffer(256);
+        Object buf = new Object();
+
+        // Allocate
+        tracker.recordMethodCall(buf, "Allocator", "allocate", 1);
+
+        // Pass to wrapper constructor
+        tracker.recordMethodCall(buf, "RequestWrapper", "<init>", 1);
+
+        // Wrapper passed to method
+        tracker.recordMethodCall(buf, "RequestHandler", "handleRequest", 1);
+
+        // Another method in the flow
+        tracker.recordMethodCall(buf, "ErrorLogger", "logError", 1);
+
+        // INTENTIONALLY DO NOT RELEASE - This is a leak!
+
+        // Get and verify tree output
+        String tree = renderer.renderIndentedTree();
+        assertNotNull(tree, "Tree output should not be null");
+        assertTrue(tree.contains("ROOT: Allocator.allocate"), "Tree should show allocate as root");
+        assertTrue(tree.contains("RequestWrapper.<init>"), "Tree should show wrapper constructor");
+        assertTrue(tree.contains("RequestHandler.handleRequest"), "Tree should show handleRequest");
+        assertTrue(tree.contains("ErrorLogger.logError"), "Tree should show logError");
+        assertTrue(tree.contains("⚠️ LEAK"), "Tree should show LEAK indicator");
+        assertTrue(tree.contains("ref=1"), "Tree should show non-zero ref count");
+
+        // Get and verify LLM output
+        String llmOutput = renderer.renderForLLM();
+        assertTrue(llmOutput.contains("total_roots=1"), "Should have 1 root");
+        assertTrue(llmOutput.contains("leak_paths=1"), "Should have 1 leak");
+        assertFalse(llmOutput.contains("LEAKS:\nnone"), "Leaks section should not show none");
+        assertTrue(llmOutput.contains("leak|"), "Should have leak entry");
+        assertTrue(llmOutput.contains("final_ref=1"), "Final ref should be 1 (not released)");
+        assertTrue(llmOutput.contains("is_leak=true"), "Should be marked as leak");
+        assertTrue(llmOutput.contains("RequestWrapper.<init>"), "Flow should include wrapper init");
+        assertTrue(llmOutput.contains("RequestHandler.handleRequest"), "Flow should include handleRequest");
+        assertTrue(llmOutput.contains("ErrorLogger.logError"), "Flow should include logError");
+
+        // Verify active flow still tracked (not released)
+        assertEquals(1, tracker.getActiveFlowCount(), "Should have 1 active flow (leak)");
+    }
 }

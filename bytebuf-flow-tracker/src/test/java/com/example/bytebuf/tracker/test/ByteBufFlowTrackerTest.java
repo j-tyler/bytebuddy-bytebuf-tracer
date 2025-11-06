@@ -189,6 +189,212 @@ public class ByteBufFlowTrackerTest {
         assertTrue("Static method should be tracked", tree.contains("processWithStatic"));
     }
 
+    @Test
+    public void testConstructorTracking() {
+        // Create a ByteBuf
+        ByteBuf buffer = Unpooled.buffer(256);
+        tracker.recordMethodCall(buffer, "TestClass", "allocate", buffer.refCnt());
+
+        // Pass ByteBuf to a constructor - currently NOT tracked
+        WrappedMessage message = new WrappedMessage(buffer);
+
+        // Pass the wrapped object to another method
+        // The ByteBuf is still inside, but is it tracked?
+        processWrappedMessage(message);
+
+        // Release the buffer
+        buffer.release();
+        tracker.recordMethodCall(buffer, "TestClass", "cleanup", buffer.refCnt());
+
+        // Verify the tree structure
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+
+        System.out.println("\nConstructor Tracking Test:");
+        System.out.println(tree);
+
+        // Check if constructor was tracked
+        boolean constructorTracked = tree.contains("WrappedMessage") || tree.contains("<init>");
+        System.out.println("Constructor tracked: " + constructorTracked);
+
+        // Document the current behavior
+        assertFalse("Constructors are currently NOT tracked (this is expected to fail)", constructorTracked);
+    }
+
+    @Test
+    public void testWrappedObjectFlowTracking() {
+        System.out.println("\n=== Wrapped Object Flow Tracking Test ===");
+
+        // Step 1: Allocate ByteBuf
+        ByteBuf buffer = Unpooled.buffer(256);
+        buffer.writeBytes("Test Data".getBytes());
+        tracker.recordMethodCall(buffer, "Client", "allocate", buffer.refCnt());
+
+        // Step 2: Pass to method that wraps it
+        WrappedMessage message = wrapInMessage(buffer);
+
+        // Step 3: Pass wrapped object to different method
+        processWrappedMessage(message);
+
+        // Step 4: Another method processes it
+        validateWrappedMessage(message);
+
+        // Step 5: Finally extract and release
+        ByteBuf extracted = extractFromMessage(message);
+        extracted.release();
+        tracker.recordMethodCall(extracted, "Client", "release", extracted.refCnt());
+
+        // Analyze the flow
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+        String flatPaths = renderer.renderFlatPaths();
+
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(tree);
+
+        System.out.println("\n=== Flat Paths ===");
+        System.out.println(flatPaths);
+
+        // Check what was tracked
+        boolean wrappingTracked = tree.contains("wrapInMessage");
+        boolean processingTracked = tree.contains("processWrappedMessage");
+        boolean validationTracked = tree.contains("validateWrappedMessage");
+        boolean extractionTracked = tree.contains("extractFromMessage");
+
+        System.out.println("\nTracking Results:");
+        System.out.println("  wrapInMessage tracked: " + wrappingTracked);
+        System.out.println("  processWrappedMessage tracked: " + processingTracked);
+        System.out.println("  validateWrappedMessage tracked: " + validationTracked);
+        System.out.println("  extractFromMessage tracked: " + extractionTracked);
+
+        // Document expected vs actual behavior
+        assertTrue("wrapInMessage should be tracked (ByteBuf is a parameter)", wrappingTracked);
+        assertTrue("extractFromMessage should be tracked (ByteBuf is return value)", extractionTracked);
+
+        // These will likely FAIL because WrappedMessage is not a ByteBuf
+        System.out.println("\nExpected behavior: We should see CONTINUOUS flow from allocate -> release");
+        System.out.println("Actual behavior: Flow likely BREAKS when ByteBuf is wrapped in WrappedMessage");
+
+        // The flow breaks because:
+        // 1. processWrappedMessage receives WrappedMessage, not ByteBuf
+        // 2. shouldTrack(WrappedMessage) returns false
+        // 3. The tracker loses visibility of the ByteBuf
+    }
+
+    @Test
+    public void testConstructorWithByteBuffParameter() {
+        System.out.println("\n=== Constructor with ByteBuf Parameter Test ===");
+
+        // Allocate ByteBuf
+        ByteBuf buffer = Unpooled.buffer(256);
+        tracker.recordMethodCall(buffer, "TestClient", "create", buffer.refCnt());
+
+        // Pass to constructor - constructors are currently excluded from tracking
+        MessageWithConstructorTracking message = new MessageWithConstructorTracking(buffer);
+
+        // Use the message
+        message.process();
+
+        // Release
+        buffer.release();
+        tracker.recordMethodCall(buffer, "TestClient", "cleanup", buffer.refCnt());
+
+        // Check the flow
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(tree);
+
+        // Constructors are currently NOT tracked
+        boolean constructorInFlow = tree.contains("MessageWithConstructorTracking") || tree.contains("<init>");
+        System.out.println("\nConstructor appears in flow: " + constructorInFlow);
+        System.out.println("Note: Constructors are currently excluded by .and(not(isConstructor()))");
+
+        // But the process() method should be tracked if it takes ByteBuf
+        boolean processTracked = tree.contains("process");
+        System.out.println("process() method tracked: " + processTracked);
+    }
+
+    /**
+     * Test class that wraps a ByteBuf
+     */
+    public static class WrappedMessage {
+        private final ByteBuf data;
+        private final long timestamp;
+
+        public WrappedMessage(ByteBuf data) {
+            this.data = data;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public ByteBuf getData() {
+            return data;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+    }
+
+    /**
+     * Test class that manually tracks in constructor
+     */
+    public static class MessageWithConstructorTracking {
+        private final ByteBuf data;
+
+        public MessageWithConstructorTracking(ByteBuf data) {
+            this.data = data;
+            // Manual tracking in constructor
+            ByteBufFlowTracker.getInstance().recordMethodCall(
+                data, "MessageWithConstructorTracking", "<init>", data.refCnt());
+        }
+
+        public void process() {
+            ByteBufFlowTracker.getInstance().recordMethodCall(
+                data, "MessageWithConstructorTracking", "process", data.refCnt());
+        }
+
+        public ByteBuf getData() {
+            return data;
+        }
+    }
+
+    /**
+     * Method that wraps ByteBuf in a message object
+     */
+    public WrappedMessage wrapInMessage(ByteBuf buffer) {
+        tracker.recordMethodCall(buffer, "TestHelper", "wrapInMessage", buffer.refCnt());
+        return new WrappedMessage(buffer);
+    }
+
+    /**
+     * Method that processes wrapped message
+     * This receives WrappedMessage, not ByteBuf, so won't be auto-tracked
+     */
+    public void processWrappedMessage(WrappedMessage message) {
+        // Manual tracking since WrappedMessage isn't a ByteBuf
+        ByteBuf buffer = message.getData();
+        tracker.recordMethodCall(buffer, "TestHelper", "processWrappedMessage", buffer.refCnt());
+    }
+
+    /**
+     * Method that validates wrapped message
+     */
+    public void validateWrappedMessage(WrappedMessage message) {
+        ByteBuf buffer = message.getData();
+        tracker.recordMethodCall(buffer, "TestHelper", "validateWrappedMessage", buffer.refCnt());
+    }
+
+    /**
+     * Method that extracts ByteBuf from wrapped message
+     */
+    public ByteBuf extractFromMessage(WrappedMessage message) {
+        ByteBuf buffer = message.getData();
+        tracker.recordMethodCall(buffer, "TestHelper", "extractFromMessage", buffer.refCnt());
+        return buffer;
+    }
+
     /**
      * Helper class to test static method tracking
      */

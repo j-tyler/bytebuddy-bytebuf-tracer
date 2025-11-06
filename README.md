@@ -9,7 +9,7 @@ A lightweight, efficient ByteBuddy-based tool for tracking ByteBuf flows through
 - **Memory efficient**: Trie structure shares common prefixes, minimizing memory usage
 - **Clean separation**: Pure data structure (Trie) with separate rendering/viewing
 - **Real-time monitoring**: JMX MBean for runtime analysis
-- **Multiple output formats**: Tree, flat paths, CSV, JSON
+- **Dual output formats**: Human-readable tree view and LLM-optimized structured format
 
 ## Architecture
 
@@ -54,9 +54,13 @@ Available operations:
 
 ### 4. Analyze Output
 
-## Example Output
+## Output Formats
 
-### Tree View
+The tracker provides two output formats optimized for different use cases:
+
+### 1. Human-Readable Format: Visual Tree
+
+A clean tree visualization with summary statistics, perfect for manual analysis:
 ```
 ROOT: FrameDecoder.decode [count=15234]
 ├── MessageHandler.handle [ref=1, count=14156]
@@ -83,6 +87,61 @@ ROOT: HttpHandler.handleRequest [count=8923]
 
 3. **Hot Paths**: High traversal counts indicate common flows
    - Example: `BusinessService.process [count=14156]`
+
+### 2. LLM-Optimized Format: Structured Analysis
+
+Structured text format designed for automated analysis and LLM parsing:
+
+```
+METADATA:
+total_roots=6
+total_traversals=210
+total_paths=8
+leak_paths=3
+leak_percentage=37.50%
+
+LEAKS:
+leak|root=LeakyExample.allocate|final_ref=1|path=LeakyExample.allocate[ref=1,count=2] -> ErrorDecoder.decode[ref=1,count=1] -> Logger.logError[ref=1,count=0]
+
+FLOWS:
+flow|root=DirectExample.allocate|final_ref=0|is_leak=false|path=DirectExample.allocate[ref=1,count=2] -> Decoder.decode[ref=1,count=1] -> DirectExample.cleanup[ref=0,count=0]
+flow|root=LeakyExample.allocate|final_ref=1|is_leak=true|path=LeakyExample.allocate[ref=1,count=2] -> ErrorDecoder.decode[ref=1,count=1] -> Logger.logError[ref=1,count=0]
+```
+
+**Format Details:**
+- **METADATA section**: Key-value pairs with overall statistics
+- **LEAKS section**: Pipe-delimited leak records with root, final_ref, and full path
+- **FLOWS section**: All flows with leak status and complete paths
+- Each node shows: `ClassName.methodName[ref=N,count=N]`
+
+## Building and Testing
+
+### Build the Project
+
+```bash
+# Build with Gradle
+gradle -b build-standalone.gradle build
+
+# Run the example
+gradle -b build-standalone.gradle run
+```
+
+### Run Unit Tests
+
+```bash
+# Run all tests
+gradle -b build-standalone.gradle test
+
+# Run with verbose output
+gradle -b build-standalone.gradle test --info
+```
+
+The test suite includes:
+- Empty tracker validation
+- Single and multiple flow tracking
+- Leak detection verification
+- Output format validation
+- Reset functionality testing
 
 ## Configuration
 
@@ -150,13 +209,13 @@ While designed for ByteBuf, the system can track any object:
 ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
 
-// Get tree view
+// Get human-readable tree view
 String tree = renderer.renderIndentedTree();
 
-// Get CSV for analysis
-String csv = renderer.renderCsv();
+// Get LLM-optimized format
+String llmFormat = renderer.renderForLLM();
 
-// Get statistics
+// Get summary statistics
 String summary = renderer.renderSummary();
 ```
 

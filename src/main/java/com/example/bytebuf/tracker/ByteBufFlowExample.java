@@ -330,58 +330,25 @@ public class ByteBufFlowExample {
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
 
-        // 1. Summary
+        // 1. Human-Readable Format: Visual Tree
         System.out.println("\n" + "=".repeat(60));
-        System.out.println("SUMMARY");
+        System.out.println("HUMAN-READABLE FORMAT: Visual Tree");
         System.out.println("=".repeat(60));
         System.out.println(renderer.renderSummary());
-
-        // 2. Tree View (human-readable)
-        System.out.println("\n" + "=".repeat(60));
-        System.out.println("TREE VIEW (Human-Readable)");
-        System.out.println("=".repeat(60));
+        System.out.println();
         System.out.println(renderer.renderIndentedTree());
-
-        // 3. Flat Paths View
-        System.out.println("\n" + "=".repeat(60));
-        System.out.println("FLAT PATHS VIEW");
-        System.out.println("=".repeat(60));
-        System.out.println(renderer.renderFlatPaths());
-
-        // 4. CSV View
-        System.out.println("\n" + "=".repeat(60));
-        System.out.println("CSV VIEW (For Spreadsheet Analysis)");
-        System.out.println("=".repeat(60));
-        System.out.println(renderer.renderCsv());
-
-        // 5. JSON View (truncated for brevity)
-        System.out.println("\n" + "=".repeat(60));
-        System.out.println("JSON VIEW (First 50 lines)");
-        System.out.println("=".repeat(60));
-        String json = renderer.renderJson();
-        String[] jsonLines = json.split("\n");
-        for (int i = 0; i < Math.min(50, jsonLines.length); i++) {
-            System.out.println(jsonLines[i]);
-        }
-        if (jsonLines.length > 50) {
-            System.out.println("... (truncated, " + (jsonLines.length - 50) + " more lines)");
-        }
-
-        // 6. Analysis Notes
-        System.out.println("\n\n" + "=".repeat(60));
-        System.out.println("ANALYSIS NOTES");
-        System.out.println("=".repeat(60));
         System.out.println("Look for:");
         System.out.println("  • Leaf nodes with ⚠️ LEAK indicator");
-        System.out.println("  • [LEAK:ref=N] in flat view");
         System.out.println("  • High traversal counts indicate hot paths");
         System.out.println("  • Different refCounts for same method indicate branching logic");
-        System.out.println("\nExpected leaks in this example:");
-        System.out.println("  • LeakyExample flow (Scenario 2)");
-        System.out.println("  • FailedReceiver flow (Scenario 5)");
-        System.out.println("  • Some HttpHandler exception paths (Scenario 6)");
 
+        // 2. LLM-Optimized Format: Structured Text
         System.out.println("\n" + "=".repeat(60));
+        System.out.println("LLM-OPTIMIZED FORMAT: Structured Analysis");
+        System.out.println("=".repeat(60));
+        System.out.println(renderer.renderForLLM());
+
+        System.out.println("=".repeat(60));
         System.out.println("Active flows still tracked: " + tracker.getActiveFlowCount());
         System.out.println("=".repeat(60));
     }

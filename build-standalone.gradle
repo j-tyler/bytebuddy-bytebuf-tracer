@@ -16,6 +16,9 @@ repositories {
 dependencies {
     // Netty for ByteBuf - using local JARs
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // JUnit for testing
+    testImplementation 'junit:junit:4.13.2'
 }
 
 java {
@@ -33,8 +36,17 @@ sourceSets {
     }
     test {
         java {
-            srcDirs = []
+            srcDirs = ['src/test/java']
         }
+    }
+}
+
+test {
+    useJUnit()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
     }
 }
 

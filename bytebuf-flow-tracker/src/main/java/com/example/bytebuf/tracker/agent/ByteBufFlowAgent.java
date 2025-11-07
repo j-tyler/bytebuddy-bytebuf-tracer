@@ -2,6 +2,8 @@ package com.example.bytebuf.tracker.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.method.ParameterDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
@@ -88,13 +90,55 @@ public class ByteBufFlowAgent {
                 .method(
                     // Match methods that might handle ByteBufs (including static methods)
                     // Skip abstract methods (they have no bytecode to instrument)
+                    // IMPORTANT: Only instrument methods with ByteBuf in their signature
+                    // to prevent unnecessary class transformation and Mockito conflicts
                     isPublic()
                     .or(isProtected())
                     .and(not(isConstructor()))
                     .and(not(isAbstract()))
+                    .and(hasByteBufInSignature())
                 )
                 .intercept(Advice.to(ByteBufTrackingAdvice.class));
         }
+    }
+
+    /**
+     * Creates a matcher that checks if a method has ByteBuf in its signature.
+     * This includes:
+     * - Methods that return ByteBuf (or any subclass)
+     * - Methods that take ByteBuf as a parameter (at any position)
+     *
+     * @return ElementMatcher that matches methods with ByteBuf in signature
+     */
+    private static ElementMatcher.Junction<MethodDescription> hasByteBufInSignature() {
+        // Match methods that return ByteBuf or any subclass
+        ElementMatcher.Junction<MethodDescription> matcher =
+            returns(isSubTypeOf(io.netty.buffer.ByteBuf.class));
+
+        // Match methods that have ByteBuf as a parameter at any position
+        // We create a custom matcher that checks all parameters
+        matcher = matcher.or(new ElementMatcher<MethodDescription>() {
+            @Override
+            public boolean matches(MethodDescription target) {
+                // Check if any parameter is assignable to ByteBuf
+                for (ParameterDescription param : target.getParameters()) {
+                    TypeDescription paramType = param.getType().asErasure();
+                    try {
+                        // Check if the parameter type is ByteBuf or a subclass
+                        if (paramType.represents(io.netty.buffer.ByteBuf.class) ||
+                            paramType.isAssignableTo(io.netty.buffer.ByteBuf.class)) {
+                            return true;
+                        }
+                    } catch (Exception e) {
+                        // If we can't load the class, skip it
+                        // This can happen with classloader issues
+                    }
+                }
+                return false;
+            }
+        });
+
+        return matcher;
     }
 
     /**

@@ -48,8 +48,12 @@ public class ByteBufFlowAgent {
                 .or(nameStartsWith("com.sun."))
                 .or(nameStartsWith("jdk."))
                 .or(nameStartsWith("com.example.bytebuf.tracker.")) // Don't instrument ourselves
+                .or(isSynthetic()) // Don't instrument compiler-generated classes
             )
-            .type(config.getTypeMatcher())
+            // Filter out interfaces and abstract classes (can't instrument abstract methods)
+            .type(config.getTypeMatcher()
+                .and(not(isInterface()))
+                .and(not(isAbstract())))
             .transform(new ByteBufTransformer())
             .installOn(inst);
         
@@ -70,10 +74,12 @@ public class ByteBufFlowAgent {
             return builder
                 .method(
                     // Match methods that might handle ByteBufs
+                    // Skip abstract methods (they have no bytecode to instrument)
                     isPublic()
                     .or(isProtected())
                     .and(not(isConstructor()))
                     .and(not(isStatic()))
+                    .and(not(isAbstract()))
                 )
                 .intercept(Advice.to(ByteBufTrackingAdvice.class));
         }

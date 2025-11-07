@@ -12,7 +12,12 @@ import java.lang.reflect.Method;
  * Applied to all methods that might handle ByteBufs.
  */
 public class ByteBufTrackingAdvice {
-    
+
+    // Re-entrance guard to prevent infinite recursion when tracking code
+    // triggers other instrumented methods
+    private static final ThreadLocal<Boolean> IS_TRACKING =
+        ThreadLocal.withInitial(() -> false);
+
     /**
      * Method entry advice - tracks ByteBufs in parameters
      */
@@ -21,23 +26,33 @@ public class ByteBufTrackingAdvice {
             @Advice.Origin Class<?> clazz,
             @Advice.Origin("#m") String methodName,
             @Advice.AllArguments Object[] arguments) {
-        
+
+        // Prevent re-entrant calls
+        if (IS_TRACKING.get()) {
+            return;
+        }
+
         if (arguments == null || arguments.length == 0) {
             return;
         }
-        
-        ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
-        
-        for (Object arg : arguments) {
-            if (arg instanceof ByteBuf) {
-                ByteBuf buf = (ByteBuf) arg;
-                tracker.recordMethodCall(
-                    buf,
-                    clazz.getSimpleName(),
-                    methodName,
-                    buf.refCnt()
-                );
+
+        try {
+            IS_TRACKING.set(true);
+            ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
+
+            for (Object arg : arguments) {
+                if (arg instanceof ByteBuf) {
+                    ByteBuf buf = (ByteBuf) arg;
+                    tracker.recordMethodCall(
+                        buf,
+                        clazz.getSimpleName(),
+                        methodName,
+                        buf.refCnt()
+                    );
+                }
             }
+        } finally {
+            IS_TRACKING.set(false);
         }
     }
     
@@ -51,34 +66,44 @@ public class ByteBufTrackingAdvice {
             @Advice.AllArguments Object[] arguments,
             @Advice.Return Object returnValue,
             @Advice.Thrown Throwable thrown) {
-        
-        ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
-        
-        // Check if any ByteBufs in parameters have changed refCount
-        if (arguments != null) {
-            for (Object arg : arguments) {
-                if (arg instanceof ByteBuf) {
-                    ByteBuf buf = (ByteBuf) arg;
-                    // Record the exit state
-                    tracker.recordMethodCall(
-                        buf,
-                        clazz.getSimpleName(),
-                        methodName + "_exit",
-                        buf.refCnt()
-                    );
+
+        // Prevent re-entrant calls
+        if (IS_TRACKING.get()) {
+            return;
+        }
+
+        try {
+            IS_TRACKING.set(true);
+            ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
+
+            // Check if any ByteBufs in parameters have changed refCount
+            if (arguments != null) {
+                for (Object arg : arguments) {
+                    if (arg instanceof ByteBuf) {
+                        ByteBuf buf = (ByteBuf) arg;
+                        // Record the exit state
+                        tracker.recordMethodCall(
+                            buf,
+                            clazz.getSimpleName(),
+                            methodName + "_exit",
+                            buf.refCnt()
+                        );
+                    }
                 }
             }
-        }
-        
-        // Track ByteBuf return values
-        if (returnValue instanceof ByteBuf) {
-            ByteBuf buf = (ByteBuf) returnValue;
-            tracker.recordMethodCall(
-                buf,
-                clazz.getSimpleName(),
-                methodName + "_return",
-                buf.refCnt()
-            );
+
+            // Track ByteBuf return values
+            if (returnValue instanceof ByteBuf) {
+                ByteBuf buf = (ByteBuf) returnValue;
+                tracker.recordMethodCall(
+                    buf,
+                    clazz.getSimpleName(),
+                    methodName + "_return",
+                    buf.refCnt()
+                );
+            }
+        } finally {
+            IS_TRACKING.set(false);
         }
     }
 }

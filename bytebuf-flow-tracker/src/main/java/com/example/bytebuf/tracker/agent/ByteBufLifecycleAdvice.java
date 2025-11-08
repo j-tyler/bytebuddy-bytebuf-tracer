@@ -19,11 +19,13 @@ import net.bytebuddy.asm.Advice;
 public class ByteBufLifecycleAdvice {
 
     // Re-entrance guard to prevent infinite recursion
-    private static final ThreadLocal<Boolean> IS_TRACKING =
+    // Must be public for instrumented classes to access
+    public static final ThreadLocal<Boolean> IS_TRACKING =
         ThreadLocal.withInitial(() -> false);
 
     // ThreadLocal to store refCnt before the method call
-    private static final ThreadLocal<Integer> BEFORE_REF_COUNT =
+    // Must be public for instrumented classes to access
+    public static final ThreadLocal<Integer> BEFORE_REF_COUNT =
         ThreadLocal.withInitial(() -> 0);
 
     /**
@@ -97,6 +99,13 @@ public class ByteBufLifecycleAdvice {
             }
 
             if (shouldTrack) {
+                // Only track lifecycle methods if the ByteBuf is already part of a flow
+                // This prevents release() or retain() from creating unwanted roots
+                if (!tracker.isTracking(thiz)) {
+                    // ByteBuf not in any flow - skip tracking this lifecycle event
+                    return;
+                }
+
                 // Get the actual ByteBuf class name if available
                 String className = clazz.getSimpleName();
                 if (thiz instanceof ByteBuf) {

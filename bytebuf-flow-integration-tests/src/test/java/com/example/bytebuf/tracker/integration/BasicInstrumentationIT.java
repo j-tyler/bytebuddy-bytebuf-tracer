@@ -125,14 +125,19 @@ public class BasicInstrumentationIT {
 
         OutputVerifier verifier = new OutputVerifier(result.getOutput());
 
-        // Should have proper cleanup (ref=0)
-        assertThat(verifier.hasProperCleanup())
-            .withFailMessage("Should show proper cleanup with ref=0")
+        // Should track the release() call, indicating cleanup occurred
+        assertThat(verifier.hasMethodInFlow("release"))
+            .withFailMessage("Should track release() call showing cleanup occurred")
             .isTrue();
 
-        // Should NOT have leak markers
+        // Should have no leak paths (proper cleanup means no leaks)
+        assertThat(verifier.getLeakPaths())
+            .withFailMessage("Should have 0 leak paths when ByteBuf is properly released")
+            .isEqualTo(0);
+
+        // Should NOT have leak markers in the output
         assertThat(verifier.hasLeakDetected())
-            .withFailMessage("Should not detect any leaks")
+            .withFailMessage("Should not detect any leaks when ByteBuf is properly released")
             .isFalse();
     }
 

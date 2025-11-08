@@ -5,6 +5,10 @@ gradle-app.setting
 !gradle-wrapper.jar
 .gradletasknamecache
 
+# Maven
+target/
+dependency-reduced-pom.xml
+
 # IDE
 .idea/
 *.iml

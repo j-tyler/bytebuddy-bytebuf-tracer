@@ -112,12 +112,25 @@ public class ByteBufFlowTracker {
     }
     
     /**
+     * Check if an object is currently being tracked in a flow
+     *
+     * @param obj The object to check
+     * @return true if the object is being tracked and has a root in the flow
+     */
+    public boolean isTracking(Object obj) {
+        if (obj == null) return false;
+        int objectId = System.identityHashCode(obj);
+        FlowContext context = activeFlows.get(objectId);
+        return context != null && context.hasRoot();
+    }
+
+    /**
      * Get the underlying Trie for analysis/viewing
      */
     public FlowTrie getTrie() {
         return trie;
     }
-    
+
     /**
      * Get number of ByteBufs currently being tracked
      */

@@ -49,7 +49,11 @@ public class ByteBufFlowAgent {
                 .or(nameStartsWith("sun."))
                 .or(nameStartsWith("com.sun."))
                 .or(nameStartsWith("jdk."))
-                .or(nameStartsWith("com.example.bytebuf.tracker.")) // Don't instrument ourselves
+                // Don't instrument the tracker implementation, but DO instrument test apps
+                .or(nameStartsWith("com.example.bytebuf.tracker.agent."))
+                .or(nameStartsWith("com.example.bytebuf.tracker.ByteBufFlowTracker"))
+                .or(nameStartsWith("com.example.bytebuf.tracker.ObjectTracker"))
+                .or(nameStartsWith("com.example.bytebuf.tracker.Trie"))
                 .or(isSynthetic()) // Don't instrument compiler-generated classes
             )
             // Transform regular methods (non-constructors)
@@ -93,7 +97,8 @@ public class ByteBufFlowAgent {
                 DynamicType.Builder<?> builder,
                 TypeDescription typeDescription,
                 ClassLoader classLoader,
-                JavaModule module) {
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
 
             return builder
                 .method(
@@ -163,7 +168,8 @@ public class ByteBufFlowAgent {
                 DynamicType.Builder<?> builder,
                 TypeDescription typeDescription,
                 ClassLoader classLoader,
-                JavaModule module) {
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
 
             return builder
                 .constructor(
@@ -186,7 +192,8 @@ public class ByteBufFlowAgent {
                 DynamicType.Builder<?> builder,
                 TypeDescription typeDescription,
                 ClassLoader classLoader,
-                JavaModule module) {
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
 
             return builder
                 .method(
@@ -204,11 +211,11 @@ public class ByteBufFlowAgent {
      */
     private static void setupJmxMonitoring() {
         try {
-            javax.management.MBeanServer mbs = 
+            javax.management.MBeanServer mbs =
                 java.lang.management.ManagementFactory.getPlatformMBeanServer();
-            javax.management.ObjectName name = 
+            javax.management.ObjectName name =
                 new javax.management.ObjectName("com.example:type=ByteBufFlowTracker");
-            mbs.registerMBean(new ByteBufFlowMBean(), name);
+            mbs.registerMBean(new ByteBufFlow(), name);
             System.out.println("[ByteBufFlowAgent] JMX MBean registered");
         } catch (Exception e) {
             System.err.println("[ByteBufFlowAgent] Failed to register JMX MBean: " + e);
@@ -286,8 +293,8 @@ class AgentConfig {
     /**
      * Get type matcher based on configuration
      */
-    public ElementMatcher<TypeDescription> getTypeMatcher() {
-        ElementMatcher<TypeDescription> matcher = none();
+    public ElementMatcher.Junction<TypeDescription> getTypeMatcher() {
+        ElementMatcher.Junction<TypeDescription> matcher = none();
 
         // Include packages
         for (String pkg : includePackages) {
@@ -305,8 +312,8 @@ class AgentConfig {
     /**
      * Get matcher for classes that should have constructor tracking
      */
-    public ElementMatcher<TypeDescription> getConstructorTrackingMatcher() {
-        ElementMatcher<TypeDescription> matcher = none();
+    public ElementMatcher.Junction<TypeDescription> getConstructorTrackingMatcher() {
+        ElementMatcher.Junction<TypeDescription> matcher = none();
 
         for (String className : constructorTrackingClasses) {
             // Support both exact matches and pattern matches

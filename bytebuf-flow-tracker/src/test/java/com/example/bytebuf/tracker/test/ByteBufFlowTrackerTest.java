@@ -214,12 +214,21 @@ public class ByteBufFlowTrackerTest {
         System.out.println("\nConstructor Tracking Test:");
         System.out.println(tree);
 
-        // Check if constructor was tracked
-        boolean constructorTracked = tree.contains("WrappedMessage") || tree.contains("<init>");
+        // Check if constructor was tracked (look for <init> specifically)
+        // Note: Must check for "<init>" pattern, not just "WrappedMessage"
+        // which can match in method names like "processWrappedMessage"
+        boolean constructorTracked = tree.contains("<init>");
         System.out.println("Constructor tracked: " + constructorTracked);
 
-        // Document the current behavior
-        assertFalse("Constructors are currently NOT tracked (this is expected to fail)", constructorTracked);
+        // Verify actual behavior: constructors are NOT automatically tracked
+        // Only methods that explicitly call tracker.recordMethodCall appear
+        assertFalse("Constructors should NOT be auto-tracked without trackConstructors config",
+                    constructorTracked);
+
+        // Verify the methods that were manually tracked DO appear
+        assertTrue("allocate should be tracked", tree.contains("allocate"));
+        assertTrue("processWrappedMessage should be tracked", tree.contains("processWrappedMessage"));
+        assertTrue("cleanup should be tracked", tree.contains("cleanup"));
     }
 
     @Test

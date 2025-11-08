@@ -6,6 +6,7 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 
 - **Zero allocation overhead**: No stack trace collection or allocation site tracking
 - **First-touch root**: The first method that handles a ByteBuf becomes the Trie root
+- **Intelligent release tracking**: Tracks `release()` only when refCnt drops to 0, eliminating leak ambiguity
 - **Memory efficient**: Trie structure shares common prefixes, minimizing memory usage
 - **Clean separation**: Pure data structure (Trie) with separate rendering/viewing
 - **Real-time monitoring**: JMX MBean for runtime analysis
@@ -109,6 +110,27 @@ ROOT: DemoApplication.createLeak [count=1]
 ## Tracking Capabilities
 
 The tracker automatically instruments methods with ByteBuf parameters/returns. Additional features are available for advanced tracking scenarios:
+
+### Release Tracking (NEW)
+
+**Intelligent leak detection** - Tracks `release()` calls only when they drop refCnt to zero.
+
+**Problem solved**: Previously, leaf nodes didn't show whether ByteBuf was released, causing ambiguity.
+
+**Now**: Leaf nodes ending with `release() [ref=0]` are clean. Leaf nodes with `[ref>0]` are leaks.
+
+```java
+ByteBuf buffer = allocate();           // ✓ Tracked
+processor.process(buffer);             // ✓ Tracked
+buffer.release();                      // ✓ Tracked ONLY if refCnt -> 0
+```
+
+**Benefits**:
+- Clear leak detection at leaf nodes
+- No tree clutter from intermediate `release()` calls
+- Tracks `retain()` to show refCount increases
+
+See **[RELEASE_TRACKING.md](RELEASE_TRACKING.md)** for complete guide.
 
 ### Static Method Tracking
 
@@ -670,6 +692,7 @@ String summary = renderer.renderSummary();
 ### Documentation
 
 **Feature Guides:**
+- **[RELEASE_TRACKING.md](RELEASE_TRACKING.md)** - Release tracking for clear leak detection (enabled by default)
 - **[STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md)** - Static method tracking (enabled by default)
 - **[WRAPPER_TRACKING.md](WRAPPER_TRACKING.md)** - Tracking ByteBuf wrapped in custom objects (Message, Request, Event)
 

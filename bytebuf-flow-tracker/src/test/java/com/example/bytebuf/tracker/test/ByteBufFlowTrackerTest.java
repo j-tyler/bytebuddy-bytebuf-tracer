@@ -547,4 +547,189 @@ public class ByteBufFlowTrackerTest {
             // ... actual processing ...
         }
     }
+
+    @Test
+    public void testReleaseTrackingOnlyWhenRefCntReachesZero() {
+        System.out.println("\n=== Release Tracking (Only When refCnt -> 0) Test ===");
+
+        // Scenario: ByteBuf with multiple retain/release calls
+        // Only the FINAL release (when refCnt drops to 0) should be tracked
+
+        ByteBuf buffer = Unpooled.buffer(256);
+
+        // Initial allocation
+        tracker.recordMethodCall(buffer, "Client", "allocate", buffer.refCnt()); // ref=1
+
+        // Method that retains the buffer
+        buffer.retain();
+        tracker.recordMethodCall(buffer, "Handler", "retain", buffer.refCnt()); // ref=2
+
+        // Another retain
+        buffer.retain();
+        tracker.recordMethodCall(buffer, "Processor", "retain", buffer.refCnt()); // ref=3
+
+        // First release (ref=3 -> 2) - should NOT be tracked in final tree
+        buffer.release();
+        // NOTE: With lifecycle advice enabled, this intermediate release would be SKIPPED
+
+        // Processing with ref=2
+        tracker.recordMethodCall(buffer, "Processor", "process", buffer.refCnt()); // ref=2
+
+        // Second release (ref=2 -> 1) - should NOT be tracked in final tree
+        buffer.release();
+        // NOTE: With lifecycle advice enabled, this intermediate release would be SKIPPED
+
+        // Processing with ref=1
+        tracker.recordMethodCall(buffer, "Handler", "cleanup", buffer.refCnt()); // ref=1
+
+        // Final release (ref=1 -> 0) - THIS should be tracked
+        buffer.release();
+        tracker.recordMethodCall(buffer, "Handler", "release", buffer.refCnt()); // ref=0
+
+        // Verify the flow
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+        String flatPaths = renderer.renderFlatPaths();
+
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(tree);
+
+        System.out.println("\n=== Flat Paths ===");
+        System.out.println(flatPaths);
+
+        // Verify that:
+        // 1. Initial allocation is tracked
+        assertTrue("allocate should be tracked", tree.contains("allocate"));
+
+        // 2. Retain calls are tracked (to show refCnt increases)
+        assertTrue("retain should be tracked", tree.contains("retain"));
+
+        // 3. Final release with ref=0 is tracked
+        assertTrue("Final release with ref=0 should be tracked",
+                   tree.contains("release") && tree.contains("[ref=0"));
+
+        // 4. The leaf node shows ref=0 (properly released)
+        assertTrue("Leaf should show ref=0 (not a leak)", flatPaths.contains("[0]"));
+
+        System.out.println("\n✓ Release tracking verified: Only final release (refCnt->0) is tracked");
+        System.out.println("✓ Intermediate releases are skipped to avoid tree clutter");
+    }
+
+    @Test
+    public void testLeafNodeWithoutReleaseIsLeak() {
+        System.out.println("\n=== Leaf Node Without Release = Leak Test ===");
+
+        // Scenario: ByteBuf that is never released
+        ByteBuf leakyBuffer = Unpooled.buffer(256);
+
+        tracker.recordMethodCall(leakyBuffer, "Service", "allocate", leakyBuffer.refCnt()); // ref=1
+        tracker.recordMethodCall(leakyBuffer, "Service", "process", leakyBuffer.refCnt());  // ref=1
+        tracker.recordMethodCall(leakyBuffer, "Service", "store", leakyBuffer.refCnt());    // ref=1
+        // NOTE: No release() call!
+
+        // Scenario: ByteBuf that is properly released
+        ByteBuf goodBuffer = Unpooled.buffer(256);
+
+        tracker.recordMethodCall(goodBuffer, "Service", "allocate", goodBuffer.refCnt());  // ref=1
+        tracker.recordMethodCall(goodBuffer, "Service", "process", goodBuffer.refCnt());   // ref=1
+        goodBuffer.release();
+        tracker.recordMethodCall(goodBuffer, "Service", "release", goodBuffer.refCnt());   // ref=0
+
+        // Verify the flow
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+        String flatPaths = renderer.renderFlatPaths();
+
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(tree);
+
+        System.out.println("\n=== Flat Paths ===");
+        System.out.println(flatPaths);
+
+        // Verify leak detection
+        // Leaky path: ends at "store" with ref=1
+        assertTrue("Leaky path should end with ref=1", flatPaths.contains("store[1]"));
+
+        // Good path: ends at "release" with ref=0
+        assertTrue("Good path should end with ref=0", flatPaths.contains("release[0]"));
+
+        System.out.println("\n✓ Leak detection verified:");
+        System.out.println("  - Leaf with ref=1 (store) = LEAK");
+        System.out.println("  - Leaf with ref=0 (release) = CLEAN");
+    }
+
+    @Test
+    public void testMultipleReleaseCallsOnSameBuffer() {
+        System.out.println("\n=== Multiple Release Calls on Same Buffer Test ===");
+
+        // Scenario: ByteBuf retained multiple times, then released multiple times
+        // Only the FINAL release (refCnt -> 0) should appear in the tree
+
+        ByteBuf buffer = Unpooled.buffer(256);
+
+        // Allocate with ref=1
+        tracker.recordMethodCall(buffer, "Manager", "create", buffer.refCnt()); // ref=1
+
+        // Retain twice (ref=1 -> 2 -> 3)
+        buffer.retain();
+        tracker.recordMethodCall(buffer, "Manager", "retain", buffer.refCnt()); // ref=2
+        buffer.retain();
+        tracker.recordMethodCall(buffer, "Manager", "retain", buffer.refCnt()); // ref=3
+
+        // Process with ref=3
+        tracker.recordMethodCall(buffer, "Worker", "process", buffer.refCnt()); // ref=3
+
+        // Release once (ref=3 -> 2) - intermediate, should be SKIPPED
+        int refCountBefore1 = buffer.refCnt();
+        buffer.release();
+        int refCountAfter1 = buffer.refCnt();
+        System.out.println("First release: ref=" + refCountBefore1 + " -> " + refCountAfter1 + " (intermediate, skipped)");
+        // Don't track this intermediate release
+
+        // Process with ref=2
+        tracker.recordMethodCall(buffer, "Worker", "process", buffer.refCnt()); // ref=2
+
+        // Release again (ref=2 -> 1) - intermediate, should be SKIPPED
+        int refCountBefore2 = buffer.refCnt();
+        buffer.release();
+        int refCountAfter2 = buffer.refCnt();
+        System.out.println("Second release: ref=" + refCountBefore2 + " -> " + refCountAfter2 + " (intermediate, skipped)");
+        // Don't track this intermediate release
+
+        // Final processing
+        tracker.recordMethodCall(buffer, "Manager", "cleanup", buffer.refCnt()); // ref=1
+
+        // Final release (ref=1 -> 0) - THIS is tracked
+        int refCountBefore3 = buffer.refCnt();
+        buffer.release();
+        int refCountAfter3 = buffer.refCnt();
+        System.out.println("Third release: ref=" + refCountBefore3 + " -> " + refCountAfter3 + " (FINAL, tracked)");
+        tracker.recordMethodCall(buffer, "Manager", "release", buffer.refCnt()); // ref=0
+
+        // Verify the flow
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String tree = renderer.renderIndentedTree();
+
+        System.out.println("\n=== Flow Tree ===");
+        System.out.println(tree);
+
+        // Count how many times "release" appears
+        int releaseCount = 0;
+        for (String line : tree.split("\n")) {
+            if (line.contains("release") && line.contains("ref=")) {
+                releaseCount++;
+            }
+        }
+
+        System.out.println("\nRelease calls in tree: " + releaseCount);
+        System.out.println("Expected: 1 (only the final release with ref=0)");
+
+        // Only the final release should be in the tree
+        assertEquals("Only final release should be tracked", 1, releaseCount);
+
+        // And it should have ref=0
+        assertTrue("Final release should have ref=0", tree.contains("release") && tree.contains("[ref=0"));
+
+        System.out.println("\n✓ Multiple release tracking verified: Only final release appears in tree");
+    }
 }

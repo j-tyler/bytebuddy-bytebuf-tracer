@@ -4,6 +4,7 @@ import com.example.bytebuf.tracker.ByteBufFlowTracker;
 import io.netty.buffer.ByteBuf;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bind.annotation.*;
+import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Method;
 
@@ -64,7 +65,7 @@ public class ByteBufTrackingAdvice {
             @Advice.Origin Class<?> clazz,
             @Advice.Origin("#m") String methodName,
             @Advice.AllArguments Object[] arguments,
-            @Advice.Return Object returnValue,
+            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
 
         // Prevent re-entrant calls

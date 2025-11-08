@@ -2,6 +2,8 @@ package com.example.bytebuf.tracker.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.method.MethodDescription;
+import net.bytebuddy.description.method.ParameterDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.matcher.ElementMatcher;
@@ -68,6 +70,15 @@ public class ByteBufFlowAgent {
                 .transform(new ConstructorTrackingTransformer());
         }
 
+        // Add ByteBuf lifecycle method tracking (release, retain)
+        // This tracks release() only when it drops refCnt to 0
+        System.out.println("[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)");
+        agentBuilder = agentBuilder
+            .type(isSubTypeOf(io.netty.buffer.ByteBuf.class)
+                .and(not(isInterface()))
+                .and(not(isAbstract())))
+            .transform(new ByteBufLifecycleTransformer());
+
         agentBuilder.installOn(inst);
 
         System.out.println("[ByteBufFlowAgent] Instrumentation installed successfully");
@@ -89,17 +100,63 @@ public class ByteBufFlowAgent {
                 .method(
                     // Match methods that might handle ByteBufs (including static methods)
                     // Skip abstract methods (they have no bytecode to instrument)
+                    // IMPORTANT: Only instrument methods with ByteBuf in their signature
+                    // to prevent unnecessary class transformation and Mockito conflicts
                     isPublic()
                     .or(isProtected())
                     .and(not(isConstructor()))
                     .and(not(isAbstract()))
+                    .and(hasByteBufInSignature())
                 )
                 .intercept(Advice.to(ByteBufTrackingAdvice.class));
         }
     }
 
     /**
-     * Transformer that applies advice to constructors for specified classes
+     * Creates a matcher that checks if a method has ByteBuf in its signature.
+     * This includes:
+     * - Methods that return ByteBuf (or any subclass)
+     * - Methods that take ByteBuf as a parameter (at any position)
+     *
+     * @return ElementMatcher that matches methods with ByteBuf in signature
+     */
+    private static ElementMatcher.Junction<MethodDescription> hasByteBufInSignature() {
+        // Match methods that return ByteBuf or any subclass
+        ElementMatcher.Junction<MethodDescription> matcher =
+            returns(isSubTypeOf(io.netty.buffer.ByteBuf.class));
+
+        // Match methods that have ByteBuf as a parameter at any position
+        // We create a custom matcher that checks all parameters
+        matcher = matcher.or(new ElementMatcher<MethodDescription>() {
+            @Override
+            public boolean matches(MethodDescription target) {
+                // Check if any parameter is assignable to ByteBuf
+                for (ParameterDescription param : target.getParameters()) {
+                    TypeDescription paramType = param.getType().asErasure();
+                    try {
+                        // Check if the parameter type is ByteBuf or a subclass
+                        if (paramType.represents(io.netty.buffer.ByteBuf.class) ||
+                            paramType.isAssignableTo(io.netty.buffer.ByteBuf.class)) {
+                            return true;
+                        }
+                    } catch (Exception e) {
+                        // If we can't load the class, skip it
+                        // This can happen with classloader issues
+                    }
+                }
+                return false;
+            }
+        });
+
+        return matcher;
+    }
+
+    /**
+     * Transformer that applies advice to constructors for specified classes.
+     * Uses ByteBufConstructorAdvice instead of ByteBufTrackingAdvice because:
+     * - Constructors cannot use onThrowable (would wrap code before super() call)
+     * - JVM bytecode verifier requires super()/this() to be called first
+     * - Exception handlers can only exist AFTER super/this initialization
      */
     static class ConstructorTrackingTransformer implements AgentBuilder.Transformer {
         @Override
@@ -115,10 +172,35 @@ public class ByteBufFlowAgent {
                     // Match public and protected constructors
                     isPublic().or(isProtected())
                 )
-                .intercept(Advice.to(ByteBufTrackingAdvice.class));
+                .intercept(Advice.to(ByteBufConstructorAdvice.class));
         }
     }
-    
+
+    /**
+     * Transformer that applies advice to ByteBuf lifecycle methods.
+     * Instruments release() and retain() methods to track reference count changes.
+     * Only records release() when it drops refCnt to 0, avoiding noise from
+     * intermediate release calls.
+     */
+    static class ByteBufLifecycleTransformer implements AgentBuilder.Transformer {
+        @Override
+        public DynamicType.Builder<?> transform(
+                DynamicType.Builder<?> builder,
+                TypeDescription typeDescription,
+                ClassLoader classLoader,
+                JavaModule module) {
+
+            return builder
+                .method(
+                    // Match release() and retain() methods
+                    (named("release").or(named("retain")))
+                    .and(isPublic())
+                    .and(not(isAbstract()))
+                )
+                .intercept(Advice.to(ByteBufLifecycleAdvice.class));
+        }
+    }
+
     /**
      * Setup JMX MBean for runtime monitoring
      */

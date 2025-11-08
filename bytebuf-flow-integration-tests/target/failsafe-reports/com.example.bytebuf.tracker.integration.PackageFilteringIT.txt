@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.PackageFilteringIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 12.045 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.PackageFilteringIT
-com.example.bytebuf.tracker.integration.PackageFilteringIT.testExcludePackage  Time elapsed: 2.42 s  <<< FAILURE!
+Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 11.951 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.PackageFilteringIT
+com.example.bytebuf.tracker.integration.PackageFilteringIT.testExcludePackage  Time elapsed: 2.381 s  <<< FAILURE!
 java.lang.AssertionError: Should have no traversals when package is excluded
 	at com.example.bytebuf.tracker.integration.PackageFilteringIT.testExcludePackage(PackageFilteringIT.java:68)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)

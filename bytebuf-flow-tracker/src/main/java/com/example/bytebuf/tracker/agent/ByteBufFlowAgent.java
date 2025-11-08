@@ -49,7 +49,11 @@ public class ByteBufFlowAgent {
                 .or(nameStartsWith("sun."))
                 .or(nameStartsWith("com.sun."))
                 .or(nameStartsWith("jdk."))
-                .or(nameStartsWith("com.example.bytebuf.tracker.")) // Don't instrument ourselves
+                // Don't instrument the tracker implementation, but DO instrument test apps
+                .or(nameStartsWith("com.example.bytebuf.tracker.agent."))
+                .or(nameStartsWith("com.example.bytebuf.tracker.ByteBufFlowTracker"))
+                .or(nameStartsWith("com.example.bytebuf.tracker.ObjectTracker"))
+                .or(nameStartsWith("com.example.bytebuf.tracker.Trie"))
                 .or(isSynthetic()) // Don't instrument compiler-generated classes
             )
             // Transform regular methods (non-constructors)

@@ -13,9 +13,11 @@ import java.util.Date;
 
 /**
  * JMX MBean implementation.
- * Follows JMX Standard MBean naming convention: class is <ClassName>, implements <ClassName>MBean
+ * Follows JMX Standard MBean naming convention:
+ * - Interface: ByteBufFlowMBean
+ * - Implementation: ByteBufFlow (this class)
  */
-public class ByteBufFlowTrackerImpl implements ByteBufFlowTrackerMBean {
+public class ByteBufFlow implements ByteBufFlowMBean {
 
     private final com.example.bytebuf.tracker.ByteBufFlowTracker tracker =
         com.example.bytebuf.tracker.ByteBufFlowTracker.getInstance();

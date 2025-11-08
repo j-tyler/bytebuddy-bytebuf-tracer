@@ -1,8 +1,9 @@
+com/example/bytebuf/tracker/agent/ByteBufFlowMBean.class
 com/example/bytebuf/tracker/agent/ByteBufFlowAgent$ByteBufLifecycleTransformer.class
 com/example/bytebuf/tracker/ByteBufFlowTracker.class
 com/example/bytebuf/tracker/agent/ByteBufConstructorAdvice.class
+com/example/bytebuf/tracker/agent/ByteBufFlow.class
 com/example/bytebuf/tracker/trie/FlowTrie$TrieNode.class
-com/example/bytebuf/tracker/agent/ByteBufFlowTrackerMBean.class
 com/example/bytebuf/tracker/agent/ByteBufFlowAgent$1.class
 com/example/bytebuf/tracker/agent/ByteBufFlowAgent$ConstructorTrackingTransformer.class
 com/example/bytebuf/tracker/ObjectTrackerHandler.class
@@ -14,7 +15,6 @@ com/example/bytebuf/tracker/trie/FlowTrie.class
 com/example/bytebuf/tracker/agent/ByteBufLifecycleAdvice.class
 com/example/bytebuf/tracker/agent/ByteBufFlowAgent$ByteBufTransformer.class
 com/example/bytebuf/tracker/view/TrieRenderer$1.class
-com/example/bytebuf/tracker/agent/ByteBufFlowTrackerImpl.class
 com/example/bytebuf/tracker/view/TrieRenderer$PathStats.class
 com/example/bytebuf/tracker/ObjectTrackerRegistry.class
 com/example/bytebuf/tracker/trie/FlowTrie$NodeKey.class

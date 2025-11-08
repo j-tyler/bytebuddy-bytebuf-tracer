@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-failsafe-plugin/xsd/failsafe-test-report-3.0.xsd" version="3.0" name="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="11.929" tests="5" errors="0" skipped="0" failures="4">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-failsafe-plugin/xsd/failsafe-test-report-3.0.xsd" version="3.0" name="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="11.502" tests="5" errors="0" skipped="0" failures="2">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="ANSI_X3.4-1968"/>
@@ -14,7 +14,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/usr/lib/jvm/java-21-openjdk-amd64/lib"/>
-    <property name="sun.java.command" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire/surefirebooter-20251108022131953_3.jar /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire 2025-11-08T02-21-31_810-jvmRun1 surefire-20251108022131953_1tmp surefire_0-20251108022131953_2tmp"/>
+    <property name="sun.java.command" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire/surefirebooter-20251108022942070_3.jar /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire 2025-11-08T02-29-41_931-jvmRun1 surefire-20251108022942070_1tmp surefire_0-20251108022942070_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -29,7 +29,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
-    <property name="surefire.real.class.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire/surefirebooter-20251108022131953_3.jar"/>
+    <property name="surefire.real.class.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire/surefirebooter-20251108022942070_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="21.0.8+9-Ubuntu-0ubuntu124.04.1"/>
     <property name="user.name" value="root"/>
@@ -55,192 +55,39 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testAgentLoads" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.321">
-    <failure message="JMX MBean should be registered. Output:&#10;[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}&#10;[ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)&#10;[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)&#10;[ByteBufFlowAgent] Instrumentation installed successfully&#10;[Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;=== BasicFlowApp Starting ===&#10;[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper&#10;	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)&#10;	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)&#10;	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)&#10;	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignable(TypeDescription.java:7771)&#10;	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignableFrom(TypeDescription.java:7798)&#10;	at net.bytebuddy.description.type.TypeDescription$ForLoadedType.isAssignableFrom(TypeDescription.java:8759)&#10;	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignable(TypeDescription.java:7772)&#10;	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignableTo(TypeDescription.java:7812)&#10;	at net.bytebuddy.matcher.SubTypeMatcher.doMatch(SubTypeMatcher.java:47)&#10;	at net.bytebuddy.matcher.SubTypeMatcher.doMatch(SubTypeMatcher.java:26)&#10;	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)&#10;	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)&#10;	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)&#10;	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)&#10;	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)&#10;	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)&#10;	at java.base/java.lang.ClassLoader.defineClass1(Native Method)&#10;	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)&#10;	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)&#10;	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)&#10;	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)&#10;	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)&#10;	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)&#10;	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)&#10;	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)&#10;	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)&#10;	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)&#10;	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)&#10;	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)&#10;	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)&#10;	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)&#10;	at io.netty.util.ResourceLeakDetector.&lt;clinit&gt;(ResourceLeakDetector.java:101)&#10;	at io.netty.buffer.AbstractByteBufAllocator.&lt;clinit&gt;(AbstractByteBufAllocator.java:37)&#10;	at io.netty.buffer.Unpooled.&lt;clinit&gt;(Unpooled.java:75)&#10;	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$Qo6r01Ha(BasicFlowApp.java:51)&#10;	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)&#10;	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)&#10;	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]&#10;[ObjectTrackerRegistry] Using default ByteBuf handler&#10;Step 1: Processing 13 bytes&#10;Step 2: Read 13 bytes&#10;Step 3: Final processing&#10;Cleanup: Releasing buffer&#10;&#10;=== Flow Summary ===&#10;=== ByteBuf Flow Summary ===&#10;Total Root Methods: 1&#10;Total Traversals: 1&#10;Unique Paths: 1&#10;Leak Paths: 0&#10;Leak Percentage: 0.00%&#10;&#10;&#10;=== Flow Tree ===&#10;ROOT: BasicFlowApp.allocate_return [count=1]&#10;??? BasicFlowApp.processStep1 [ref=1, count=1]&#10;    ??? BasicFlowApp.processStep1_return [ref=1, count=1]&#10;        ??? BasicFlowApp.processStep2 [ref=1, count=1]&#10;            ??? BasicFlowApp.processStep2_return [ref=1, count=1]&#10;                ??? BasicFlowApp.processStep3 [ref=1, count=1]&#10;                    ??? BasicFlowApp.processStep3_return [ref=1, count=1]&#10;                        ??? BasicFlowApp.cleanup [ref=1, count=1]&#10;                            ??? InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=1]&#10;&#10;&#10;=== Flat Paths ===&#10;[count=1] BasicFlowApp.allocate_return -&gt; BasicFlowApp.processStep1[1] -&gt; BasicFlowApp.processStep1_return[1] -&gt; BasicFlowApp.processStep2[1] -&gt; BasicFlowApp.processStep2_return[1] -&gt; BasicFlowApp.processStep3[1] -&gt; BasicFlowApp.processStep3_return[1] -&gt; BasicFlowApp.cleanup[1] -&gt; InstrumentedUnpooledUnsafeHeapByteBuf.release[0]&#10;&#10;&#10;=== BasicFlowApp Complete ===&#10;&#10;=== ByteBuf Flow Final Report ===&#10;ByteBuf Flow Analysis Report&#10;Generated: Sat Nov 08 02:21:46 UTC 2025&#10;================================================================================&#10;&#10;=== ByteBuf Flow Summary ===&#10;Total Root Methods: 1&#10;Total Traversals: 1&#10;Unique Paths: 1&#10;Leak Paths: 0&#10;Leak Percentage: 0.00%&#10;&#10;=== Flow Tree ===&#10;ROOT: BasicFlowApp.allocate_return [count=1]&#10;??? BasicFlowApp.processStep1 [ref=1, count=1]&#10;    ??? BasicFlowApp.processStep1_return [ref=1, count=1]&#10;        ??? BasicFlowApp.processStep2 [ref=1, count=1]&#10;            ??? BasicFlowApp.processStep2_return [ref=1, count=1]&#10;                ??? BasicFlowApp.processStep3 [ref=1, count=1]&#10;                    ??? BasicFlowApp.processStep3_return [ref=1, count=1]&#10;                        ??? BasicFlowApp.cleanup [ref=1, count=1]&#10;                            ??? InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=1]&#10;&#10;=== Potential Leaks ===&#10;No leaks detected&#10;&#10;&#10;" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: 
-JMX MBean should be registered. Output:
-[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
-[ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)
-[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
-[ByteBufFlowAgent] Instrumentation installed successfully
-[Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-=== BasicFlowApp Starting ===
-[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
-	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
-	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
-	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
-	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignable(TypeDescription.java:7771)
-	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignableFrom(TypeDescription.java:7798)
-	at net.bytebuddy.description.type.TypeDescription$ForLoadedType.isAssignableFrom(TypeDescription.java:8759)
-	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignable(TypeDescription.java:7772)
-	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignableTo(TypeDescription.java:7812)
-	at net.bytebuddy.matcher.SubTypeMatcher.doMatch(SubTypeMatcher.java:47)
-	at net.bytebuddy.matcher.SubTypeMatcher.doMatch(SubTypeMatcher.java:26)
-	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
-	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
-	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
-	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
-	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
-	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
-	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
-	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
-	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
-	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
-	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
-	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
-	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
-	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
-	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
-	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
-	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
-	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
-	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
-	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
-	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
-	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$Qo6r01Ha(BasicFlowApp.java:51)
-	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)
-	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)
-	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[ObjectTrackerRegistry] Using default ByteBuf handler
-Step 1: Processing 13 bytes
-Step 2: Read 13 bytes
-Step 3: Final processing
-Cleanup: Releasing buffer
-
-=== Flow Summary ===
-=== ByteBuf Flow Summary ===
-Total Root Methods: 1
-Total Traversals: 1
-Unique Paths: 1
-Leak Paths: 0
-Leak Percentage: 0.00%
-
-
-=== Flow Tree ===
-ROOT: BasicFlowApp.allocate_return [count=1]
-??? BasicFlowApp.processStep1 [ref=1, count=1]
-    ??? BasicFlowApp.processStep1_return [ref=1, count=1]
-        ??? BasicFlowApp.processStep2 [ref=1, count=1]
-            ??? BasicFlowApp.processStep2_return [ref=1, count=1]
-                ??? BasicFlowApp.processStep3 [ref=1, count=1]
-                    ??? BasicFlowApp.processStep3_return [ref=1, count=1]
-                        ??? BasicFlowApp.cleanup [ref=1, count=1]
-                            ??? InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=1]
-
-
-=== Flat Paths ===
-[count=1] BasicFlowApp.allocate_return -> BasicFlowApp.processStep1[1] -> BasicFlowApp.processStep1_return[1] -> BasicFlowApp.processStep2[1] -> BasicFlowApp.processStep2_return[1] -> BasicFlowApp.processStep3[1] -> BasicFlowApp.processStep3_return[1] -> BasicFlowApp.cleanup[1] -> InstrumentedUnpooledUnsafeHeapByteBuf.release[0]
-
-
-=== BasicFlowApp Complete ===
-
-=== ByteBuf Flow Final Report ===
-ByteBuf Flow Analysis Report
-Generated: Sat Nov 08 02:21:46 UTC 2025
-================================================================================
-
-=== ByteBuf Flow Summary ===
-Total Root Methods: 1
-Total Traversals: 1
-Unique Paths: 1
-Leak Paths: 0
-Leak Percentage: 0.00%
-
-=== Flow Tree ===
-ROOT: BasicFlowApp.allocate_return [count=1]
-??? BasicFlowApp.processStep1 [ref=1, count=1]
-    ??? BasicFlowApp.processStep1_return [ref=1, count=1]
-        ??? BasicFlowApp.processStep2 [ref=1, count=1]
-            ??? BasicFlowApp.processStep2_return [ref=1, count=1]
-                ??? BasicFlowApp.processStep3 [ref=1, count=1]
-                    ??? BasicFlowApp.processStep3_return [ref=1, count=1]
-                        ??? BasicFlowApp.cleanup [ref=1, count=1]
-                            ??? InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=1]
-
-=== Potential Leaks ===
-No leaks detected
-
-
-
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testAgentLoads(BasicInstrumentationIT.java:55)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-]]></failure>
+  <testcase name="testAgentLoads" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.29">
     <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar: com.example.bytebuf.tracker.integration.testapp.BasicFlowApp
 [APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
-[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] JMX MBean registered
 [APP] [ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
 [APP] [ByteBufFlowAgent] Instrumentation installed successfully
-[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] === BasicFlowApp Starting ===
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
 [APP] 	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
 [APP] 	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
@@ -284,15 +131,15 @@ No leaks detected
 [APP] 	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
 [APP] 	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
 [APP] 	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
-[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$Qo6r01Ha(BasicFlowApp.java:51)
+[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$Np5GORKH(BasicFlowApp.java:51)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] [ObjectTrackerRegistry] Using default ByteBuf handler
 [APP] Step 1: Processing 13 bytes
 [APP] Step 2: Read 13 bytes
@@ -328,7 +175,7 @@ No leaks detected
 [APP] 
 [APP] === ByteBuf Flow Final Report ===
 [APP] ByteBuf Flow Analysis Report
-[APP] Generated: Sat Nov 08 02:21:46 UTC 2025
+[APP] Generated: Sat Nov 08 02:29:56 UTC 2025
 [APP] ================================================================================
 [APP] 
 [APP] === ByteBuf Flow Summary ===
@@ -355,39 +202,39 @@ No leaks detected
 [APP] 
 ]]></system-out>
   </testcase>
-  <testcase name="testMethodsAreTracked" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.348">
+  <testcase name="testMethodsAreTracked" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.208">
     <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar: com.example.bytebuf.tracker.integration.testapp.BasicFlowApp
 [APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
-[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] JMX MBean registered
 [APP] [ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
 [APP] [ByteBufFlowAgent] Instrumentation installed successfully
-[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] === BasicFlowApp Starting ===
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
 [APP] 	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
 [APP] 	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
@@ -431,15 +278,15 @@ No leaks detected
 [APP] 	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
 [APP] 	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
 [APP] 	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
-[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$F31zgsI1(BasicFlowApp.java:51)
+[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$zyT78BLm(BasicFlowApp.java:51)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] [ObjectTrackerRegistry] Using default ByteBuf handler
 [APP] Step 1: Processing 13 bytes
 [APP] Step 2: Read 13 bytes
@@ -475,7 +322,7 @@ No leaks detected
 [APP] 
 [APP] === ByteBuf Flow Final Report ===
 [APP] ByteBuf Flow Analysis Report
-[APP] Generated: Sat Nov 08 02:21:49 UTC 2025
+[APP] Generated: Sat Nov 08 02:29:59 UTC 2025
 [APP] ================================================================================
 [APP] 
 [APP] === ByteBuf Flow Summary ===
@@ -502,7 +349,7 @@ No leaks detected
 [APP] 
 ]]></system-out>
   </testcase>
-  <testcase name="testProperCleanup" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.412">
+  <testcase name="testProperCleanup" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.312">
     <failure message="Should show proper cleanup with ref=0" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Should show proper cleanup with ref=0
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -513,36 +360,36 @@ No leaks detected
 ]]></failure>
     <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar: com.example.bytebuf.tracker.integration.testapp.BasicFlowApp
 [APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
-[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] JMX MBean registered
 [APP] [ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
 [APP] [ByteBufFlowAgent] Instrumentation installed successfully
-[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] === BasicFlowApp Starting ===
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
 [APP] 	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
 [APP] 	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
@@ -586,15 +433,15 @@ No leaks detected
 [APP] 	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
 [APP] 	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
 [APP] 	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
-[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$uIQOwden(BasicFlowApp.java:51)
+[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$3qidHEx2(BasicFlowApp.java:51)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] [ObjectTrackerRegistry] Using default ByteBuf handler
 [APP] Step 1: Processing 13 bytes
 [APP] Step 2: Read 13 bytes
@@ -630,7 +477,7 @@ No leaks detected
 [APP] 
 [APP] === ByteBuf Flow Final Report ===
 [APP] ByteBuf Flow Analysis Report
-[APP] Generated: Sat Nov 08 02:21:51 UTC 2025
+[APP] Generated: Sat Nov 08 02:30:01 UTC 2025
 [APP] ================================================================================
 [APP] 
 [APP] === ByteBuf Flow Summary ===
@@ -657,45 +504,39 @@ No leaks detected
 [APP] 
 ]]></system-out>
   </testcase>
-  <testcase name="testNoErrors" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.449">
-    <failure message="Should not contain unexpected errors" type="java.lang.AssertionError"><![CDATA[java.lang.AssertionError: Should not contain unexpected errors
-	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testNoErrors(BasicInstrumentationIT.java:154)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-]]></failure>
+  <testcase name="testNoErrors" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.318">
     <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar: com.example.bytebuf.tracker.integration.testapp.BasicFlowApp
 [APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
-[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] JMX MBean registered
 [APP] [ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
 [APP] [ByteBufFlowAgent] Instrumentation installed successfully
-[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] === BasicFlowApp Starting ===
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
 [APP] 	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
 [APP] 	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
@@ -739,15 +580,15 @@ No leaks detected
 [APP] 	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
 [APP] 	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
 [APP] 	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
-[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$0KZcfzxR(BasicFlowApp.java:51)
+[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$67mvqzUk(BasicFlowApp.java:51)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] [ObjectTrackerRegistry] Using default ByteBuf handler
 [APP] Step 1: Processing 13 bytes
 [APP] Step 2: Read 13 bytes
@@ -783,7 +624,7 @@ No leaks detected
 [APP] 
 [APP] === ByteBuf Flow Final Report ===
 [APP] ByteBuf Flow Analysis Report
-[APP] Generated: Sat Nov 08 02:21:54 UTC 2025
+[APP] Generated: Sat Nov 08 02:30:03 UTC 2025
 [APP] ================================================================================
 [APP] 
 [APP] === ByteBuf Flow Summary ===
@@ -810,7 +651,7 @@ No leaks detected
 [APP] 
 ]]></system-out>
   </testcase>
-  <testcase name="testFlowStructure" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.393">
+  <testcase name="testFlowStructure" classname="com.example.bytebuf.tracker.integration.BasicInstrumentationIT" time="2.369">
     <failure message="Should have 1 unique path" type="java.lang.AssertionError"><![CDATA[java.lang.AssertionError: Should have 1 unique path
 	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testFlowStructure(BasicInstrumentationIT.java:111)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
@@ -819,36 +660,36 @@ No leaks detected
 ]]></failure>
     <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar: com.example.bytebuf.tracker.integration.testapp.BasicFlowApp
 [APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
-[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl: Class com.example.bytebuf.tracker.agent.ByteBufFlowTrackerImpl is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] JMX MBean registered
 [APP] [ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
 [APP] [ByteBufFlowAgent] Instrumentation installed successfully
-[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM com.example.bytebuf.tracker.integration.testapp.BasicFlowApp [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] === BasicFlowApp Starting ===
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
 [APP] 	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
 [APP] 	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
@@ -892,15 +733,15 @@ No leaks detected
 [APP] 	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
 [APP] 	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
 [APP] 	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
-[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$lV0VNqPs(BasicFlowApp.java:51)
+[APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate$original$Ti7VsU4o(BasicFlowApp.java:51)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.allocate(BasicFlowApp.java)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.run(BasicFlowApp.java:39)
 [APP] 	at com.example.bytebuf.tracker.integration.testapp.BasicFlowApp.main(BasicFlowApp.java:19)
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
-[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
+[APP] [Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @53f65459, Thread[#1,main,5,main], loaded=false]
 [APP] [ObjectTrackerRegistry] Using default ByteBuf handler
 [APP] Step 1: Processing 13 bytes
 [APP] Step 2: Read 13 bytes
@@ -936,7 +777,7 @@ No leaks detected
 [APP] 
 [APP] === ByteBuf Flow Final Report ===
 [APP] ByteBuf Flow Analysis Report
-[APP] Generated: Sat Nov 08 02:21:56 UTC 2025
+[APP] Generated: Sat Nov 08 02:30:06 UTC 2025
 [APP] ================================================================================
 [APP] 
 [APP] === ByteBuf Flow Summary ===

@@ -2,9 +2,11 @@ package com.example.bytebuf.tracker.agent;
 
 /**
  * JMX MBean interface for ByteBuf flow monitoring.
- * Follows JMX Standard MBean naming convention: interface is <ClassName>MBean
+ * Follows JMX Standard MBean naming convention:
+ * - Interface: ByteBufFlowMBean
+ * - Implementation: ByteBufFlow
  */
-public interface ByteBufFlowTrackerMBean {
+public interface ByteBufFlowMBean {
     // View operations
     String getTreeView();
     String getFlatView();

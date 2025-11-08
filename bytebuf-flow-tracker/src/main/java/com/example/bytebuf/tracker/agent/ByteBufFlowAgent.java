@@ -211,11 +211,11 @@ public class ByteBufFlowAgent {
      */
     private static void setupJmxMonitoring() {
         try {
-            javax.management.MBeanServer mbs = 
+            javax.management.MBeanServer mbs =
                 java.lang.management.ManagementFactory.getPlatformMBeanServer();
-            javax.management.ObjectName name = 
+            javax.management.ObjectName name =
                 new javax.management.ObjectName("com.example:type=ByteBufFlowTracker");
-            mbs.registerMBean(new ByteBufFlowTrackerImpl(), name);
+            mbs.registerMBean(new ByteBufFlow(), name);
             System.out.println("[ByteBufFlowAgent] JMX MBean registered");
         } catch (Exception e) {
             System.err.println("[ByteBufFlowAgent] Failed to register JMX MBean: " + e);

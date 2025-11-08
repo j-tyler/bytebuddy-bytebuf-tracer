@@ -731,3 +731,15 @@ String summary = renderer.renderSummary();
 - [Netty ByteBuf Guide](https://netty.io/wiki/reference-counted-objects.html)
 - [Java Agents Tutorial](https://www.baeldung.com/java-instrumentation)
 
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+### Third-Party Licenses
+
+This project bundles the following dependencies:
+- **Byte Buddy** - Apache License 2.0 (Copyright 2014-Present Rafael Winterhalter)
+- **ASM** (bundled within Byte Buddy) - BSD 3-Clause License (Copyright 2000-2011 INRIA, France Telecom)
+
+See the [NOTICE](NOTICE) file for complete attribution details.
+

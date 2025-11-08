@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.example.bytebuf'
+version = '1.0.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    // ByteBuf Flow Tracker library
+    implementation 'com.example.bytebuf:bytebuf-flow-tracker:1.0.0-SNAPSHOT'
+
+    // Netty for ByteBuf
+    implementation 'io.netty:netty-buffer:4.1.100.Final'
+
+    // JUnit 5 for integration tests
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+
+    // AssertJ for fluent assertions
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+test {
+    useJUnitPlatform()
+
+    // Set system properties for integration tests
+    systemProperty 'agent.jar.path',
+        "${project.parent.projectDir}/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar"
+    systemProperty 'test.classpath',
+        "${project.buildDir}/classes/java/main"
+    systemProperty 'java.home',
+        System.getProperty('java.home')
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}
+
+// Task to run only integration tests
+tasks.register('integrationTest', Test) {
+    useJUnitPlatform {
+        includeTags 'integration'
+    }
+
+    systemProperty 'agent.jar.path',
+        "${project.parent.projectDir}/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar"
+    systemProperty 'test.classpath',
+        "${project.buildDir}/classes/java/main"
+    systemProperty 'java.home',
+        System.getProperty('java.home')
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}

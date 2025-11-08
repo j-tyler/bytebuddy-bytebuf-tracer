@@ -25,6 +25,7 @@
     <modules>
         <module>bytebuf-flow-tracker</module>
         <module>bytebuf-flow-example</module>
+        <module>bytebuf-flow-integration-tests</module>
     </modules>
 
     <dependencyManagement>

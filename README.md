@@ -104,8 +104,6 @@ buffer.release();                      // ✓ Tracked ONLY if refCnt -> 0
 - No tree clutter from intermediate `release()` calls
 - Tracks `retain()` to show refCount increases
 
-See **[RELEASE_TRACKING.md](RELEASE_TRACKING.md)** for complete guide.
-
 ### Static Method Tracking
 
 **Enabled by default** - Static methods are automatically tracked.
@@ -113,8 +111,6 @@ See **[RELEASE_TRACKING.md](RELEASE_TRACKING.md)** for complete guide.
 ```java
 public static ByteBuf compress(ByteBuf buffer) { }  // ✓ Tracked
 ```
-
-See [STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md) for details.
 
 ### Wrapper Object Tracking
 
@@ -138,8 +134,6 @@ public void processMessage(Message msg) {
     tracker.recordMethodCall(buf, "Handler", "processMessage", buf.refCnt());  // Manual tracking needed
 }
 ```
-
-See [WRAPPER_TRACKING.md](WRAPPER_TRACKING.md) for complete guide, configuration, and examples.
 
 ---
 
@@ -275,9 +269,6 @@ Format: `include=package1,package2;exclude=package3,package4;trackConstructors=c
 # Exclude protocol/DTO classes to avoid Mockito conflicts
 -javaagent:tracker.jar=include=com.github.ambry;exclude=com.github.ambry.protocol
 
-# Exclude protocol/DTO classes to avoid Mockito conflicts
--javaagent:tracker.jar=include=com.github.ambry;exclude=com.github.ambry.protocol
-
 # Enable constructor tracking for wrapper classes
 -javaagent:tracker.jar=include=com.example;trackConstructors=com.example.Message,com.example.Request
 
@@ -312,65 +303,7 @@ jconsole localhost:9999
 - `exportToFile(filepath, format)` - Export to file (formats: tree, flat, csv, json)
 - `reset()` - Clear all tracking data
 
-## Tracking Capabilities
-
-### Release Tracking
-
-**Intelligent leak detection** - Tracks `release()` calls only when they drop refCnt to zero.
-
-```java
-ByteBuf buffer = allocate();           // ✓ Tracked
-processor.process(buffer);             // ✓ Tracked
-buffer.release();                      // ✓ Tracked ONLY if refCnt -> 0
-```
-
-**Benefits**:
-- Clear leak detection at leaf nodes
-- No tree clutter from intermediate `release()` calls
-- Tracks `retain()` to show refCount increases
-
-### Static Method Tracking
-
-**Enabled by default** - Static methods are automatically tracked.
-
-```java
-public static ByteBuf compress(ByteBuf buffer) { }  // ✓ Tracked
-```
-
-### Wrapper Object Tracking
-
-**Important for real applications** - When ByteBuf is wrapped in custom objects (Message, Request, Event), tracking breaks by default.
-
-**Enable constructor tracking** for your wrapper classes to maintain continuous flow:
-
-```bash
--javaagent:tracker.jar=trackConstructors=com.example.Message,com.example.Request
-```
-
-**Example:**
-
-```java
-public class Message {
-    public Message(ByteBuf data) { }  // ✓ Tracked with trackConstructors
-}
-
-public void processMessage(Message msg) {
-    ByteBuf buf = msg.getData();
-    tracker.recordMethodCall(buf, "Handler", "processMessage", buf.refCnt());  // Manual tracking needed
-}
-```
-
-**What's tracked automatically:**
-- ✓ Methods with ByteBuf parameters
-- ✓ Methods returning ByteBuf
-- ✓ Static methods (with ByteBuf)
-- ✓ Constructors (when configured with `trackConstructors`)
-
-**What needs manual tracking:**
-- ✗ Methods receiving wrapper objects (Message, Request, etc.)
-- ✗ Methods accessing ByteBuf through fields
-
-### Custom Object Tracking
+## Custom Object Tracking
 
 Track ANY object type by implementing `ObjectTrackerHandler`:
 
@@ -609,22 +542,7 @@ String summary = renderer.renderSummary();
 
 **Test coverage**: Simple flow tracking, leak detection, refCount anomalies, high-volume scenarios, CSV/JSON export.
 
-### Documentation
-
-**Feature Guides:**
-- **[RELEASE_TRACKING.md](RELEASE_TRACKING.md)** - Release tracking for clear leak detection (enabled by default)
-- **[STATIC_METHOD_TRACKING.md](STATIC_METHOD_TRACKING.md)** - Static method tracking (enabled by default)
-- **[WRAPPER_TRACKING.md](WRAPPER_TRACKING.md)** - Tracking ByteBuf wrapped in custom objects (Message, Request, Event)
-
-**Module Documentation:**
-- **[Library README](bytebuf-flow-tracker/README.md)** - API documentation, architecture
-- **[Example README](bytebuf-flow-example/README.md)** - Integration patterns, best practices
-
-**Integration Guides:**
-- **[CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md)** - Claude Code specific guide (multi-module builds)
-- **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Project restructuring history
-
-### External Resources
+## External Resources
 
 - [ByteBuddy Documentation](https://bytebuddy.net/)
 - [Netty ByteBuf Guide](https://netty.io/wiki/reference-counted-objects.html)

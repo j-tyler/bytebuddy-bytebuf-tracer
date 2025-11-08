@@ -1,4 +1,5 @@
 /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/agent/ByteBufTrackingAdvice.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/agent/ByteBufLifecycleAdvice.java
 /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/agent/ByteBufFlowMBean.java
 /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/agent/ByteBufConstructorAdvice.java
 /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/ByteBufFlowTracker.java

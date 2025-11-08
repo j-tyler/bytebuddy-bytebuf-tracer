@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 6.48 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWithConstructorTracking  Time elapsed: 1.249 s  <<< FAILURE!
+Tests run: 5, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 11.431 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWithConstructorTracking  Time elapsed: 2.31 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: Envelope constructor should be tracked with trackConstructors config
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -11,16 +11,16 @@ org.opentest4j.AssertionFailedError: Envelope constructor should be tracked with
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWrapAndUnwrapMethodsTracked  Time elapsed: 1.339 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: allocate method should be tracked
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWrapAndUnwrapMethodsTracked  Time elapsed: 2.308 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: wrap method should be tracked
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWrapAndUnwrapMethodsTracked(WrapperObjectTrackingIT.java:39)
+	at com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWrapAndUnwrapMethodsTracked(WrapperObjectTrackingIT.java:43)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testProperCleanup  Time elapsed: 1.32 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testProperCleanup  Time elapsed: 2.275 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: Should have proper cleanup with ref=0
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -29,13 +29,13 @@ org.opentest4j.AssertionFailedError: Should have proper cleanup with ref=0
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testFlowContinuity  Time elapsed: 1.263 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testFlowContinuity  Time elapsed: 2.305 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 
 Expecting value to be true but was false
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testFlowContinuity(WrapperObjectTrackingIT.java:132)
+	at com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testFlowContinuity(WrapperObjectTrackingIT.java:134)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)

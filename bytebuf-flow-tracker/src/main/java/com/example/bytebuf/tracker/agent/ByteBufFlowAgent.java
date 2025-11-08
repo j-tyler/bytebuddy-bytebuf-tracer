@@ -188,7 +188,8 @@ public class ByteBufFlowAgent {
                 DynamicType.Builder<?> builder,
                 TypeDescription typeDescription,
                 ClassLoader classLoader,
-                JavaModule module) {
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
 
             return builder
                 .method(

@@ -1,54 +1,137 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.LeakDetectionIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 6.647 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.LeakDetectionIT
-com.example.bytebuf.tracker.integration.LeakDetectionIT.testBothFlowsAreTracked  Time elapsed: 1.313 s  <<< FAILURE!
+Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 11.591 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.LeakDetectionIT
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testBothFlowsAreTracked  Time elapsed: 2.344 s  <<< FAILURE!
 java.lang.AssertionError: Should have 2 root methods
 	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testBothFlowsAreTracked(LeakDetectionIT.java:54)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakIsDetected  Time elapsed: 1.316 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakIsDetected  Time elapsed: 2.375 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 Should detect the intentional leak. Output:
 [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
 [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
 [ByteBufFlowAgent] Instrumentation installed successfully
 === LeakDetectionApp Starting ===
+[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnreleasableByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.FixedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.ReadOnlyByteBufferBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
+	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
+	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignable(TypeDescription.java:7771)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignableFrom(TypeDescription.java:7798)
+	at net.bytebuddy.description.type.TypeDescription$ForLoadedType.isAssignableFrom(TypeDescription.java:8759)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignable(TypeDescription.java:7772)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase.isAssignableTo(TypeDescription.java:7812)
+	at net.bytebuddy.matcher.SubTypeMatcher.doMatch(SubTypeMatcher.java:47)
+	at net.bytebuddy.matcher.SubTypeMatcher.doMatch(SubTypeMatcher.java:26)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
+	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
+	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
+	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
+	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
+	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
+	at io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75)
+	at com.example.bytebuf.tracker.integration.testapp.LeakDetectionApp.allocateNormal(LeakDetectionApp.java:55)
+	at com.example.bytebuf.tracker.integration.testapp.LeakDetectionApp.normalFlow(LeakDetectionApp.java:42)
+	at com.example.bytebuf.tracker.integration.testapp.LeakDetectionApp.main(LeakDetectionApp.java:20)
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @15d0c81b, Thread[#1,main,5,main], loaded=false]
+[ObjectTrackerRegistry] Using default ByteBuf handler
 Oops, forgot to release! RefCount: 1
 
 === Flow Summary ===
 === ByteBuf Flow Summary ===
-Total Root Methods: 0
-Total Traversals: 0
-Unique Paths: 0
-Leak Paths: 0
+Total Root Methods: 1
+Total Traversals: 3
+Unique Paths: 1
+Leak Paths: 1
+Leak Percentage: 100.00%
 
 
 === Flow Tree ===
+ROOT: InstrumentedUnpooledUnsafeHeapByteBuf.release [count=3]
 
 
 === Flat Paths ===
+[count=3] [LEAK:ref=1] InstrumentedUnpooledUnsafeHeapByteBuf.release
 
 
 === LeakDetectionApp Complete ===
 
 === ByteBuf Flow Final Report ===
 ByteBuf Flow Analysis Report
-Generated: Sat Nov 08 01:19:02 UTC 2025
+Generated: Sat Nov 08 01:31:52 UTC 2025
 ================================================================================
 
 === ByteBuf Flow Summary ===
-Total Root Methods: 0
-Total Traversals: 0
-Unique Paths: 0
-Leak Paths: 0
+Total Root Methods: 1
+Total Traversals: 3
+Unique Paths: 1
+Leak Paths: 1
+Leak Percentage: 100.00%
 
 === Flow Tree ===
+ROOT: InstrumentedUnpooledUnsafeHeapByteBuf.release [count=3]
 
 === Potential Leaks ===
-No leaks detected
+[count=3] [LEAK:ref=1] InstrumentedUnpooledUnsafeHeapByteBuf.release
 
 
 
@@ -59,11 +142,12 @@ No leaks detected
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakyFlowIsFlagged  Time elapsed: 1.28 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakyFlowIsFlagged  Time elapsed: 2.349 s  <<< FAILURE!
 java.lang.AssertionError: 
 
 Expecting actual:
-  "=== Flat Paths ==="
+  "=== Flat Paths ===
+[count=3] [LEAK:ref=1] InstrumentedUnpooledUnsafeHeapByteBuf.release"
 to contain:
   "allocateLeaky" 
 	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakyFlowIsFlagged(LeakDetectionIT.java:106)
@@ -71,7 +155,7 @@ to contain:
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakMethodIsEndNode  Time elapsed: 1.368 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakMethodIsEndNode  Time elapsed: 2.284 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: forgetToRelease method should be in the flow
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -80,11 +164,12 @@ org.opentest4j.AssertionFailedError: forgetToRelease method should be in the flo
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.LeakDetectionIT.testNormalFlowHasNoLeak  Time elapsed: 1.364 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testNormalFlowHasNoLeak  Time elapsed: 2.233 s  <<< FAILURE!
 java.lang.AssertionError: 
 
 Expecting actual:
-  "=== Flat Paths ==="
+  "=== Flat Paths ===
+[count=3] [LEAK:ref=1] InstrumentedUnpooledUnsafeHeapByteBuf.release"
 to contain:
   "allocateNormal" 
 	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testNormalFlowHasNoLeak(LeakDetectionIT.java:84)

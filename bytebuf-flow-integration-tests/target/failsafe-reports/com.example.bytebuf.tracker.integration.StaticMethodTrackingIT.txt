@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.StaticMethodTrackingIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 6.847 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.StaticMethodTrackingIT
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testStaticMethodsAreTracked  Time elapsed: 1.322 s  <<< FAILURE!
+Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 11.427 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.StaticMethodTrackingIT
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testStaticMethodsAreTracked  Time elapsed: 2.278 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: allocateStatic method should be tracked
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -11,11 +11,12 @@ org.opentest4j.AssertionFailedError: allocateStatic method should be tracked
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMixedFlowTracked  Time elapsed: 1.378 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMixedFlowTracked  Time elapsed: 2.263 s  <<< FAILURE!
 java.lang.AssertionError: 
 
 Expecting actual:
-  "=== Flow Tree ==="
+  "=== Flow Tree ===
+ROOT: InstrumentedUnpooledUnsafeHeapByteBuf.release [count=9]"
 to contain:
   "allocateInstance" 
 	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMixedFlowTracked(StaticMethodTrackingIT.java:125)
@@ -23,27 +24,25 @@ to contain:
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testInstanceMethodsAreTracked  Time elapsed: 1.39 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: allocateInstance method should be tracked
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testInstanceMethodsAreTracked  Time elapsed: 2.286 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: processInstance method should be tracked
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testInstanceMethodsAreTracked(StaticMethodTrackingIT.java:39)
+	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testInstanceMethodsAreTracked(StaticMethodTrackingIT.java:43)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected  Time elapsed: 1.393 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected  Time elapsed: 2.257 s  <<< FAILURE!
 java.lang.AssertionError: Should have 3 root methods
 	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected(StaticMethodTrackingIT.java:85)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks  Time elapsed: 1.358 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: All flows should have proper cleanup
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks(StaticMethodTrackingIT.java:109)
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks  Time elapsed: 2.339 s  <<< FAILURE!
+java.lang.AssertionError: Should have no leak paths
+	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks(StaticMethodTrackingIT.java:105)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)

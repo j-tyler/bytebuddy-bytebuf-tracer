@@ -1,47 +1,10 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.PackageFilteringIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 7.428 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.PackageFilteringIT
-com.example.bytebuf.tracker.integration.PackageFilteringIT.testBroadInclude  Time elapsed: 1.94 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: 
-
-Expecting value to be true but was false
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.PackageFilteringIT.testBroadInclude(PackageFilteringIT.java:103)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
-com.example.bytebuf.tracker.integration.PackageFilteringIT.testMultipleIncludes  Time elapsed: 1.406 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: 
-
-Expecting value to be true but was false
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.PackageFilteringIT.testMultipleIncludes(PackageFilteringIT.java:87)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
-com.example.bytebuf.tracker.integration.PackageFilteringIT.testNarrowInclude  Time elapsed: 1.352 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: 
-
-Expecting value to be true but was false
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.PackageFilteringIT.testNarrowInclude(PackageFilteringIT.java:119)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
-com.example.bytebuf.tracker.integration.PackageFilteringIT.testIncludePackage  Time elapsed: 1.364 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: 
-
-Expecting value to be true but was false
-	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.PackageFilteringIT.testIncludePackage(PackageFilteringIT.java:44)
+Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 12.045 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.PackageFilteringIT
+com.example.bytebuf.tracker.integration.PackageFilteringIT.testExcludePackage  Time elapsed: 2.42 s  <<< FAILURE!
+java.lang.AssertionError: Should have no traversals when package is excluded
+	at com.example.bytebuf.tracker.integration.PackageFilteringIT.testExcludePackage(PackageFilteringIT.java:68)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)

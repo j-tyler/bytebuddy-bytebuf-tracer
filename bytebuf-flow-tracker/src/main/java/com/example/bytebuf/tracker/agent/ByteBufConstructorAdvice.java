@@ -21,7 +21,8 @@ public class ByteBufConstructorAdvice {
 
     // Re-entrance guard to prevent infinite recursion when tracking code
     // triggers other instrumented methods
-    private static final ThreadLocal<Boolean> IS_TRACKING =
+    // Must be public for instrumented classes to access
+    public static final ThreadLocal<Boolean> IS_TRACKING =
         ThreadLocal.withInitial(() -> false);
 
     /**

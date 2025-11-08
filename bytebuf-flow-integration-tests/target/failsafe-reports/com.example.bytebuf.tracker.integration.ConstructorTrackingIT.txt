@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.ConstructorTrackingIT
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 5.499 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.ConstructorTrackingIT
-com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testWildcardConstructorTracking  Time elapsed: 1.393 s  <<< FAILURE!
+Tests run: 4, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 9.215 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.ConstructorTrackingIT
+com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testWildcardConstructorTracking  Time elapsed: 2.223 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: Constructor should be tracked with wildcard pattern
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -11,27 +11,29 @@ org.opentest4j.AssertionFailedError: Constructor should be tracked with wildcard
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsNotTrackedByDefault  Time elapsed: 1.351 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: allocate method should be tracked
+com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsNotTrackedByDefault  Time elapsed: 2.268 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: prepare method should be tracked
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsNotTrackedByDefault(ConstructorTrackingIT.java:41)
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsNotTrackedByDefault(ConstructorTrackingIT.java:45)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testContinuousFlowWithConstructorTracking  Time elapsed: 1.374 s  <<< FAILURE!
-java.lang.AssertionError: Should have 1 continuous flow with constructor tracking
-	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testContinuousFlowWithConstructorTracking(ConstructorTrackingIT.java:100)
+com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testContinuousFlowWithConstructorTracking  Time elapsed: 2.416 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Should have proper cleanup
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testContinuousFlowWithConstructorTracking(ConstructorTrackingIT.java:105)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsTrackedWithConfig  Time elapsed: 1.378 s  <<< FAILURE!
-org.opentest4j.AssertionFailedError: allocate method should be tracked
+com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsTrackedWithConfig  Time elapsed: 2.304 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: prepare method should be tracked
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsTrackedWithConfig(ConstructorTrackingIT.java:70)
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsTrackedWithConfig(ConstructorTrackingIT.java:74)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)

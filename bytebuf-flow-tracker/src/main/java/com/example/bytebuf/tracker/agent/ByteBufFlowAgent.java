@@ -84,6 +84,17 @@ public class ByteBufFlowAgent {
                 .and(not(isAbstract())))
             .transform(new ByteBufLifecycleTransformer());
 
+        // Add ByteBuf construction tracking
+        // This makes allocation sites (Unpooled.buffer, allocator.directBuffer, etc.)
+        // the root nodes in the flow trie for better leak diagnosis
+        System.out.println("[ByteBufFlowAgent] ByteBuf construction tracking enabled");
+        agentBuilder = agentBuilder
+            .type(named("io.netty.buffer.Unpooled")
+                .or(hasSuperType(named("io.netty.buffer.ByteBufAllocator"))
+                    .and(not(isInterface()))
+                    .and(not(isAbstract()))))
+            .transform(new ByteBufConstructionTransformer());
+
         agentBuilder.installOn(inst);
 
         System.out.println("[ByteBufFlowAgent] Instrumentation installed successfully");
@@ -204,6 +215,44 @@ public class ByteBufFlowAgent {
                     .and(not(isAbstract()))
                 )
                 .intercept(Advice.to(ByteBufLifecycleAdvice.class));
+        }
+    }
+
+    /**
+     * Transformer that applies advice to ByteBuf construction/factory methods.
+     * Instruments Unpooled static methods and ByteBufAllocator methods to
+     * make allocation sites the root nodes in flow trees.
+     *
+     * This enables deterministic roots and better leak diagnosis by showing
+     * the exact allocation method (buffer, directBuffer, wrappedBuffer, etc.)
+     */
+    static class ByteBufConstructionTransformer implements AgentBuilder.Transformer {
+        @Override
+        public DynamicType.Builder<?> transform(
+                DynamicType.Builder<?> builder,
+                TypeDescription typeDescription,
+                ClassLoader classLoader,
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
+
+            return builder
+                .method(
+                    // Match factory methods that return ByteBuf
+                    // For Unpooled: buffer, directBuffer, wrappedBuffer, copiedBuffer, compositeBuffer
+                    // For ByteBufAllocator: buffer, directBuffer, ioBuffer, heapBuffer, compositeBuffer
+                    (named("buffer")
+                        .or(named("directBuffer"))
+                        .or(named("wrappedBuffer"))
+                        .or(named("copiedBuffer"))
+                        .or(named("compositeBuffer"))
+                        .or(named("ioBuffer"))
+                        .or(named("heapBuffer")))
+                    // Must be public and return ByteBuf
+                    .and(isPublic())
+                    .and(not(isAbstract()))
+                    .and(returns(hasSuperType(named("io.netty.buffer.ByteBuf"))))
+                )
+                .intercept(Advice.to(ByteBufConstructionAdvice.class));
         }
     }
 

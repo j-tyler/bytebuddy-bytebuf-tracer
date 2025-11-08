@@ -66,12 +66,14 @@ Configure in your `pom.xml`:
 
 ## Agent Configuration
 
-Agent arguments format: `include=package1,package2;exclude=package3,package4`
+Agent arguments format: `include=package1,package2;exclude=package3,package4;trackConstructors=class1,class2`
 
 Examples:
 - Track everything in com.example: `include=com.example`
 - Track multiple packages: `include=com.example,com.myapp,org.custom`
 - Exclude legacy code: `include=com.example;exclude=com.example.legacy`
+- Exclude DTOs to avoid Mockito conflicts: `include=com.yourcompany;exclude=com.yourcompany.protocol,com.yourcompany.dto`
+- Enable constructor tracking: `include=com.example;trackConstructors=com.example.Message`
 
 ## JMX Monitoring
 

@@ -68,12 +68,13 @@ public class FlowTrie {
         }
         
         /**
-         * Record traversal through this node and get/create child
+         * Traverse to a child node, creating it if necessary.
+         * Note: This does NOT increment traversalCount on the parent node.
+         * traversalCount represents how many times THIS specific method was called,
+         * not how many times we passed through it to reach children.
          * Using explicit get/putIfAbsent to avoid re-entrance issues with computeIfAbsent
          */
         public TrieNode traverse(String className, String methodName, int refCount) {
-            traversalCount.increment();
-
             NodeKey key = new NodeKey(className, methodName, refCount);
             TrieNode child = children.get(key);
             if (child == null) {
@@ -83,6 +84,8 @@ public class FlowTrie {
                     child = existing;
                 }
             }
+            // Increment traversal count on the CHILD node, not parent
+            child.recordTraversal();
             return child;
         }
         

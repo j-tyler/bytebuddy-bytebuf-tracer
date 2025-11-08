@@ -99,6 +99,13 @@ public class ByteBufLifecycleAdvice {
             }
 
             if (shouldTrack) {
+                // Only track lifecycle methods if the ByteBuf is already part of a flow
+                // This prevents release() or retain() from creating unwanted roots
+                if (!tracker.isTracking(thiz)) {
+                    // ByteBuf not in any flow - skip tracking this lifecycle event
+                    return;
+                }
+
                 // Get the actual ByteBuf class name if available
                 String className = clazz.getSimpleName();
                 if (thiz instanceof ByteBuf) {

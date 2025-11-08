@@ -7,10 +7,10 @@ com/example/demo/StaticMethodExample.class
 com/example/demo/ConstructorTrackingExample$TrackedMessage.class
 com/example/demo/WrappedObjectFlowExample$MessageCodec.class
 com/example/demo/WrappedObjectFlowExample.class
-com/example/demo/MessageProcessor.class
-com/example/demo/DemoApplication.class
-com/example/demo/WrappedObjectFlowExample$Message.class
 com/example/demo/ConstructorTrackingExample$HttpRequest.class
-com/example/demo/ConstructorTrackingExample.class
+com/example/demo/WrappedObjectFlowExample$Message.class
+com/example/demo/DemoApplication.class
+com/example/demo/MessageProcessor.class
 com/example/demo/WrappedObjectFlowExample$MessageWithTracking.class
+com/example/demo/ConstructorTrackingExample.class
 com/example/demo/LeakyService.class

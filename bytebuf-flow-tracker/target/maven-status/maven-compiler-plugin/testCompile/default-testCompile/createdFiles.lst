@@ -1,11 +1,11 @@
-com/example/bytebuf/tracker/test/MethodLevelFilteringTest$AllByteBuffMethods.class
 com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$StaticMethodExample.class
+com/example/bytebuf/tracker/test/MethodLevelFilteringTest$AllByteBuffMethods.class
 com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest.class
-com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$WrappedMessage.class
 com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$ProductionExample.class
+com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$WrappedMessage.class
 com/example/bytebuf/tracker/test/MethodLevelFilteringTest$MySqlAccountStoreFactory.class
 com/example/bytebuf/tracker/test/MethodLevelFilteringTest$SomeByteBuffMethods.class
 com/example/bytebuf/tracker/test/MethodLevelFilteringTest.class
 com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$MessageWithConstructorTracking.class
-com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$TrackedMessage.class
 com/example/bytebuf/tracker/test/MethodLevelFilteringTest$NoByteBuffMethods.class
+com/example/bytebuf/tracker/test/ByteBufFlowTrackerTest$TrackedMessage.class

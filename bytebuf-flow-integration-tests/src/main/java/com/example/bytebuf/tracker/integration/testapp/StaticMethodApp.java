@@ -28,7 +28,7 @@ public class StaticMethodApp {
         System.out.println(renderer.renderIndentedTree());
 
         System.out.println("\n=== Flat Paths ===");
-        System.out.println(renderer.renderFlatPaths());
+        System.out.println(renderer.renderForLLM());
 
         System.out.println("\n=== StaticMethodApp Complete ===");
     }

@@ -67,17 +67,18 @@ public class ByteBufFlowTrackerTest {
         goodBuffer.release();
         tracker.recordMethodCall(goodBuffer, "ResponseWriter", "write", goodBuffer.refCnt());
         
-        // Get the flat view to see leaks
+        // Get the LLM view to see leaks
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
-        String flatView = renderer.renderFlatPaths();
-        
-        System.out.println("\nLeak Detection - Flat Paths:");
-        System.out.println(flatView);
-        
-        // The leaky path should show ref=1 at the end
-        assertTrue(flatView.contains("ErrorLogger.log[1]"));
-        // The good path should show ref=0 at the end
-        assertTrue(flatView.contains("ResponseWriter.write[0]"));
+        String llmView = renderer.renderForLLM();
+
+        System.out.println("\nLeak Detection - LLM View:");
+        System.out.println(llmView);
+
+        // The leaky path should be in the LEAKS section
+        assertTrue(llmView.contains("LEAKS:"));
+        assertTrue(llmView.contains("ErrorLogger.log"));
+        // The good path should have final_ref=0
+        assertTrue(llmView.contains("final_ref=0"));
     }
     
     @Test
@@ -141,26 +142,6 @@ public class ByteBufFlowTrackerTest {
         assertTrue(summary.contains("Total Traversals: 1000"));
     }
     
-    @Test
-    public void testCsvExport() {
-        // Create some test data
-        ByteBuf buffer = Unpooled.buffer(256);
-        
-        tracker.recordMethodCall(buffer, "CsvTest", "method1", buffer.refCnt());
-        tracker.recordMethodCall(buffer, "CsvTest", "method2", buffer.refCnt());
-        buffer.release();
-        tracker.recordMethodCall(buffer, "CsvTest", "method3", buffer.refCnt());
-        
-        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
-        String csv = renderer.renderCsv();
-        
-        System.out.println("\nCSV Export:");
-        System.out.println(csv);
-        
-        assertTrue(csv.startsWith("root,path,final_ref_count,traversal_count,is_leak"));
-        assertTrue(csv.contains("CsvTest.method1"));
-        assertTrue(csv.contains("false")); // not a leak
-    }
     
     @Test
     public void testStaticMethodTracking() {
@@ -257,13 +238,13 @@ public class ByteBufFlowTrackerTest {
         // Analyze the flow
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
-        String flatPaths = renderer.renderFlatPaths();
+        String llmView = renderer.renderForLLM();
 
         System.out.println("\n=== Flow Tree ===");
         System.out.println(tree);
 
-        System.out.println("\n=== Flat Paths ===");
-        System.out.println(flatPaths);
+        System.out.println("\n=== LLM View ===");
+        System.out.println(llmView);
 
         // Check what was tracked
         boolean wrappingTracked = tree.contains("wrapInMessage");
@@ -454,13 +435,13 @@ public class ByteBufFlowTrackerTest {
         // Verify continuous flow
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
-        String flatPaths = renderer.renderFlatPaths();
+        String llmView = renderer.renderForLLM();
 
         System.out.println("\n=== Flow Tree (Continuous) ===");
         System.out.println(tree);
 
-        System.out.println("\n=== Flat Paths ===");
-        System.out.println(flatPaths);
+        System.out.println("\n=== LLM View ===");
+        System.out.println(llmView);
 
         // Verify all steps are present
         assertTrue("allocate should be tracked", tree.contains("allocate"));
@@ -598,13 +579,13 @@ public class ByteBufFlowTrackerTest {
         // Verify the flow
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
-        String flatPaths = renderer.renderFlatPaths();
+        String llmView = renderer.renderForLLM();
 
         System.out.println("\n=== Flow Tree ===");
         System.out.println(tree);
 
-        System.out.println("\n=== Flat Paths ===");
-        System.out.println(flatPaths);
+        System.out.println("\n=== LLM View ===");
+        System.out.println(llmView);
 
         // Verify that:
         // 1. Initial allocation is tracked
@@ -618,7 +599,7 @@ public class ByteBufFlowTrackerTest {
                    tree.contains("release") && tree.contains("[ref=0"));
 
         // 4. The leaf node shows ref=0 (properly released)
-        assertTrue("Leaf should show ref=0 (not a leak)", flatPaths.contains("[0]"));
+        assertTrue("Leaf should show ref=0 (not a leak)", llmView.contains("final_ref=0"));
 
         System.out.println("\n✓ Release tracking verified: Only final release (refCnt->0) is tracked");
         System.out.println("✓ Intermediate releases are skipped to avoid tree clutter");
@@ -647,24 +628,92 @@ public class ByteBufFlowTrackerTest {
         // Verify the flow
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
-        String flatPaths = renderer.renderFlatPaths();
+        String llmView = renderer.renderForLLM();
 
         System.out.println("\n=== Flow Tree ===");
         System.out.println(tree);
 
-        System.out.println("\n=== Flat Paths ===");
-        System.out.println(flatPaths);
+        System.out.println("\n=== LLM View ===");
+        System.out.println(llmView);
 
         // Verify leak detection
-        // Leaky path: ends at "store" with ref=1
-        assertTrue("Leaky path should end with ref=1", flatPaths.contains("store[1]"));
+        // Leaky path should be in LEAKS section with final_ref=1
+        assertTrue("LEAKS section should exist", llmView.contains("LEAKS:"));
+        assertTrue("Leaky path should have final_ref=1", llmView.contains("final_ref=1"));
+        assertTrue("Leaky path should mention store", llmView.contains("store"));
 
-        // Good path: ends at "release" with ref=0
-        assertTrue("Good path should end with ref=0", flatPaths.contains("release[0]"));
+        // Good path should have final_ref=0
+        assertTrue("Good path should have final_ref=0", llmView.contains("final_ref=0"));
 
         System.out.println("\n✓ Leak detection verified:");
         System.out.println("  - Leaf with ref=1 (store) = LEAK");
         System.out.println("  - Leaf with ref=0 (release) = CLEAN");
+    }
+
+    @Test
+    public void testLLMOptimizedFormat() {
+        System.out.println("\n=== LLM-Optimized Format Test ===");
+
+        // Create test data with both leaks and clean paths
+        // Leaky buffer
+        ByteBuf leakyBuffer = Unpooled.buffer(256);
+        tracker.recordMethodCall(leakyBuffer, "Service", "allocate", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "Service", "process", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "Service", "forget", leakyBuffer.refCnt());
+        // Not released - leak!
+
+        // Clean buffer
+        ByteBuf cleanBuffer = Unpooled.buffer(256);
+        tracker.recordMethodCall(cleanBuffer, "Service", "allocate", cleanBuffer.refCnt());
+        tracker.recordMethodCall(cleanBuffer, "Service", "process", cleanBuffer.refCnt());
+        cleanBuffer.release();
+        tracker.recordMethodCall(cleanBuffer, "Service", "cleanup", cleanBuffer.refCnt());
+
+        // Render in LLM format
+        TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
+        String llmView = renderer.renderForLLM();
+
+        System.out.println("\n=== LLM Format Output ===");
+        System.out.println(llmView);
+
+        // Verify structure
+        assertTrue("Should have METADATA section", llmView.contains("METADATA:"));
+        assertTrue("Should have LEAKS section", llmView.contains("LEAKS:"));
+        assertTrue("Should have FLOWS section", llmView.contains("FLOWS:"));
+
+        // Verify metadata
+        assertTrue("Should contain total_roots", llmView.contains("total_roots="));
+        assertTrue("Should contain total_traversals", llmView.contains("total_traversals="));
+        assertTrue("Should contain total_paths", llmView.contains("total_paths="));
+        assertTrue("Should contain leak_paths", llmView.contains("leak_paths="));
+        assertTrue("Should contain leak_percentage", llmView.contains("leak_percentage="));
+
+        // Verify leak detection
+        assertTrue("Should have leak with final_ref=1", llmView.contains("leak|") && llmView.contains("final_ref=1"));
+        assertTrue("Leak should mention forget method", llmView.contains("forget"));
+
+        // Verify flows section contains both leaks and clean paths
+        assertTrue("Should have flow entries", llmView.contains("flow|"));
+        assertTrue("Should have is_leak=true", llmView.contains("is_leak=true"));
+        assertTrue("Should have is_leak=false", llmView.contains("is_leak=false"));
+        assertTrue("Clean flow should have final_ref=0", llmView.contains("final_ref=0"));
+
+        // Verify the format is pipe-delimited
+        String[] lines = llmView.split("\n");
+        for (String line : lines) {
+            if (line.startsWith("leak|") || line.startsWith("flow|")) {
+                assertTrue("Flow/leak lines should be pipe-delimited", line.contains("|"));
+                assertTrue("Should contain root field", line.contains("root="));
+                assertTrue("Should contain final_ref field", line.contains("final_ref="));
+                assertTrue("Should contain path field", line.contains("path="));
+            }
+        }
+
+        System.out.println("\n✓ LLM format verified:");
+        System.out.println("  - Structured sections (METADATA, LEAKS, FLOWS)");
+        System.out.println("  - Pipe-delimited fields for easy parsing");
+        System.out.println("  - Leak detection in dedicated section");
+        System.out.println("  - Token-efficient representation");
     }
 
     @Test

@@ -106,7 +106,7 @@ public class CustomObjectExample {
 
         // Flat paths highlighting leaks
         System.out.println("=== Flat Paths (Leaks Highlighted) ===");
-        System.out.println(renderer.renderFlatPaths());
+        System.out.println(renderer.renderForLLM());
         System.out.println();
 
         System.out.println("Look for leaf nodes with metric=1 - those are file handles that weren't closed!");

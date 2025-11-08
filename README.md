@@ -335,13 +335,11 @@ jconsole localhost:9999
 
 **JMX Operations**:
 - `getTreeView()` - Get hierarchical tree view
-- `getFlatView()` - Get flat root-to-leaf paths
-- `getCsvView()` - Get CSV format
-- `getJsonView()` - Get JSON format
+- `getLLMView()` - Get LLM-optimized structured format
 - `getSummary()` - Get statistics summary
 - `getActiveFlowCount()` - Get count of currently tracked objects
 - `getRootCount()` - Get number of root methods
-- `exportToFile(filepath, format)` - Export to file (formats: tree, flat, csv, json)
+- `exportToFile(filepath, format)` - Export to file (formats: tree, llm)
 - `reset()` - Clear all tracking data
 
 ## Custom Object Tracking
@@ -399,9 +397,7 @@ TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
 // View tracking data
 System.out.println(renderer.renderSummary());        // Statistics
 System.out.println(renderer.renderIndentedTree());   // Tree view
-System.out.println(renderer.renderFlatPaths());      // Flat paths (leaks highlighted)
-System.out.println(renderer.renderCsv());            // CSV export
-System.out.println(renderer.renderJson());           // JSON export
+System.out.println(renderer.renderForLLM());         // LLM-optimized format
 
 // Active monitoring
 int activeObjects = tracker.getActiveFlowCount();    // Currently tracked objects

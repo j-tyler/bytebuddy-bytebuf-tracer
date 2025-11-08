@@ -9,9 +9,7 @@ package com.example.bytebuf.tracker.agent;
 public interface ByteBufFlowMBean {
     // View operations
     String getTreeView();
-    String getFlatView();
-    String getCsvView();
-    String getJsonView();
+    String getLLMView();
     String getSummary();
 
     // Statistics

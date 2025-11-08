@@ -104,6 +104,47 @@ buffer.release();                      // ✓ Tracked ONLY if refCnt -> 0
 - No tree clutter from intermediate `release()` calls
 - Tracks `retain()` to show refCount increases
 
+**Interpreting Leaf Nodes**:
+
+| Leaf Node Pattern | Meaning | Action |
+|-------------------|---------|--------|
+| `release() [ref=0]` | ByteBuf properly released | ✓ No action needed |
+| `SomeMethod [ref=1]` | ByteBuf not released | ⚠️ Investigate for leak |
+| `SomeMethod [ref>1]` | ByteBuf retained but not released | ⚠️ Investigate for leak |
+
+**Complex Example - Multiple Retain/Release**:
+
+```java
+ByteBuf buffer = Unpooled.buffer(256);          // ref=1
+
+buffer.retain();                                 // ref=1 -> 2 ✓ TRACKED
+processor.process(buffer);                       // ref=2
+
+buffer.retain();                                 // ref=2 -> 3 ✓ TRACKED
+worker.work(buffer);                             // ref=3
+
+buffer.release();                                // ref=3 -> 2 ✗ SKIPPED (intermediate)
+worker.cleanup(buffer);                          // ref=2
+
+buffer.release();                                // ref=2 -> 1 ✗ SKIPPED (intermediate)
+processor.finish(buffer);                        // ref=1
+
+buffer.release();                                // ref=1 -> 0 ✓ TRACKED (final)
+```
+
+**Flow Tree**:
+```
+ROOT: Processor.process [count=1]
+└── UnpooledHeapByteBuf.retain [ref=2, count=1]
+    └── Worker.work [ref=3, count=1]
+        └── UnpooledHeapByteBuf.retain [ref=3, count=1]
+            └── Worker.cleanup [ref=2, count=1]
+                └── Processor.finish [ref=1, count=1]
+                    └── UnpooledHeapByteBuf.release [ref=0, count=1]  ✓ Clean
+```
+
+**Note**: Only retain calls and the FINAL release are tracked. Intermediate releases are skipped to keep the tree clean.
+
 ### Static Method Tracking
 
 **Enabled by default** - Static methods are automatically tracked.
@@ -450,6 +491,26 @@ ROOT: Client.allocate [count=10]
 2. Ensure objects are actually used in tracked packages
 3. Test with broader include: `include=com,org`
 4. Check agent logs for instrumentation messages
+
+**Understanding what gets instrumented**:
+
+The agent only instruments methods that have ByteBuf in their signature (parameters or return type):
+
+```java
+// ✓ INSTRUMENTED - Has ByteBuf parameter
+public void processByteBuf(ByteBuf buf) { }
+
+// ✓ INSTRUMENTED - Returns ByteBuf
+public ByteBuf createBuffer() { }
+
+// ✗ NOT INSTRUMENTED - No ByteBuf in signature
+public void setName(String name) { }
+
+// ✗ NOT INSTRUMENTED - ByteBuf is wrapped
+public void processMessage(Message msg) { }  // Even if Message contains ByteBuf
+```
+
+If a class has NO ByteBuf methods, it won't be transformed at all.
 
 ### Too much data
 

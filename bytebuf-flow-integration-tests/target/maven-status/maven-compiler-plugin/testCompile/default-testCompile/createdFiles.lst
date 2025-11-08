@@ -1,6 +1,0 @@
-com/example/bytebuf/tracker/integration/LeakDetectionIT.class
-com/example/bytebuf/tracker/integration/StaticMethodTrackingIT.class
-com/example/bytebuf/tracker/integration/BasicInstrumentationIT.class
-com/example/bytebuf/tracker/integration/ConstructorTrackingIT.class
-com/example/bytebuf/tracker/integration/WrapperObjectTrackingIT.class
-com/example/bytebuf/tracker/integration/PackageFilteringIT.class

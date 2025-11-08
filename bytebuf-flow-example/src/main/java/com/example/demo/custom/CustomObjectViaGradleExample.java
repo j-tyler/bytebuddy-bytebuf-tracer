@@ -1,3 +1,8 @@
+/*
+ * Copyright 2025 Justin Marsh
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.example.demo.custom;
 
 import com.example.bytebuf.tracker.ByteBufFlowTracker;

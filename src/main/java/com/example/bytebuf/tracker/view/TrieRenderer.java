@@ -12,86 +12,112 @@ import java.util.stream.Collectors;
  * Pure presentation logic - no business logic or analysis.
  */
 public class TrieRenderer {
-    
+
+    /**
+     * Maximum recursion depth to prevent StackOverflowError from cyclic graphs.
+     * This limits how deep we traverse the tree structure during rendering.
+     * 100 levels is plenty for debugging while preventing stack overflow.
+     */
+    private static final int MAX_RECURSION_DEPTH = 100;
+
     private final FlowTrie trie;
-    
+
     public TrieRenderer(FlowTrie trie) {
         this.trie = trie;
     }
-    
+
     /**
      * Render as indented tree format (human-readable)
      */
     public String renderIndentedTree() {
         StringBuilder sb = new StringBuilder();
-        
+
         // Sort roots by traversal count for better visibility
         List<Map.Entry<String, TrieNode>> sortedRoots = trie.getRoots().entrySet().stream()
-            .sorted((a, b) -> Long.compare(b.getValue().getTraversalCount(), 
+            .sorted((a, b) -> Long.compare(b.getValue().getTraversalCount(),
                                           a.getValue().getTraversalCount()))
             .collect(Collectors.toList());
-        
+
         for (Map.Entry<String, TrieNode> entry : sortedRoots) {
             sb.append("ROOT: ").append(entry.getKey());
             sb.append(" [count=").append(entry.getValue().getTraversalCount()).append("]\n");
-            renderNode(sb, entry.getValue(), "", true, true);
+            renderNode(sb, entry.getValue(), "", true, true, 0);
         }
-        
+
         return sb.toString();
     }
-    
-    private void renderNode(StringBuilder sb, TrieNode node, String prefix, boolean isLast, boolean isRoot) {
+
+    private void renderNode(StringBuilder sb, TrieNode node, String prefix, boolean isLast, boolean isRoot, int depth) {
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            if (!isRoot) {
+                sb.append(prefix);
+                sb.append(isLast ? "└── " : "├── ");
+                sb.append("[MAX DEPTH REACHED - Truncated at ").append(depth).append(" levels]\n");
+            }
+            return;
+        }
+
         if (!isRoot) {
             sb.append(prefix);
             sb.append(isLast ? "└── " : "├── ");
             sb.append(formatNode(node));
             sb.append("\n");
         }
-        
+
         String childPrefix = isRoot ? "" : prefix + (isLast ? "    " : "│   ");
-        
+
         List<Map.Entry<NodeKey, TrieNode>> children = new ArrayList<>(node.getChildren().entrySet());
         // Sort children by traversal count
-        children.sort((a, b) -> Long.compare(b.getValue().getTraversalCount(), 
+        children.sort((a, b) -> Long.compare(b.getValue().getTraversalCount(),
                                             a.getValue().getTraversalCount()));
-        
+
         for (int i = 0; i < children.size(); i++) {
             Map.Entry<NodeKey, TrieNode> child = children.get(i);
             boolean isLastChild = (i == children.size() - 1);
-            renderNode(sb, child.getValue(), childPrefix, isLastChild, false);
+            renderNode(sb, child.getValue(), childPrefix, isLastChild, false, depth + 1);
         }
     }
-    
+
     private String formatNode(TrieNode node) {
         StringBuilder sb = new StringBuilder();
         sb.append(node.getClassName()).append(".").append(node.getMethodName());
         sb.append(" [ref=").append(node.getRefCount());
         sb.append(", count=").append(node.getTraversalCount()).append("]");
-        
+
         // Add indicators for potential issues
         if (node.isLeaf() && node.getRefCount() != 0) {
             sb.append(" ⚠️ LEAK");
         }
-        
+
         return sb.toString();
     }
-    
+
     /**
      * Render as flat paths (each root-to-leaf path on one line)
      */
     public String renderFlatPaths() {
         StringBuilder sb = new StringBuilder();
-        
+
         for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
             List<String> currentPath = new ArrayList<>();
             currentPath.add(entry.getKey());
-            collectPaths(sb, entry.getValue(), currentPath);
+            collectPaths(sb, entry.getValue(), currentPath, 0);
         }
-        
+
         return sb.toString();
     }
-    
-    private void collectPaths(StringBuilder sb, TrieNode node, List<String> currentPath) {
+
+    private void collectPaths(StringBuilder sb, TrieNode node, List<String> currentPath, int depth) {
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            sb.append("[count=").append(node.getTraversalCount()).append("]");
+            sb.append(" [MAX DEPTH REACHED at ").append(depth).append(" levels] ");
+            sb.append(String.join(" -> ", currentPath));
+            sb.append("\n");
+            return;
+        }
+
         if (node.isLeaf()) {
             // Leaf node - output the complete path
             sb.append("[count=").append(node.getTraversalCount()).append("]");
@@ -106,36 +132,46 @@ public class TrieRenderer {
             for (Map.Entry<NodeKey, TrieNode> child : node.getChildren().entrySet()) {
                 List<String> newPath = new ArrayList<>(currentPath);
                 newPath.add(formatNodeCompact(child.getValue()));
-                collectPaths(sb, child.getValue(), newPath);
+                collectPaths(sb, child.getValue(), newPath, depth + 1);
             }
         }
     }
-    
+
     private String formatNodeCompact(TrieNode node) {
-        return String.format("%s.%s[%d]", 
-            node.getClassName(), 
-            node.getMethodName(), 
+        return String.format("%s.%s[%d]",
+            node.getClassName(),
+            node.getMethodName(),
             node.getRefCount());
     }
-    
+
     /**
      * Render as CSV for analysis in spreadsheets
      */
     public String renderCsv() {
         StringBuilder sb = new StringBuilder();
         sb.append("root,path,final_ref_count,traversal_count,is_leak\n");
-        
+
         for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
             List<String> currentPath = new ArrayList<>();
-            exportToCsv(sb, entry.getKey(), entry.getValue(), currentPath);
+            exportToCsv(sb, entry.getKey(), entry.getValue(), currentPath, 0);
         }
-        
+
         return sb.toString();
     }
-    
-    private void exportToCsv(StringBuilder sb, String root, TrieNode node, List<String> currentPath) {
+
+    private void exportToCsv(StringBuilder sb, String root, TrieNode node, List<String> currentPath, int depth) {
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            sb.append('"').append(root).append('"').append(',');
+            sb.append('"').append(String.join(" -> ", currentPath)).append(" -> [MAX DEPTH REACHED]").append('"').append(',');
+            sb.append(node.getRefCount()).append(',');
+            sb.append(node.getTraversalCount()).append(',');
+            sb.append("truncated").append('\n');
+            return;
+        }
+
         currentPath.add(formatNodeCompact(node));
-        
+
         if (node.isLeaf()) {
             boolean isLeak = node.getRefCount() != 0;
             sb.append('"').append(root).append('"').append(',');
@@ -145,11 +181,11 @@ public class TrieRenderer {
             sb.append(isLeak ? "true" : "false").append('\n');
         } else {
             for (TrieNode child : node.getChildren().values()) {
-                exportToCsv(sb, root, child, new ArrayList<>(currentPath));
+                exportToCsv(sb, root, child, new ArrayList<>(currentPath), depth + 1);
             }
         }
     }
-    
+
     /**
      * Render as JSON for programmatic analysis
      */
@@ -158,40 +194,50 @@ public class TrieRenderer {
         sb.append("{\n");
         sb.append("  \"rootCount\": ").append(trie.getRootCount()).append(",\n");
         sb.append("  \"roots\": [\n");
-        
+
         boolean firstRoot = true;
         for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
             if (!firstRoot) sb.append(",\n");
             firstRoot = false;
-            
+
             sb.append("    {\n");
             sb.append("      \"name\": \"").append(entry.getKey()).append("\",\n");
             sb.append("      \"traversalCount\": ").append(entry.getValue().getTraversalCount()).append(",\n");
             sb.append("      \"tree\": ");
-            renderNodeJson(sb, entry.getValue(), "      ");
+            renderNodeJson(sb, entry.getValue(), "      ", 0);
             sb.append("\n    }");
         }
-        
+
         sb.append("\n  ]\n");
         sb.append("}\n");
-        
+
         return sb.toString();
     }
-    
-    private void renderNodeJson(StringBuilder sb, TrieNode node, String indent) {
+
+    private void renderNodeJson(StringBuilder sb, TrieNode node, String indent, int depth) {
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            sb.append("{\n");
+            sb.append(indent).append("  \"truncated\": true,\n");
+            sb.append(indent).append("  \"reason\": \"MAX_DEPTH_REACHED\",\n");
+            sb.append(indent).append("  \"depth\": ").append(depth).append("\n");
+            sb.append(indent).append("}");
+            return;
+        }
+
         sb.append("{\n");
         sb.append(indent).append("  \"class\": \"").append(node.getClassName()).append("\",\n");
         sb.append(indent).append("  \"method\": \"").append(node.getMethodName()).append("\",\n");
         sb.append(indent).append("  \"refCount\": ").append(node.getRefCount()).append(",\n");
         sb.append(indent).append("  \"traversalCount\": ").append(node.getTraversalCount()).append(",\n");
         sb.append(indent).append("  \"isLeaf\": ").append(node.isLeaf()).append(",\n");
-        
+
         if (node.isLeaf() && node.getRefCount() != 0) {
             sb.append(indent).append("  \"isLeak\": true,\n");
         }
-        
+
         sb.append(indent).append("  \"children\": [");
-        
+
         if (!node.getChildren().isEmpty()) {
             sb.append("\n");
             boolean firstChild = true;
@@ -199,16 +245,16 @@ public class TrieRenderer {
                 if (!firstChild) sb.append(",\n");
                 firstChild = false;
                 sb.append(indent).append("    ");
-                renderNodeJson(sb, child, indent + "    ");
+                renderNodeJson(sb, child, indent + "    ", depth + 1);
             }
             sb.append("\n").append(indent).append("  ]");
         } else {
             sb.append("]");
         }
-        
+
         sb.append("\n").append(indent).append("}");
     }
-    
+
     /**
      * Render in LLM-optimized format for automated analysis.
      * Structured text format with clear sections for easy parsing.
@@ -222,7 +268,7 @@ public class TrieRenderer {
         int leakPaths = 0;
 
         for (TrieNode root : trie.getRoots().values()) {
-            PathStats stats = calculatePathStats(root);
+            PathStats stats = calculatePathStats(root, 0);
             totalTraversals += root.getTraversalCount();
             totalPaths += stats.pathCount;
             leakPaths += stats.leakCount;
@@ -245,7 +291,7 @@ public class TrieRenderer {
             sb.append("none\n");
         } else {
             for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
-                collectLeaks(sb, entry.getKey(), entry.getValue(), new ArrayList<>());
+                collectLeaks(sb, entry.getKey(), entry.getValue(), new ArrayList<>(), 0);
             }
         }
         sb.append("\n");
@@ -253,13 +299,24 @@ public class TrieRenderer {
         // Complete flows section
         sb.append("FLOWS:\n");
         for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
-            collectFlowsForLLM(sb, entry.getKey(), entry.getValue(), new ArrayList<>());
+            collectFlowsForLLM(sb, entry.getKey(), entry.getValue(), new ArrayList<>(), 0);
         }
 
         return sb.toString();
     }
 
-    private void collectLeaks(StringBuilder sb, String root, TrieNode node, List<String> currentPath) {
+    private void collectLeaks(StringBuilder sb, String root, TrieNode node, List<String> currentPath, int depth) {
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            if (node.getRefCount() != 0) {
+                sb.append("leak|root=").append(root);
+                sb.append("|final_ref=").append(node.getRefCount());
+                sb.append("|path=").append(String.join(" -> ", currentPath)).append(" -> [MAX DEPTH REACHED]");
+                sb.append("\n");
+            }
+            return;
+        }
+
         currentPath.add(formatNodeForLLM(node));
 
         if (node.isLeaf()) {
@@ -271,12 +328,23 @@ public class TrieRenderer {
             }
         } else {
             for (TrieNode child : node.getChildren().values()) {
-                collectLeaks(sb, root, child, new ArrayList<>(currentPath));
+                collectLeaks(sb, root, child, new ArrayList<>(currentPath), depth + 1);
             }
         }
     }
 
-    private void collectFlowsForLLM(StringBuilder sb, String root, TrieNode node, List<String> currentPath) {
+    private void collectFlowsForLLM(StringBuilder sb, String root, TrieNode node, List<String> currentPath, int depth) {
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            sb.append("flow|root=").append(root);
+            sb.append("|final_ref=").append(node.getRefCount());
+            sb.append("|is_leak=").append(node.getRefCount() != 0);
+            sb.append("|truncated=true");
+            sb.append("|path=").append(String.join(" -> ", currentPath)).append(" -> [MAX DEPTH REACHED]");
+            sb.append("\n");
+            return;
+        }
+
         currentPath.add(formatNodeForLLM(node));
 
         if (node.isLeaf()) {
@@ -287,7 +355,7 @@ public class TrieRenderer {
             sb.append("\n");
         } else {
             for (TrieNode child : node.getChildren().values()) {
-                collectFlowsForLLM(sb, root, child, new ArrayList<>(currentPath));
+                collectFlowsForLLM(sb, root, child, new ArrayList<>(currentPath), depth + 1);
             }
         }
     }
@@ -313,7 +381,7 @@ public class TrieRenderer {
         int leakPaths = 0;
 
         for (TrieNode root : trie.getRoots().values()) {
-            PathStats stats = calculatePathStats(root);
+            PathStats stats = calculatePathStats(root, 0);
             totalTraversals += root.getTraversalCount();
             totalPaths += stats.pathCount;
             leakPaths += stats.leakCount;
@@ -330,15 +398,25 @@ public class TrieRenderer {
 
         return sb.toString();
     }
-    
+
     private static class PathStats {
         int pathCount = 0;
         int leakCount = 0;
     }
-    
-    private PathStats calculatePathStats(TrieNode node) {
+
+    private PathStats calculatePathStats(TrieNode node, int depth) {
         PathStats stats = new PathStats();
-        
+
+        // Prevent stack overflow from cyclic graphs or very deep trees
+        if (depth >= MAX_RECURSION_DEPTH) {
+            // Treat max-depth nodes as leaf nodes for stats purposes
+            stats.pathCount = 1;
+            if (node.getRefCount() != 0) {
+                stats.leakCount = 1;
+            }
+            return stats;
+        }
+
         if (node.isLeaf()) {
             stats.pathCount = 1;
             if (node.getRefCount() != 0) {
@@ -346,12 +424,12 @@ public class TrieRenderer {
             }
         } else {
             for (TrieNode child : node.getChildren().values()) {
-                PathStats childStats = calculatePathStats(child);
+                PathStats childStats = calculatePathStats(child, depth + 1);
                 stats.pathCount += childStats.pathCount;
                 stats.leakCount += childStats.leakCount;
             }
         }
-        
+
         return stats;
     }
 }

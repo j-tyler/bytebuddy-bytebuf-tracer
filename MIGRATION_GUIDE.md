@@ -161,6 +161,10 @@ Option C - Production (Command Line):
 ```bash
 java -javaagent:bytebuf-flow-tracker-agent.jar=include=com.yourcompany \
      -jar your-application.jar
+
+# To exclude packages (e.g., to avoid Mockito conflicts with DTOs):
+java -javaagent:bytebuf-flow-tracker-agent.jar=include=com.yourcompany;exclude=com.yourcompany.protocol,com.yourcompany.dto \
+     -jar your-application.jar
 ```
 
 ### Step 3: Access Results

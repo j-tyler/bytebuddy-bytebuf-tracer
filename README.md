@@ -558,6 +558,9 @@ Format: `include=package1,package2;exclude=package3,package4;trackConstructors=c
 # Exclude third-party
 -javaagent:tracker.jar=include=com.example;exclude=org.apache,io.netty
 
+# Exclude protocol/DTO classes to avoid Mockito conflicts
+-javaagent:tracker.jar=include=com.github.ambry;exclude=com.github.ambry.protocol
+
 # Enable constructor tracking for wrapper classes
 -javaagent:tracker.jar=include=com.example;trackConstructors=com.example.Message,com.example.Request
 
@@ -672,6 +675,32 @@ See [WRAPPER_TRACKING.md](WRAPPER_TRACKING.md) for details.
 2. System property spelled correctly? `-Dobject.tracker.handler=...`
 3. Check console for `[ObjectTrackerRegistry]` messages
 4. Is `shouldTrack()` returning true? Add debug logging
+
+### Mockito test failures
+
+**Symptoms**: `Mockito cannot mock this class` or `class redefinition failed: attempted to delete a method`
+
+**Root Cause**: The agent transforms classes with ByteBuf in their signatures. When Mockito 5 tries to retransform an already-transformed class, the JVM rejects it.
+
+**Solutions**:
+1. **Exclude DTO/protocol/response classes** that are mocked but don't cause leaks:
+   ```bash
+   -javaagent:tracker.jar=include=com.yourcompany;exclude=com.yourcompany.protocol,com.yourcompany.dto
+   ```
+
+2. **Exclude specific packages** commonly mocked in tests:
+   ```bash
+   # Exclude classes implementing ByteBufHolder (data carriers)
+   -javaagent:tracker.jar=include=com.github.ambry;exclude=com.github.ambry.protocol
+   ```
+
+3. **Pattern**: Exclude packages containing:
+   - DTOs (Data Transfer Objects)
+   - Protocol messages/responses
+   - Classes implementing `ByteBufHolder` that are just data carriers
+   - Any class that is mocked in tests and has ByteBuf in its signature
+
+**Why this works**: Excluding these classes prevents the agent from transforming them, allowing Mockito to work normally. These classes typically don't cause leaks anyway (they're just data containers).
 
 ### JMX connection fails
 

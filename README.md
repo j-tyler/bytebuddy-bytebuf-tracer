@@ -735,6 +735,15 @@ String summary = renderer.renderSummary();
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
+All source files use [SPDX license identifiers](https://spdx.dev/learn/handling-license-info/) for brevity and machine-readability:
+
+```java
+/*
+ * Copyright 2025 Justin Marsh
+ * SPDX-License-Identifier: Apache-2.0
+ */
+```
+
 ### Third-Party Licenses
 
 This project bundles the following dependencies:

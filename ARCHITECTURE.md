@@ -37,6 +37,7 @@ bytebuddy-bytebuf-tracer/
 **Key Methods**:
 - `recordMethodCall(Object, String, String, int)` - Track a method call
 - `getTrie()` - Get the underlying Trie structure
+- `getActiveFlowCount()` - Get count of currently tracked objects
 - `reset()` - Clear all tracking data
 
 **Design**:
@@ -44,6 +45,36 @@ bytebuddy-bytebuf-tracer/
 - Thread-safe using ConcurrentHashMap for object-to-root mapping
 - Uses `System.identityHashCode()` to track object identity
 - First method to handle an object becomes its root node
+
+**Active Flow Monitoring**:
+
+The tracker maintains a `ConcurrentHashMap<Integer, FlowContext>` called `activeFlows` that maps object identity hash codes to their current tracking context.
+
+**FlowContext** holds:
+- Object ID (identity hash code)
+- Current node in the Trie
+- Whether root has been set
+
+**Lifecycle**:
+1. When object first seen → Create FlowContext, create root node
+2. On each method call → Update FlowContext to point to new node
+3. When metric reaches 0 (e.g., refCnt=0) → Remove from activeFlows
+
+**Real-time monitoring**:
+```java
+tracker.getActiveFlowCount()  // Returns activeFlows.size()
+```
+
+This provides:
+- Count of objects currently being tracked (not yet released/closed)
+- Detection of object accumulation before they become leaks
+- Available via programmatic API and JMX MBean
+- Useful for debugging and runtime monitoring
+
+**Memory management**: Objects automatically removed from tracking when:
+- Their metric reaches 0 (e.g., ByteBuf.refCnt() == 0)
+- They are explicitly removed via reset()
+- JVM shuts down (map cleared)
 
 ### 2. FlowTrie
 
@@ -94,15 +125,57 @@ bytebuddy-bytebuf-tracer/
 
 **Execution Flow**:
 ```
+@OnMethodEnter (runs before method body)
+  ↓
+1. Check re-entrance guard (prevent infinite recursion)
+2. Check parameters - any tracked objects?
+3. For each tracked object:
+   - Extract metric
+   - Record method call in tracker
+
 @OnMethodExit (runs after method completes)
   ↓
-1. Check return value - is it ByteBuf?
-2. Check parameters - any ByteBuf?
-3. For each ByteBuf found:
-   - Extract metric (refCnt())
-   - Record method call in tracker
-   - Handle release() specially (only track if refCnt -> 0)
+1. Check re-entrance guard
+2. Check parameters - track exit state with "_exit" suffix
+3. Check return value - track with "_return" suffix
+4. For each tracked object:
+   - Extract current metric
+   - Record in tracker
 ```
+
+**Re-entrance Guard Mechanism**:
+```java
+private static final ThreadLocal<Boolean> IS_TRACKING =
+    ThreadLocal.withInitial(() -> false);
+
+// In advice methods:
+if (IS_TRACKING.get()) return;  // Already tracking, skip
+try {
+    IS_TRACKING.set(true);
+    // ... tracking logic ...
+} finally {
+    IS_TRACKING.set(false);
+}
+```
+
+**Why this is critical**:
+- Prevents infinite recursion when tracking code calls instrumented methods
+- Uses ThreadLocal for thread safety without locks
+- Explains why some methods might not appear in traces (called during tracking)
+
+**Method Exit Tracking with Suffixes**:
+
+The advice tracks BOTH method entry and exit, appending suffixes to differentiate:
+- `methodName` - Tracked at method entry (from parameters)
+- `methodName_exit` - Tracked at method exit (parameter state changes)
+- `methodName_return` - Tracked at method exit (return values)
+
+**Example flow tree**:
+```
+allocate → process_exit → process_return → cleanup
+```
+
+This allows tracking state changes across method execution. Users will see these suffixes in their flow trees.
 
 **Special Cases**:
 - **release()**: Only tracked when refCnt drops to 0 (prevents tree clutter)
@@ -219,6 +292,30 @@ if (methodName.equals("release")) {
 - `ConcurrentHashMap` for object-to-root mapping
 - `ConcurrentHashMap` for Trie nodes
 - Lock-free updates (critical for performance)
+- ThreadLocal-based re-entrance guard (no locks)
+
+**Re-entrance Prevention**:
+
+Critical design feature to prevent infinite recursion:
+
+```java
+// In ByteBufTrackingAdvice.java
+private static final ThreadLocal<Boolean> IS_TRACKING =
+    ThreadLocal.withInitial(() -> false);
+```
+
+**How it works**:
+1. Before tracking: Check `IS_TRACKING.get()`
+2. If true → Already tracking on this thread → Skip and return
+3. If false → Set to true, execute tracking logic, set back to false
+
+**Why this is necessary**:
+- Tracking code itself may call instrumented methods
+- Without guard: infinite recursion (StackOverflowError)
+- Example: `tracker.recordMethodCall()` might trigger `toString()` on tracked object
+- ThreadLocal ensures per-thread isolation without global locks
+
+**Side effect**: Methods called during tracking will not appear in traces. This is intentional and acceptable.
 
 **Memory Model**:
 - No synchronization on read paths
@@ -229,6 +326,7 @@ if (methodName.equals("release")) {
 - ~5-10% overhead in high-throughput scenarios
 - Zero allocations during tracking
 - No stack trace collection (major performance win)
+- ThreadLocal access is fast (thread-local storage)
 
 ## Build System
 

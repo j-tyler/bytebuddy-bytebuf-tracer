@@ -197,7 +197,16 @@ jconsole localhost:9999
 # Navigate to: MBeans → com.example → ByteBufFlowTracker
 ```
 
-**JMX Operations**: `getTreeView()`, `getFlatView()`, `getCsvView()`, `getJsonView()`, `getSummary()`, `reset()`
+**JMX Operations**:
+- `getTreeView()` - Get hierarchical tree view
+- `getFlatView()` - Get flat root-to-leaf paths
+- `getCsvView()` - Get CSV format
+- `getJsonView()` - Get JSON format
+- `getSummary()` - Get statistics summary
+- `getActiveFlowCount()` - Get count of currently tracked objects
+- `getRootCount()` - Get number of root methods
+- `exportToFile(filepath, format)` - Export to file (formats: tree, flat, csv, json)
+- `reset()` - Clear all tracking data
 
 ## Tracking Capabilities
 
@@ -267,10 +276,26 @@ public class ConnectionTracker implements ObjectTrackerHandler {
     public int getMetric(Object obj) { return ((Connection) obj).isClosed() ? 0 : 1; }
     public String getObjectType() { return "DatabaseConnection"; }
 }
-
-// Register in main()
-ObjectTrackerRegistry.setHandler(new ConnectionTracker());
 ```
+
+**Registration Options:**
+
+**Option 1: System Property** (no code changes needed)
+```bash
+java -Dobject.tracker.handler=com.yourcompany.ConnectionTracker \
+     -javaagent:tracker.jar=include=com.yourcompany \
+     -jar your-app.jar
+```
+
+**Option 2: Programmatic** (in your application code)
+```java
+public static void main(String[] args) {
+    ObjectTrackerRegistry.setHandler(new ConnectionTracker());
+    // ... start application
+}
+```
+
+**Note**: The handler must be set BEFORE any tracked objects are created. Use system property if you can't modify application code or need to avoid static initialization order issues.
 
 **Metric Selection Guide:**
 
@@ -293,11 +318,17 @@ import com.example.bytebuf.tracker.view.TrieRenderer;
 ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
 
+// View tracking data
 System.out.println(renderer.renderSummary());        // Statistics
 System.out.println(renderer.renderIndentedTree());   // Tree view
 System.out.println(renderer.renderFlatPaths());      // Flat paths (leaks highlighted)
 System.out.println(renderer.renderCsv());            // CSV export
 System.out.println(renderer.renderJson());           // JSON export
+
+// Active monitoring
+int activeObjects = tracker.getActiveFlowCount();    // Currently tracked objects
+int rootMethods = tracker.getTrie().getRootCount();  // Root methods
+System.out.println("Active flows: " + activeObjects + ", Roots: " + rootMethods);
 ```
 
 ### Output Formats
@@ -322,6 +353,44 @@ leak|root=LeakyExample.allocate|final_ref=1|path=LeakyExample.allocate[ref=1] ->
 FLOWS:
 flow|root=DirectExample.allocate|final_ref=0|is_leak=false|path=DirectExample.allocate[ref=1] -> cleanup[ref=0]
 ```
+
+### Automatic Shutdown Report
+
+The agent automatically registers a shutdown hook that prints a comprehensive final report when the JVM exits. This is useful for:
+- Batch jobs that run and exit
+- Short-lived processes
+- Testing scenarios
+- Getting results without setting up JMX
+
+**What's included in the shutdown report:**
+- Summary statistics (total roots, paths, leaks)
+- Full flow tree
+- List of all detected leaks with complete paths
+
+**Example output:**
+```
+=== ByteBuf Flow Final Report ===
+ByteBuf Flow Analysis Report
+Generated: Thu Nov 08 12:34:56 UTC 2025
+================================================================================
+
+=== ByteBuf Flow Summary ===
+Total Root Methods: 3
+Total Traversals: 15
+Unique Paths: 4
+Leak Paths: 1
+Leak Percentage: 25.00%
+
+=== Flow Tree ===
+ROOT: Client.allocate [count=10]
+└── Handler.process [ref=1, count=10]
+    └── Handler.cleanup [ref=0, count=9]
+
+=== Potential Leaks ===
+[count=1] [LEAK:ref=1] Client.allocate -> Handler.process[1]
+```
+
+**Note**: This report is printed to stdout during JVM shutdown. To disable, you would need to modify the agent code (not configurable via arguments).
 
 ## Troubleshooting
 

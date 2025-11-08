@@ -4,13 +4,20 @@ import com.example.bytebuf.tracker.ByteBufFlowTracker;
 import com.example.bytebuf.tracker.ObjectTrackerHandler;
 import com.example.bytebuf.tracker.ObjectTrackerRegistry;
 import net.bytebuddy.asm.Advice;
-import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 /**
- * ByteBuddy advice for tracking object flow through methods.
- * Originally designed for ByteBuf, but now supports any object via ObjectTrackerHandler.
+ * ByteBuddy advice for tracking object flow through constructors.
+ * This is separate from ByteBufTrackingAdvice because constructors have special constraints:
+ *
+ * - Cannot use onThrowable = Throwable.class (would wrap code before super() call)
+ * - JVM bytecode verifier requires super()/this() to be called first
+ * - Exception handlers can only exist AFTER super/this call completes
+ *
+ * Trade-off: We don't track exceptions during construction, but this is acceptable because:
+ * - Exceptions during construction are rare and typically fatal
+ * - We still track entry and exit states, which is the primary goal
  */
-public class ByteBufTrackingAdvice {
+public class ByteBufConstructorAdvice {
 
     // Re-entrance guard to prevent infinite recursion when tracking code
     // triggers other instrumented methods
@@ -18,12 +25,11 @@ public class ByteBufTrackingAdvice {
         ThreadLocal.withInitial(() -> false);
 
     /**
-     * Method entry advice - tracks objects in parameters
+     * Constructor entry advice - tracks objects in parameters
      */
     @Advice.OnMethodEnter
-    public static void onMethodEnter(
+    public static void onConstructorEnter(
             @Advice.Origin Class<?> clazz,
-            @Advice.Origin("#m") String methodName,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -46,7 +52,7 @@ public class ByteBufTrackingAdvice {
                     tracker.recordMethodCall(
                         arg,
                         clazz.getSimpleName(),
-                        methodName,
+                        "<init>",
                         metric
                     );
                 }
@@ -57,15 +63,17 @@ public class ByteBufTrackingAdvice {
     }
 
     /**
-     * Method exit advice - tracks objects in return values and final state
+     * Constructor exit advice - tracks final state of objects in parameters
+     *
+     * IMPORTANT: Does NOT use onThrowable parameter because:
+     * - Constructors cannot have exception handlers before super() call
+     * - JVM bytecode verifier would reject the instrumented class
+     * - This is a necessary trade-off for constructor tracking
      */
-    @Advice.OnMethodExit(onThrowable = Throwable.class)
-    public static void onMethodExit(
+    @Advice.OnMethodExit
+    public static void onConstructorExit(
             @Advice.Origin Class<?> clazz,
-            @Advice.Origin("#m") String methodName,
-            @Advice.AllArguments Object[] arguments,
-            @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
-            @Advice.Thrown Throwable thrown) {
+            @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
         if (IS_TRACKING.get()) {
@@ -86,22 +94,11 @@ public class ByteBufTrackingAdvice {
                         tracker.recordMethodCall(
                             arg,
                             clazz.getSimpleName(),
-                            methodName + "_exit",
+                            "<init>_exit",
                             metric
                         );
                     }
                 }
-            }
-
-            // Track return values
-            if (handler.shouldTrack(returnValue)) {
-                int metric = handler.getMetric(returnValue);
-                tracker.recordMethodCall(
-                    returnValue,
-                    clazz.getSimpleName(),
-                    methodName + "_return",
-                    metric
-                );
             }
         } finally {
             IS_TRACKING.set(false);

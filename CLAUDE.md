@@ -182,27 +182,97 @@ bytebuddy-bytebuf-tracer/
     ├── settings.gradle          # Includes tracker as composite build
     └── src/main/java/
         └── com/example/demo/
-            ├── DemoApplication.java              # Basic example
+            ├── DemoApplication.java              # Basic example with leaks
+            ├── SimpleWrapperExample.java         # Wrapper object pattern
+            ├── WrappedObjectFlowExample.java     # Advanced wrapper tracking
+            ├── ConstructorTrackingExample.java   # Constructor tracking demo
+            ├── StaticMethodExample.java          # Static method tracking
             └── custom/
-                ├── CustomObjectExample.java      # Programmatic tracker registration
-                └── CustomObjectViaGradleExample.java  # System property tracker
+                ├── CustomObjectExample.java              # Programmatic tracker registration
+                ├── CustomObjectViaGradleExample.java     # System property tracker
+                ├── FileHandleTracker.java                # Custom tracker for file handles
+                └── DatabaseConnectionTracker.java        # Custom tracker for DB connections
 ```
+
+## Available Examples
+
+| Example Class | Description | Key Features |
+|--------------|-------------|--------------|
+| **DemoApplication** | Basic ByteBuf tracking with intentional leaks | Shows normal flow vs leak detection |
+| **SimpleWrapperExample** | ByteBuf wrapped in custom object | Constructor tracking, wrapper pattern, extraction |
+| **WrappedObjectFlowExample** | Advanced wrapper tracking scenarios | Manual vs automatic tracking |
+| **ConstructorTrackingExample** | Demonstrates constructor tracking | Shows how ByteBuf flows through constructors |
+| **StaticMethodExample** | Static method tracking | Proves static methods work |
+| **CustomObjectExample** | Track custom objects (file handles) | Programmatic handler registration |
+| **CustomObjectViaGradleExample** | Track DB connections | System property configuration |
 
 ## Running Examples (After Build)
 
-### Maven Approach
+### Quick Start: Running the Default Example
 
 ```bash
 cd bytebuf-flow-example
 
-# Without agent (won't track anything but will run)
+# Run default example (DemoApplication) without agent
 mvn exec:java
 
-# With agent (shows ByteBuf flow tracking)
-mvn exec:exec \
-  -Dexec.executable="java" \
-  -Dexec.args="-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo -classpath %classpath com.example.demo.DemoApplication"
+# Run default example WITH agent tracking
+mvn exec:java -Dexec.args="-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo"
 ```
+
+### Running ANY Example Class with Agent
+
+**IMPORTANT**: The `mvn exec:exec` approach in the original docs is problematic. Use this method instead:
+
+#### Step 1: Get the Runtime Classpath
+
+```bash
+cd bytebuf-flow-example
+mvn dependency:build-classpath -Dmdep.outputFile=/tmp/cp.txt -q
+export CP="target/classes:$(cat /tmp/cp.txt)"
+```
+
+**Expected output in /tmp/cp.txt:**
+```
+/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar
+```
+
+#### Step 2: Run Any Example with Agent
+
+```bash
+# Basic pattern
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -cp "${CP}" \
+  com.example.demo.YourExampleClass
+
+# Example: Run SimpleWrapperExample with constructor tracking
+# NOTE: Use \$ to escape the $ in inner class names!
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo;trackConstructors=com.example.demo.SimpleWrapperExample\$DataPacket" \
+  -cp "${CP}" \
+  com.example.demo.SimpleWrapperExample
+
+# Example: Run custom object tracking
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -Dobject.tracker.handler=com.example.demo.custom.FileHandleTracker \
+  -cp "${CP}" \
+  com.example.demo.custom.CustomObjectExample
+```
+
+#### Step 3: Alternative - Use mvn exec:java (Simpler but Limited)
+
+This works for examples that don't need special agent configuration:
+
+```bash
+# Run with default agent config
+mvn exec:java -Dexec.mainClass="com.example.demo.SimpleWrapperExample"
+
+# Run with custom object handler via system property
+mvn exec:java \
+  -Dexec.mainClass="com.example.demo.custom.CustomObjectViaGradleExample" \
+  -Dexec.args="-Dobject.tracker.handler=com.example.demo.custom.DatabaseConnectionTracker"
+```
+
+**LIMITATION**: The `mvn exec:java` approach doesn't easily support agent arguments. For examples requiring `trackConstructors`, use the direct `java` command from Step 2.
 
 ### Gradle Approach (When Network Works)
 
@@ -217,7 +287,28 @@ gradle runBasicExample
 
 # Run custom object tracking (Gradle config)
 gradle runCustomObjectViaGradle
+
+# Run wrapper object example
+gradle runWrappedObjectExample
 ```
+
+### Common Pitfalls
+
+1. **Shell escaping**: Inner class names contain `$` which must be escaped as `\$`
+   - ❌ Wrong: `trackConstructors=com.example.Foo$Bar`
+   - ✅ Correct: `trackConstructors=com.example.Foo\$Bar`
+
+2. **Classpath order**: Always put `target/classes` BEFORE the dependency JARs
+   - ✅ Correct: `target/classes:/root/.m2/repository/...`
+   - ❌ Wrong: `/root/.m2/repository/.../bytebuf-flow-tracker.jar:target/classes`
+
+3. **Agent JAR path**: Must be the `-agent.jar` (fat JAR), not the regular JAR
+   - ✅ Correct: `bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar`
+   - ❌ Wrong: `bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar`
+
+4. **Quote the javaagent argument**: Prevents shell from interpreting semicolons
+   - ✅ Correct: `"-javaagent:path=include=foo;exclude=bar"`
+   - ❌ Wrong: `-javaagent:path=include=foo;exclude=bar` (shell interprets `;`)
 
 ## Gradle Build Files Created
 

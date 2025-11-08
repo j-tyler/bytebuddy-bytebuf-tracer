@@ -142,7 +142,11 @@ public class ByteBufFlowAgent {
     }
 
     /**
-     * Transformer that applies advice to constructors for specified classes
+     * Transformer that applies advice to constructors for specified classes.
+     * Uses ByteBufConstructorAdvice instead of ByteBufTrackingAdvice because:
+     * - Constructors cannot use onThrowable (would wrap code before super() call)
+     * - JVM bytecode verifier requires super()/this() to be called first
+     * - Exception handlers can only exist AFTER super/this initialization
      */
     static class ConstructorTrackingTransformer implements AgentBuilder.Transformer {
         @Override
@@ -157,7 +161,7 @@ public class ByteBufFlowAgent {
                     // Match public and protected constructors
                     isPublic().or(isProtected())
                 )
-                .intercept(Advice.to(ByteBufTrackingAdvice.class));
+                .intercept(Advice.to(ByteBufConstructorAdvice.class));
         }
     }
     

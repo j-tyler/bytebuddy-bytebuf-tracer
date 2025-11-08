@@ -78,23 +78,9 @@ public class ByteBufTrackingAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Check if any tracked objects in parameters have changed state
-            if (arguments != null) {
-                for (Object arg : arguments) {
-                    if (handler.shouldTrack(arg)) {
-                        int metric = handler.getMetric(arg);
-                        // Record the exit state
-                        tracker.recordMethodCall(
-                            arg,
-                            clazz.getSimpleName(),
-                            methodName + "_exit",
-                            metric
-                        );
-                    }
-                }
-            }
-
-            // Track return values
+            // Only track return values on exit
+            // Tracking arguments on exit creates noise and orphaned flows
+            // when the object state has changed (e.g., after release())
             if (handler.shouldTrack(returnValue)) {
                 int metric = handler.getMetric(returnValue);
                 tracker.recordMethodCall(

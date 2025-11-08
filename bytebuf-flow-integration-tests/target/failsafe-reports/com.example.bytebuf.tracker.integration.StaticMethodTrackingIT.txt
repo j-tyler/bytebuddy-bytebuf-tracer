@@ -1,15 +1,15 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.StaticMethodTrackingIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 11.75 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.StaticMethodTrackingIT
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected  Time elapsed: 2.415 s  <<< FAILURE!
-java.lang.AssertionError: Should have 3 root methods
-	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected(StaticMethodTrackingIT.java:85)
+Tests run: 5, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 12.765 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.StaticMethodTrackingIT
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected  Time elapsed: 2.635 s  <<< FAILURE!
+java.lang.AssertionError: Should have 3 traversals
+	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testMultipleFlowsDetected(StaticMethodTrackingIT.java:90)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks  Time elapsed: 2.402 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks  Time elapsed: 2.361 s  <<< FAILURE!
 java.lang.AssertionError: Should have no leak paths
 	at com.example.bytebuf.tracker.integration.StaticMethodTrackingIT.testNoLeaks(StaticMethodTrackingIT.java:105)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)

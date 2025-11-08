@@ -1,15 +1,15 @@
 -------------------------------------------------------------------------------
 Test set: com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 11.966 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWithConstructorTracking  Time elapsed: 2.362 s  <<< FAILURE!
+Tests run: 5, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 12.031 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWithConstructorTracking  Time elapsed: 2.567 s  <<< FAILURE!
 java.lang.AssertionError: Should have 1 continuous flow
 	at com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testWithConstructorTracking(WrapperObjectTrackingIT.java:116)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testProperCleanup  Time elapsed: 2.43 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testProperCleanup  Time elapsed: 2.312 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: Should have proper cleanup with ref=0
 	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
@@ -18,7 +18,7 @@ org.opentest4j.AssertionFailedError: Should have proper cleanup with ref=0
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 
-com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testFlowContinuity  Time elapsed: 2.336 s  <<< FAILURE!
+com.example.bytebuf.tracker.integration.WrapperObjectTrackingIT.testFlowContinuity  Time elapsed: 2.374 s  <<< FAILURE!
 org.opentest4j.AssertionFailedError: 
 
 Expecting value to be true but was false

@@ -49,6 +49,7 @@ public class ByteBufFlowAgent {
                 .or(nameStartsWith("sun."))
                 .or(nameStartsWith("com.sun."))
                 .or(nameStartsWith("jdk."))
+                .or(nameStartsWith("org.mockito.")) // Avoid conflicts with Mockito mocking framework
                 // Don't instrument the tracker implementation, but DO instrument test apps
                 .or(nameStartsWith("com.example.bytebuf.tracker.agent."))
                 .or(nameStartsWith("com.example.bytebuf.tracker.ByteBufFlowTracker"))

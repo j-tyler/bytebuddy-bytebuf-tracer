@@ -682,7 +682,8 @@ If a class has NO ByteBuf methods, it won't be transformed at all.
 
 **Root Cause**: The agent transforms classes with ByteBuf in their signatures. When Mockito 5 tries to retransform an already-transformed class, the JVM rejects it.
 
-**Solutions**:
+**Solution**: As of version 1.0.0-SNAPSHOT, **org.mockito packages are excluded by default**, so Mockito itself works seamlessly with the agent. However, if you mock your own application classes that have ByteBuf in their signatures, you may need additional exclusions:
+
 1. **Exclude DTO/protocol/response classes** that are mocked but don't cause leaks:
    ```bash
    -javaagent:tracker.jar=include=com.yourcompany;exclude=com.yourcompany.protocol,com.yourcompany.dto
@@ -701,6 +702,12 @@ If a class has NO ByteBuf methods, it won't be transformed at all.
    - Any class that is mocked in tests and has ByteBuf in its signature
 
 **Why this works**: Excluding these classes prevents the agent from transforming them, allowing Mockito to work normally. These classes typically don't cause leaks anyway (they're just data containers).
+
+**Default Exclusions**: The agent automatically excludes the following packages:
+- `org.mockito.*` - Mockito framework classes
+- `java.*` - JDK classes
+- `sun.*` - JDK internal classes
+- `net.bytebuddy.*` - ByteBuddy instrumentation framework
 
 ### JMX connection fails
 

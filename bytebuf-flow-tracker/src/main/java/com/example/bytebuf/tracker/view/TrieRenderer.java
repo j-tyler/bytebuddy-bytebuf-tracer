@@ -229,7 +229,7 @@ public class TrieRenderer {
         }
         
         sb.append("Total Traversals: ").append(totalTraversals).append("\n");
-        sb.append("Unique Paths: ").append(totalPaths).append("\n");
+        sb.append("Total Paths: ").append(totalPaths).append("\n");
         sb.append("Leak Paths: ").append(leakPaths).append("\n");
         
         if (totalPaths > 0) {

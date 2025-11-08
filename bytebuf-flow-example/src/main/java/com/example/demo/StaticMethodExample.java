@@ -49,7 +49,7 @@ public class StaticMethodExample {
         System.out.println(renderer.renderIndentedTree());
 
         System.out.println("\n=== Flat Paths (shows leaks) ===");
-        System.out.println(renderer.renderFlatPaths());
+        System.out.println(renderer.renderForLLM());
     }
 
     /**

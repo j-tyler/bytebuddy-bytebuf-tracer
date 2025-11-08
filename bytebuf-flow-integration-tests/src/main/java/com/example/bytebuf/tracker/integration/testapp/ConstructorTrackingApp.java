@@ -29,7 +29,7 @@ public class ConstructorTrackingApp {
         System.out.println(renderer.renderIndentedTree());
 
         System.out.println("\n=== Flat Paths ===");
-        System.out.println(renderer.renderFlatPaths());
+        System.out.println(renderer.renderForLLM());
 
         System.out.println("\n=== ConstructorTrackingApp Complete ===");
     }

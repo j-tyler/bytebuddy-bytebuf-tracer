@@ -116,7 +116,7 @@ public class DemoApplication {
 
         // Flat paths highlighting leaks
         System.out.println("=== Flat Paths (Leaks Highlighted) ===");
-        System.out.println(renderer.renderFlatPaths());
+        System.out.println(renderer.renderForLLM());
         System.out.println();
 
         System.out.println("Look for leaf nodes with non-zero refCount - those are leaks!");

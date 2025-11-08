@@ -188,12 +188,9 @@ This allows tracking state changes across method execution. Users will see these
 **Purpose**: Formats Trie data into various output views
 
 **Output Formats**:
-- `renderIndentedTree()` - Hierarchical tree view with indentation
-- `renderFlatPaths()` - Root-to-leaf paths (one per line)
+- `renderIndentedTree()` - Hierarchical tree view with indentation (human-readable)
+- `renderForLLM()` - Structured format optimized for LLM parsing (token-efficient)
 - `renderSummary()` - Statistics (total roots, paths, leaks)
-- `renderCsv()` - CSV format for spreadsheet analysis
-- `renderJson()` - JSON format for programmatic processing
-- `renderForLLM()` - Structured format optimized for LLM parsing
 
 **Leak Detection**:
 - Identifies leaf nodes with non-zero metric
@@ -474,10 +471,8 @@ ObjectTrackerRegistry.setHandler(new ConnectionTracker());
 **MBean Name**: `com.example:type=ByteBufFlowTracker`
 
 **Operations**:
-- `getTreeView()` - String, hierarchical tree
-- `getFlatView()` - String, flat paths
-- `getCsvView()` - String, CSV format
-- `getJsonView()` - String, JSON format
+- `getTreeView()` - String, hierarchical tree (human-readable)
+- `getLLMView()` - String, LLM-optimized format (token-efficient)
 - `getSummary()` - String, statistics
 - `reset()` - void, clears all data
 

@@ -168,7 +168,8 @@ public class ByteBufFlowTrackerTest {
         ByteBuf buffer = Unpooled.buffer(256);
 
         // Pass to instance method
-        StaticMethodExample.processWithInstance(buffer);
+        StaticMethodExample example = new StaticMethodExample();
+        example.processWithInstance(buffer);
 
         // Pass to static method
         StaticMethodExample.processWithStatic(buffer);

@@ -82,7 +82,8 @@ public class ByteBufFlowAgent {
                 DynamicType.Builder<?> builder,
                 TypeDescription typeDescription,
                 ClassLoader classLoader,
-                JavaModule module) {
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
 
             return builder
                 .method(
@@ -106,7 +107,8 @@ public class ByteBufFlowAgent {
                 DynamicType.Builder<?> builder,
                 TypeDescription typeDescription,
                 ClassLoader classLoader,
-                JavaModule module) {
+                JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
 
             return builder
                 .constructor(
@@ -204,8 +206,8 @@ class AgentConfig {
     /**
      * Get type matcher based on configuration
      */
-    public ElementMatcher<TypeDescription> getTypeMatcher() {
-        ElementMatcher<TypeDescription> matcher = none();
+    public ElementMatcher.Junction<TypeDescription> getTypeMatcher() {
+        ElementMatcher.Junction<TypeDescription> matcher = none();
 
         // Include packages
         for (String pkg : includePackages) {
@@ -223,8 +225,8 @@ class AgentConfig {
     /**
      * Get matcher for classes that should have constructor tracking
      */
-    public ElementMatcher<TypeDescription> getConstructorTrackingMatcher() {
-        ElementMatcher<TypeDescription> matcher = none();
+    public ElementMatcher.Junction<TypeDescription> getConstructorTrackingMatcher() {
+        ElementMatcher.Junction<TypeDescription> matcher = none();
 
         for (String className : constructorTrackingClasses) {
             // Support both exact matches and pattern matches

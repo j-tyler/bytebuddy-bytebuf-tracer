@@ -1,0 +1,7 @@
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/testapp/StaticMethodApp.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/testapp/ConstructorTrackingApp.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/testapp/LeakDetectionApp.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/utils/AppLauncher.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/testapp/WrapperObjectApp.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/utils/OutputVerifier.java
+/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/src/main/java/com/example/bytebuf/tracker/integration/testapp/BasicFlowApp.java

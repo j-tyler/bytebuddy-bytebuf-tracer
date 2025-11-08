@@ -1,0 +1,94 @@
+-------------------------------------------------------------------------------
+Test set: com.example.bytebuf.tracker.integration.LeakDetectionIT
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 6.647 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.LeakDetectionIT
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testBothFlowsAreTracked  Time elapsed: 1.313 s  <<< FAILURE!
+java.lang.AssertionError: Should have 2 root methods
+	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testBothFlowsAreTracked(LeakDetectionIT.java:54)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakIsDetected  Time elapsed: 1.316 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+Should detect the intentional leak. Output:
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
+[ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[ByteBufFlowAgent] Instrumentation installed successfully
+=== LeakDetectionApp Starting ===
+Oops, forgot to release! RefCount: 1
+
+=== Flow Summary ===
+=== ByteBuf Flow Summary ===
+Total Root Methods: 0
+Total Traversals: 0
+Unique Paths: 0
+Leak Paths: 0
+
+
+=== Flow Tree ===
+
+
+=== Flat Paths ===
+
+
+=== LeakDetectionApp Complete ===
+
+=== ByteBuf Flow Final Report ===
+ByteBuf Flow Analysis Report
+Generated: Sat Nov 08 01:19:02 UTC 2025
+================================================================================
+
+=== ByteBuf Flow Summary ===
+Total Root Methods: 0
+Total Traversals: 0
+Unique Paths: 0
+Leak Paths: 0
+
+=== Flow Tree ===
+
+=== Potential Leaks ===
+No leaks detected
+
+
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakIsDetected(LeakDetectionIT.java:39)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakyFlowIsFlagged  Time elapsed: 1.28 s  <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual:
+  "=== Flat Paths ==="
+to contain:
+  "allocateLeaky" 
+	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakyFlowIsFlagged(LeakDetectionIT.java:106)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakMethodIsEndNode  Time elapsed: 1.368 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: forgetToRelease method should be in the flow
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testLeakMethodIsEndNode(LeakDetectionIT.java:128)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.LeakDetectionIT.testNormalFlowHasNoLeak  Time elapsed: 1.364 s  <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual:
+  "=== Flat Paths ==="
+to contain:
+  "allocateNormal" 
+	at com.example.bytebuf.tracker.integration.LeakDetectionIT.testNormalFlowHasNoLeak(LeakDetectionIT.java:84)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

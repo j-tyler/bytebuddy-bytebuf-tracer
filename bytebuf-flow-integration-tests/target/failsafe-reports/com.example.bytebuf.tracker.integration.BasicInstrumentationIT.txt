@@ -1,0 +1,89 @@
+-------------------------------------------------------------------------------
+Test set: com.example.bytebuf.tracker.integration.BasicInstrumentationIT
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 6.569 s <<< FAILURE! - in com.example.bytebuf.tracker.integration.BasicInstrumentationIT
+com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testAgentLoads  Time elapsed: 1.314 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+JMX MBean should be registered. Output:
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
+[ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[ByteBufFlowAgent] Instrumentation installed successfully
+=== BasicFlowApp Starting ===
+Step 1: Processing 13 bytes
+Step 2: Read 13 bytes
+Step 3: Final processing
+Cleanup: Releasing buffer
+
+=== Flow Summary ===
+=== ByteBuf Flow Summary ===
+Total Root Methods: 0
+Total Traversals: 0
+Unique Paths: 0
+Leak Paths: 0
+
+
+=== Flow Tree ===
+
+
+=== Flat Paths ===
+
+
+=== BasicFlowApp Complete ===
+
+=== ByteBuf Flow Final Report ===
+ByteBuf Flow Analysis Report
+Generated: Sat Nov 08 01:18:48 UTC 2025
+================================================================================
+
+=== ByteBuf Flow Summary ===
+Total Root Methods: 0
+Total Traversals: 0
+Unique Paths: 0
+Leak Paths: 0
+
+=== Flow Tree ===
+
+=== Potential Leaks ===
+No leaks detected
+
+
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testAgentLoads(BasicInstrumentationIT.java:55)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testMethodsAreTracked  Time elapsed: 1.389 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: allocate method should be tracked
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testMethodsAreTracked(BasicInstrumentationIT.java:70)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testProperCleanup  Time elapsed: 1.311 s  <<< FAILURE!
+org.opentest4j.AssertionFailedError: Should show proper cleanup with ref=0
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testProperCleanup(BasicInstrumentationIT.java:131)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testNoErrors  Time elapsed: 1.279 s  <<< FAILURE!
+java.lang.AssertionError: Should not contain unexpected errors
+	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testNoErrors(BasicInstrumentationIT.java:154)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testFlowStructure  Time elapsed: 1.266 s  <<< FAILURE!
+java.lang.AssertionError: Should have exactly 1 root method
+	at com.example.bytebuf.tracker.integration.BasicInstrumentationIT.testFlowStructure(BasicInstrumentationIT.java:101)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

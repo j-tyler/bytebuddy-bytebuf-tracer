@@ -1,0 +1,10 @@
+com/example/bytebuf/tracker/integration/testapp/LeakDetectionApp.class
+com/example/bytebuf/tracker/integration/testapp/StaticMethodApp.class
+com/example/bytebuf/tracker/integration/testapp/BasicFlowApp.class
+com/example/bytebuf/tracker/integration/testapp/WrapperObjectApp$Envelope.class
+com/example/bytebuf/tracker/integration/testapp/WrapperObjectApp.class
+com/example/bytebuf/tracker/integration/utils/AppLauncher.class
+com/example/bytebuf/tracker/integration/testapp/ConstructorTrackingApp.class
+com/example/bytebuf/tracker/integration/utils/AppLauncher$AppResult.class
+com/example/bytebuf/tracker/integration/utils/OutputVerifier.class
+com/example/bytebuf/tracker/integration/testapp/ConstructorTrackingApp$Message.class

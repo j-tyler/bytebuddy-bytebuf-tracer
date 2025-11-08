@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-failsafe-plugin/xsd/failsafe-test-report-3.0.xsd" version="3.0" name="com.example.bytebuf.tracker.integration.ConstructorTrackingIT" time="5.499" tests="4" errors="0" skipped="0" failures="4">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.jnu.encoding" value="ANSI_X3.4-1968"/>
+    <property name="java.class.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:/root/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.9/byte-buddy-agent-1.14.9.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:"/>
+    <property name="test.classpath" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes"/>
+    <property name="java.vm.vendor" value="Ubuntu"/>
+    <property name="agent.jar.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://ubuntu.com/"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-21-openjdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire/surefirebooter-20251108011838695_3.jar /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire 2025-11-08T01-18-32_243-jvmRun1 surefire-20251108011838695_1tmp surefire_0-20251108011838695_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:/root/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.9/byte-buddy-agent-1.14.9.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/root"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-07-15"/>
+    <property name="java.home" value="/usr/lib/jvm/java-21-openjdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="surefire.real.class.path" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/surefire/surefirebooter-20251108011838695_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.8+9-Ubuntu-0ubuntu124.04.1"/>
+    <property name="user.name" value="root"/>
+    <property name="stdout.encoding" value="ANSI_X3.4-1968"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="4.4.0"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="localRepository" value="/root/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugs.launchpad.net/ubuntu/+source/openjdk-21"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="21.0.8"/>
+    <property name="user.dir" value="/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="ANSI_X3.4-1968"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="stderr.encoding" value="ANSI_X3.4-1968"/>
+    <property name="java.vendor" value="Ubuntu"/>
+    <property name="java.vm.version" value="21.0.8+9-Ubuntu-0ubuntu124.04.1"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="65.0"/>
+    <property name="maven.test.failure.ignore" value="true"/>
+  </properties>
+  <testcase name="testWildcardConstructorTracking" classname="com.example.bytebuf.tracker.integration.ConstructorTrackingIT" time="1.393">
+    <failure message="Constructor should be tracked with wildcard pattern" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: Constructor should be tracked with wildcard pattern
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testWildcardConstructorTracking(ConstructorTrackingIT.java:130)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+]]></failure>
+    <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.* -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:/root/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.9/byte-buddy-agent-1.14.9.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar: com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp
+[APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[com.example.bytebuf.tracker.integration.testapp.*]}
+[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] Constructor tracking enabled for: [com.example.bytebuf.tracker.integration.testapp.*]
+[APP] [ByteBufFlowAgent] Instrumentation installed successfully
+[APP] === ConstructorTrackingApp Starting ===
+[APP] Processing message with 16 bytes
+[APP] 
+[APP] === Flow Summary ===
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] 
+[APP] === Flat Paths ===
+[APP] 
+[APP] 
+[APP] === ConstructorTrackingApp Complete ===
+[APP] 
+[APP] === ByteBuf Flow Final Report ===
+[APP] ByteBuf Flow Analysis Report
+[APP] Generated: Sat Nov 08 01:19:08 UTC 2025
+[APP] ================================================================================
+[APP] 
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] === Potential Leaks ===
+[APP] No leaks detected
+[APP] 
+[APP] 
+]]></system-out>
+  </testcase>
+  <testcase name="testConstructorsNotTrackedByDefault" classname="com.example.bytebuf.tracker.integration.ConstructorTrackingIT" time="1.351">
+    <failure message="allocate method should be tracked" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: allocate method should be tracked
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsNotTrackedByDefault(ConstructorTrackingIT.java:41)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+]]></failure>
+    <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:/root/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.9/byte-buddy-agent-1.14.9.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar: com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp
+[APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[]}
+[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] Instrumentation installed successfully
+[APP] === ConstructorTrackingApp Starting ===
+[APP] Processing message with 16 bytes
+[APP] 
+[APP] === Flow Summary ===
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] 
+[APP] === Flat Paths ===
+[APP] 
+[APP] 
+[APP] === ConstructorTrackingApp Complete ===
+[APP] 
+[APP] === ByteBuf Flow Final Report ===
+[APP] ByteBuf Flow Analysis Report
+[APP] Generated: Sat Nov 08 01:19:09 UTC 2025
+[APP] ================================================================================
+[APP] 
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] === Potential Leaks ===
+[APP] No leaks detected
+[APP] 
+[APP] 
+]]></system-out>
+  </testcase>
+  <testcase name="testContinuousFlowWithConstructorTracking" classname="com.example.bytebuf.tracker.integration.ConstructorTrackingIT" time="1.374">
+    <failure message="Should have 1 continuous flow with constructor tracking" type="java.lang.AssertionError"><![CDATA[java.lang.AssertionError: Should have 1 continuous flow with constructor tracking
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testContinuousFlowWithConstructorTracking(ConstructorTrackingIT.java:100)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+]]></failure>
+    <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:/root/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.9/byte-buddy-agent-1.14.9.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar: com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp
+[APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message]}
+[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] Constructor tracking enabled for: [com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message]
+[APP] [ByteBufFlowAgent] Instrumentation installed successfully
+[APP] === ConstructorTrackingApp Starting ===
+[APP] Processing message with 16 bytes
+[APP] 
+[APP] === Flow Summary ===
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] 
+[APP] === Flat Paths ===
+[APP] 
+[APP] 
+[APP] === ConstructorTrackingApp Complete ===
+[APP] 
+[APP] === ByteBuf Flow Final Report ===
+[APP] ByteBuf Flow Analysis Report
+[APP] Generated: Sat Nov 08 01:19:10 UTC 2025
+[APP] ================================================================================
+[APP] 
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] === Potential Leaks ===
+[APP] No leaks detected
+[APP] 
+[APP] 
+]]></system-out>
+  </testcase>
+  <testcase name="testConstructorsTrackedWithConfig" classname="com.example.bytebuf.tracker.integration.ConstructorTrackingIT" time="1.378">
+    <failure message="allocate method should be tracked" type="org.opentest4j.AssertionFailedError"><![CDATA[org.opentest4j.AssertionFailedError: allocate method should be tracked
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.bytebuf.tracker.integration.ConstructorTrackingIT.testConstructorsTrackedWithConfig(ConstructorTrackingIT.java:70)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+]]></failure>
+    <system-out><![CDATA[Launching: /usr/lib/jvm/java-21-openjdk-amd64/bin/java -javaagent:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message -cp /home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/test-classes:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-integration-tests/target/bytebuf-flow-integration-tests-1.0.0-SNAPSHOT.jar:/home/user/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/net/bytebuddy/byte-buddy/1.14.9/byte-buddy-1.14.9.jar:/root/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.9/byte-buddy-agent-1.14.9.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/root/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/root/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/root/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/root/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/root/.m2/repository/org/assertj/assertj-core/3.24.2/assertj-core-3.24.2.jar: com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp
+[APP] [ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.tracker.integration.testapp], exclude=[], trackConstructors=[com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message]}
+[APP] [ByteBufFlowAgent] Failed to register JMX MBean: javax.management.NotCompliantMBeanException: MBean class com.example.bytebuf.tracker.agent.ByteBufFlowMBean does not implement DynamicMBean, and neither follows the Standard MBean conventions (javax.management.NotCompliantMBeanException: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant Standard MBean) nor the MXBean conventions (javax.management.NotCompliantMBeanException: com.example.bytebuf.tracker.agent.ByteBufFlowMBean: Class com.example.bytebuf.tracker.agent.ByteBufFlowMBean is not a JMX compliant MXBean)
+[APP] [ByteBufFlowAgent] Constructor tracking enabled for: [com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message]
+[APP] [ByteBufFlowAgent] Instrumentation installed successfully
+[APP] === ConstructorTrackingApp Starting ===
+[APP] Processing message with 16 bytes
+[APP] 
+[APP] === Flow Summary ===
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] 
+[APP] === Flat Paths ===
+[APP] 
+[APP] 
+[APP] === ConstructorTrackingApp Complete ===
+[APP] 
+[APP] === ByteBuf Flow Final Report ===
+[APP] ByteBuf Flow Analysis Report
+[APP] Generated: Sat Nov 08 01:19:12 UTC 2025
+[APP] ================================================================================
+[APP] 
+[APP] === ByteBuf Flow Summary ===
+[APP] Total Root Methods: 0
+[APP] Total Traversals: 0
+[APP] Unique Paths: 0
+[APP] Leak Paths: 0
+[APP] 
+[APP] === Flow Tree ===
+[APP] 
+[APP] === Potential Leaks ===
+[APP] No leaks detected
+[APP] 
+[APP] 
+]]></system-out>
+  </testcase>
+</testsuite>

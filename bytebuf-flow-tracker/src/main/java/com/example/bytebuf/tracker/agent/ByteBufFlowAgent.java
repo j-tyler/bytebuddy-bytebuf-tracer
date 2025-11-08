@@ -226,6 +226,11 @@ public class ByteBufFlowAgent {
      *
      * This enables deterministic roots and better leak diagnosis by showing
      * the exact allocation method (buffer, directBuffer, wrappedBuffer, etc.)
+     *
+     * IMPORTANT: Only instruments terminal methods to avoid confusing output
+     * from telescoping method calls. For example, directBuffer() delegates to
+     * directBuffer(int) which delegates to directBuffer(int, int). We only
+     * track the terminal directBuffer(int, int) to avoid nested duplicates.
      */
     static class ByteBufConstructionTransformer implements AgentBuilder.Transformer {
         @Override
@@ -236,23 +241,38 @@ public class ByteBufFlowAgent {
                 JavaModule module,
                 java.security.ProtectionDomain protectionDomain) {
 
-            return builder
-                .method(
-                    // Match factory methods that return ByteBuf
-                    // For Unpooled: buffer, directBuffer, wrappedBuffer, copiedBuffer, compositeBuffer
-                    // For ByteBufAllocator: buffer, directBuffer, ioBuffer, heapBuffer, compositeBuffer
-                    (named("buffer")
-                        .or(named("directBuffer"))
-                        .or(named("wrappedBuffer"))
-                        .or(named("copiedBuffer"))
-                        .or(named("compositeBuffer"))
-                        .or(named("ioBuffer"))
-                        .or(named("heapBuffer")))
-                    // Must be public and return ByteBuf
+            // Determine which methods to instrument based on the class
+            ElementMatcher.Junction<MethodDescription> methodMatcher;
+
+            // For ByteBufAllocator implementations (AbstractByteBufAllocator and subclasses):
+            // Only track terminal methods with 2 int parameters to avoid telescoping
+            // directBuffer() -> directBuffer(int) -> directBuffer(int, int) [TERMINAL]
+            // heapBuffer() -> heapBuffer(int) -> heapBuffer(int, int) [TERMINAL]
+            // buffer() -> delegates to directBuffer/heapBuffer [skip entirely]
+            // ioBuffer() -> delegates to directBuffer/heapBuffer [skip entirely]
+            if (typeDescription.asErasure().getName().equals("io.netty.buffer.Unpooled")) {
+                // For Unpooled class:
+                // - Skip buffer() and directBuffer() entirely (they delegate to allocator)
+                // - Track wrappedBuffer, copiedBuffer, compositeBuffer (all terminal)
+                methodMatcher = (named("wrappedBuffer")
+                    .or(named("copiedBuffer"))
+                    .or(named("compositeBuffer")))
+                    .and(isPublic())
+                    .and(not(isAbstract()))
+                    .and(returns(hasSuperType(named("io.netty.buffer.ByteBuf"))));
+            } else {
+                // For ByteBufAllocator implementations:
+                // Only track methods with exactly 2 int parameters (terminal implementations)
+                methodMatcher = (named("directBuffer")
+                    .or(named("heapBuffer")))
                     .and(isPublic())
                     .and(not(isAbstract()))
                     .and(returns(hasSuperType(named("io.netty.buffer.ByteBuf"))))
-                )
+                    .and(takesArguments(int.class, int.class)); // Only track 2-arg terminal versions
+            }
+
+            return builder
+                .method(methodMatcher)
                 .intercept(Advice.to(ByteBufConstructionAdvice.class));
         }
     }

@@ -1,0 +1,32 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'bytebuf-flow-example'
+
+// Include the tracker module from the parent directory
+// This allows the example to build the agent from source
+includeBuild('../bytebuf-flow-tracker')
+
+println """
+================================================================================
+ByteBuf Flow Tracker Example
+================================================================================
+
+This example demonstrates how to integrate the ByteBuf Flow Tracker into your
+project by building it from source.
+
+The tracker is included as a composite build, which means:
+  1. The agent is built from source when you run this example
+  2. Changes to the tracker module are automatically picked up
+  3. No need to publish to Maven Central or local repository
+
+To get started:
+  ./gradlew listExamples    - Show all available examples
+  ./gradlew build           - Build the example application
+
+================================================================================
+"""

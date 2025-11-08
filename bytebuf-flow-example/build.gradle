@@ -1,0 +1,257 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example.bytebuf'
+version = '1.0.0-SNAPSHOT'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+    mavenLocal()  // Use local Maven repository first
+    mavenCentral()
+}
+
+dependencies {
+    // Build the tracker from source - this is the key integration pattern
+    // Using the group:name notation since it's an included build
+    implementation 'com.example.bytebuf:bytebuf-flow-tracker:1.0.0-SNAPSHOT'
+
+    // Netty for ByteBuf usage
+    implementation 'io.netty:netty-buffer:4.1.100.Final'
+
+    // H2 database for custom object tracking example
+    implementation 'com.h2database:h2:2.2.224'
+}
+
+// ============================================================================
+// AGENT CONFIGURATION
+// ============================================================================
+
+// Path to the built agent JAR
+// For composite builds, we need to reference the included build's output
+def getAgentJar() {
+    return file("../bytebuf-flow-tracker/build/libs/bytebuf-flow-tracker-${version}-agent.jar")
+}
+
+// Base agent arguments for ByteBuf tracking
+def baseAgentArgs = "include=com.example.demo"
+
+// Example 1: Custom object tracking via SYSTEM PROPERTY (no code changes needed)
+def customObjectAgentArgs = baseAgentArgs +
+    ";trackConstructors=com.example.demo" +
+    " -Dobject.tracker.handler=com.example.demo.custom.FileHandleTracker"
+
+// Example 2: Advanced configuration with exclusions
+def advancedAgentArgs = baseAgentArgs +
+    ";exclude=com.example.demo.internal" +
+    ";trackConstructors=com.example.demo.Message,com.example.demo.Request"
+
+// ============================================================================
+// APPLICATION TASKS - Different examples to run
+// ============================================================================
+
+application {
+    mainClass = 'com.example.demo.DemoApplication'
+}
+
+// Task 1: Run basic ByteBuf example with default tracking
+task runBasicExample(type: JavaExec) {
+    description = 'Run the basic ByteBuf tracking example'
+    group = 'examples'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.demo.DemoApplication'
+
+    // Configure JVM to use the agent
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=${baseAgentArgs}"
+    ]
+
+    doFirst {
+        println "=" * 80
+        println "Running Basic ByteBuf Example"
+        println "Agent: ${getAgentJar()}"
+        println "Config: ${baseAgentArgs}"
+        println "=" * 80
+    }
+}
+
+// Task 2: Run custom object example with PROGRAMMATIC registration
+task runCustomObjectExample(type: JavaExec) {
+    description = 'Run custom object tracking example (FileHandle) with programmatic registration'
+    group = 'examples'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.demo.custom.CustomObjectExample'
+
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=${baseAgentArgs}"
+    ]
+
+    doFirst {
+        println "=" * 80
+        println "Running Custom Object Example (Programmatic Registration)"
+        println "Handler: FileHandleTracker (registered in main() method)"
+        println "=" * 80
+    }
+}
+
+// Task 3: Run custom object example with GRADLE CONFIGURATION (system property)
+task runCustomObjectViaGradle(type: JavaExec) {
+    description = 'Run custom object tracking example (FileHandle) configured via Gradle system property'
+    group = 'examples'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.demo.custom.CustomObjectViaGradleExample'
+
+    // This demonstrates configuring the tracker entirely via Gradle/system properties
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=${baseAgentArgs}",
+        "-Dobject.tracker.handler=com.example.demo.custom.DatabaseConnectionTracker"
+    ]
+
+    doFirst {
+        println "=" * 80
+        println "Running Custom Object Example (Gradle System Property)"
+        println "Handler: DatabaseConnectionTracker (set via -D system property)"
+        println "This approach requires NO code changes!"
+        println "=" * 80
+    }
+}
+
+// Task 4: Run with advanced configuration
+task runAdvancedExample(type: JavaExec) {
+    description = 'Run with advanced agent configuration (exclusions, constructor tracking)'
+    group = 'examples'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.demo.DemoApplication'
+
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=${advancedAgentArgs}",
+        // Enable JMX for runtime monitoring
+        "-Dcom.sun.management.jmxremote",
+        "-Dcom.sun.management.jmxremote.port=9999",
+        "-Dcom.sun.management.jmxremote.authenticate=false",
+        "-Dcom.sun.management.jmxremote.ssl=false"
+    ]
+
+    doFirst {
+        println "=" * 80
+        println "Running Advanced Example with JMX Monitoring"
+        println "Config: ${advancedAgentArgs}"
+        println "JMX Port: 9999"
+        println "Connect with: jconsole localhost:9999"
+        println "=" * 80
+    }
+}
+
+// Task 5: Wrapper object tracking example
+task runWrappedObjectExample(type: JavaExec) {
+    description = 'Run wrapped object tracking example (ByteBuf inside custom Message class)'
+    group = 'examples'
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.demo.WrappedObjectFlowExample'
+
+    // Enable constructor tracking to track ByteBuf wrapped in Message objects
+    def wrappedAgentArgs = baseAgentArgs + ";trackConstructors=com.example.demo.Message"
+
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=${wrappedAgentArgs}"
+    ]
+
+    doFirst {
+        println "=" * 80
+        println "Running Wrapped Object Example"
+        println "Config: ${wrappedAgentArgs}"
+        println "This demonstrates tracking ByteBuf when wrapped in custom classes"
+        println "=" * 80
+    }
+}
+
+// Default run task - runs the basic example
+run {
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=${baseAgentArgs}"
+    ]
+}
+
+// ============================================================================
+// HELPER TASKS
+// ============================================================================
+
+task listExamples {
+    description = 'List all available example tasks'
+    group = 'examples'
+
+    doLast {
+        println "\n" + "=" * 80
+        println "AVAILABLE EXAMPLES"
+        println "=" * 80
+        println ""
+        println "1. Basic ByteBuf Tracking:"
+        println "   ./gradlew runBasicExample"
+        println ""
+        println "2. Custom Object Tracking (Programmatic):"
+        println "   ./gradlew runCustomObjectExample"
+        println ""
+        println "3. Custom Object Tracking (Gradle Config):"
+        println "   ./gradlew runCustomObjectViaGradle"
+        println ""
+        println "4. Advanced Configuration (exclusions, JMX):"
+        println "   ./gradlew runAdvancedExample"
+        println ""
+        println "5. Wrapped Object Tracking:"
+        println "   ./gradlew runWrappedObjectExample"
+        println ""
+        println "=" * 80 + "\n"
+    }
+}
+
+// ============================================================================
+// DOCUMENTATION TASKS
+// ============================================================================
+
+task showAgentConfig {
+    description = 'Show the current agent configuration'
+    group = 'help'
+
+    doLast {
+        println "\n" + "=" * 80
+        println "AGENT CONFIGURATION"
+        println "=" * 80
+        println ""
+        println "Agent JAR: ${getAgentJar()}"
+        println ""
+        println "Base Config: ${baseAgentArgs}"
+        println "  - Tracks all public/protected methods in com.example.demo package"
+        println "  - Instruments methods with ByteBuf parameters or return types"
+        println ""
+        println "Advanced Config: ${advancedAgentArgs}"
+        println "  - Excludes: com.example.demo.internal"
+        println "  - Constructor tracking: Message, Request classes"
+        println ""
+        println "Custom Object Config: ${customObjectAgentArgs}"
+        println "  - Uses system property to set custom handler"
+        println "  - No code changes required!"
+        println ""
+        println "=" * 80 + "\n"
+    }
+}
+
+// Print helpful message after build
+tasks.build.doLast {
+    println "\n" + "=" * 80
+    println "BUILD SUCCESSFUL"
+    println "=" * 80
+    println ""
+    println "To run examples, use:"
+    println "  ./gradlew listExamples    - Show all available examples"
+    println "  ./gradlew runBasicExample - Run the basic ByteBuf tracking demo"
+    println ""
+    println "=" * 80 + "\n"
+}

@@ -1,0 +1,80 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.example.bytebuf'
+version = '1.0.0-SNAPSHOT'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+    mavenLocal()  // Use local Maven repository first
+    mavenCentral()
+}
+
+// Create a configuration for dependencies that should be bundled in the agent JAR
+configurations {
+    agentLib
+}
+
+dependencies {
+    // ByteBuddy - Required for agent instrumentation
+    implementation 'net.bytebuddy:byte-buddy:1.14.9'
+    implementation 'net.bytebuddy:byte-buddy-agent:1.14.9'
+
+    // Also add to agentLib so they're bundled
+    agentLib 'net.bytebuddy:byte-buddy:1.14.9'
+    agentLib 'net.bytebuddy:byte-buddy-agent:1.14.9'
+
+    // Netty Buffer - What we're tracking (provided scope - user's application provides this)
+    compileOnly 'io.netty:netty-buffer:4.1.100.Final'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'io.netty:netty-buffer:4.1.100.Final'
+}
+
+// Regular JAR configuration
+jar {
+    manifest {
+        attributes(
+            'Premain-Class': 'com.example.bytebuf.tracker.agent.ByteBufFlowAgent',
+            'Agent-Class': 'com.example.bytebuf.tracker.agent.ByteBufFlowAgent',
+            'Can-Redefine-Classes': 'true',
+            'Can-Retransform-Classes': 'true'
+        )
+    }
+}
+
+// Fat JAR task that bundles all dependencies (equivalent to Maven Shade)
+task shadowJar(type: Jar) {
+    archiveClassifier.set('agent')
+
+    manifest {
+        attributes(
+            'Premain-Class': 'com.example.bytebuf.tracker.agent.ByteBufFlowAgent',
+            'Agent-Class': 'com.example.bytebuf.tracker.agent.ByteBufFlowAgent',
+            'Can-Redefine-Classes': 'true',
+            'Can-Retransform-Classes': 'true'
+        )
+    }
+
+    // Include compiled classes from this project
+    from sourceSets.main.output
+
+    // Include all dependencies
+    from {
+        configurations.agentLib.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    // Exclude signature files
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+
+    dependsOn classes
+}
+
+// Build both regular and fat JAR
+assemble.dependsOn shadowJar

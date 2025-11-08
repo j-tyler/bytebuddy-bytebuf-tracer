@@ -22,6 +22,26 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 
 ### Build and Run Example
 
+**Using Gradle (Recommended):**
+```bash
+# Clone and navigate to examples
+git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
+cd bytebuddy-bytebuf-tracer/bytebuf-flow-example
+
+# List all available examples
+gradle listExamples
+
+# Run basic ByteBuf tracking example
+gradle runBasicExample
+
+# Run custom object tracking (programmatic)
+gradle runCustomObjectExample
+
+# Run custom object tracking (Gradle config - zero code changes!)
+gradle runCustomObjectViaGradle
+```
+
+**Using Maven (Alternative):**
 ```bash
 # Clone and build
 git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
@@ -273,7 +293,106 @@ git submodule add https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git module
 
 **Note**: Running `mvn clean install` at your project root builds everything in one command.
 
-### Method 3: Copy Source Directly
+### Method 3: Gradle Composite Build (Recommended for Gradle users)
+
+**Best for**: Gradle projects, clean builds from source, zero publishing required
+
+```bash
+# Step 1: Clone the tracker as a sibling directory
+cd your-project/
+git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git ../bytebuddy-bytebuf-tracer
+```
+
+```gradle
+// Step 2: Add to your settings.gradle
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'your-project'
+
+// Include the tracker as a composite build
+includeBuild('../bytebuddy-bytebuf-tracer/bytebuf-flow-tracker')
+```
+
+```gradle
+// Step 3: Add to your build.gradle
+dependencies {
+    implementation 'com.example.bytebuf:bytebuf-flow-tracker:1.0.0-SNAPSHOT'
+}
+
+// Step 4: Configure agent for your run task
+def getAgentJar() {
+    return file("../bytebuddy-bytebuf-tracer/bytebuf-flow-tracker/build/libs/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar")
+}
+
+task runWithAgent(type: JavaExec) {
+    mainClass = 'com.yourcompany.Main'
+    classpath = sourceSets.main.runtimeClasspath
+
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=include=com.yourcompany"
+    ]
+}
+```
+
+**Benefits of Gradle Composite Build:**
+- Builds tracker from source automatically
+- No need to publish to Maven Central or local repository
+- Changes to tracker are immediately available
+- Clean, reproducible builds
+
+**Example with Custom Object Tracking:**
+```gradle
+task runWithCustomTracking(type: JavaExec) {
+    mainClass = 'com.yourcompany.Main'
+    classpath = sourceSets.main.runtimeClasspath
+
+    jvmArgs = [
+        "-javaagent:${getAgentJar()}=include=com.yourcompany;trackConstructors=com.yourcompany.Message",
+        "-Dobject.tracker.handler=com.yourcompany.custom.ConnectionTracker"
+    ]
+}
+```
+
+See `bytebuf-flow-example/build.gradle` for a complete, realistic example.
+
+### Method 4: Gradle with Local Maven Repository
+
+**Best for**: Simple Gradle projects, testing
+
+```bash
+# Step 1: Build and install
+cd bytebuddy-bytebuf-tracer
+mvn clean install
+```
+
+```gradle
+// Step 2: Add to your build.gradle
+repositories {
+    mavenLocal()  // Check local Maven repository first
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.example.bytebuf:bytebuf-flow-tracker:1.0.0-SNAPSHOT'
+}
+
+// Step 3: Configure agent
+task runWithAgent(type: JavaExec) {
+    mainClass = 'com.yourcompany.Main'
+    classpath = sourceSets.main.runtimeClasspath
+
+    def agentJar = "${System.getProperty('user.home')}/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar"
+
+    jvmArgs = ["-javaagent:${agentJar}=include=com.yourcompany"]
+}
+```
+
+### Method 5: Copy Source Directly
 
 **Best for**: Full control, embedded in monorepo
 
@@ -282,7 +401,7 @@ git submodule add https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git module
 cp -r /path/to/bytebuddy-bytebuf-tracer/bytebuf-flow-tracker your-project/modules/
 ```
 
-Then follow the same pom.xml configuration as Method 2.
+Then follow the same pom.xml configuration as Method 2 (for Maven) or Method 3 (for Gradle).
 
 ## Configuration
 

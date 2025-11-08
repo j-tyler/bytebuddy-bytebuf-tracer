@@ -166,26 +166,6 @@ EOF
 gradle build
 ```
 
-## Known Issues with the Agent
-
-**IMPORTANT BUG**: The agent has a runtime issue at `ByteBufFlowAgent.java:80`:
-
-```java
-.type(isSubTypeOf(io.netty.buffer.ByteBuf.class))  // ← Loads ByteBuf too early!
-```
-
-This tries to load the ByteBuf class during `premain()`, before the application classpath is available. The agent will crash with:
-
-```
-Caused by: java.lang.ClassNotFoundException: io.netty.buffer.ByteBuf
-```
-
-**Workaround**: The agent can be built but cannot currently run. To fix, change to string-based matching:
-
-```java
-.type(named("io.netty.buffer.ByteBuf"))
-```
-
 ## Project Structure Overview
 
 ```
@@ -218,7 +198,7 @@ cd bytebuf-flow-example
 # Without agent (won't track anything but will run)
 mvn exec:java
 
-# With agent (currently fails due to bug)
+# With agent (shows ByteBuf flow tracking)
 mvn exec:exec \
   -Dexec.executable="java" \
   -Dexec.args="-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo -classpath %classpath com.example.demo.DemoApplication"
@@ -264,7 +244,7 @@ I created comprehensive Gradle build files that demonstrate:
 2. ☐ Configure Maven settings (`~/.m2/settings.xml`)
 3. ☐ Run `mvn clean install -DskipTests`
 4. ☐ Verify agent JAR exists at `bytebuf-flow-tracker/target/*-agent.jar`
-5. ☐ If running examples, note the agent bug prevents actual tracking
+5. ☐ Run examples to see ByteBuf flow tracking in action
 
 ## Useful Commands
 
@@ -297,9 +277,9 @@ ls -la ~/.m2/repository/com/example/bytebuf/
 
 - The Gradle build files are **production-ready and correct**
 - The network setup is **required** for any build
-- The agent has a **pre-existing bug** unrelated to the Gradle work
 - Always check if the proxy is running before building
 - The composite build approach is the recommended integration method
+- The agent uses string-based type matching to avoid early class loading
 
 ---
 

@@ -76,9 +76,10 @@ public class ByteBufFlowAgent {
 
         // Add ByteBuf lifecycle method tracking (release, retain)
         // This tracks release() only when it drops refCnt to 0
+        // Use string-based matching to avoid loading ByteBuf class during premain
         System.out.println("[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)");
         agentBuilder = agentBuilder
-            .type(isSubTypeOf(io.netty.buffer.ByteBuf.class)
+            .type(hasSuperType(named("io.netty.buffer.ByteBuf"))
                 .and(not(isInterface()))
                 .and(not(isAbstract())))
             .transform(new ByteBufLifecycleTransformer());

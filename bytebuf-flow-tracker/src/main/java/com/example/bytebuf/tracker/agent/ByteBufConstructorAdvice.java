@@ -69,12 +69,8 @@ public class ByteBufConstructorAdvice {
     }
 
     /**
-     * Constructor exit advice - tracks final state of objects in parameters
-     *
-     * IMPORTANT: Does NOT use onThrowable parameter because:
-     * - Constructors cannot have exception handlers before super() call
-     * - JVM bytecode verifier would reject the instrumented class
-     * - This is a necessary trade-off for constructor tracking
+     * Constructor exit advice - tracks parameter state after constructor completes
+     * Uses _return suffix consistently (exit = return)
      */
     @Advice.OnMethodExit
     public static void onConstructorExit(
@@ -91,16 +87,15 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Check if any tracked objects in parameters have changed state
+            // Track parameter state on exit with _return suffix (exit = return)
             if (arguments != null) {
                 for (Object arg : arguments) {
                     if (handler.shouldTrack(arg)) {
                         int metric = handler.getMetric(arg);
-                        // Record the exit state
                         tracker.recordMethodCall(
                             arg,
                             clazz.getSimpleName(),
-                            "<init>_exit",
+                            "<init>_return",
                             metric
                         );
                     }

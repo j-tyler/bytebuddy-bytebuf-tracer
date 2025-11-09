@@ -23,6 +23,12 @@ public class ByteBufTrackingAdvice {
     public static final ThreadLocal<Boolean> IS_TRACKING =
         ThreadLocal.withInitial(() -> false);
 
+    // ThreadLocal to store identity hash codes of parameters tracked during method entry
+    // This prevents duplicate tracking when the same object is both a parameter and return value
+    // Must be public for instrumented classes to access
+    public static final ThreadLocal<java.util.Set<Integer>> TRACKED_PARAMS =
+        ThreadLocal.withInitial(java.util.HashSet::new);
+
     /**
      * Method entry advice - tracks objects in parameters
      */
@@ -46,6 +52,9 @@ public class ByteBufTrackingAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
+            // Clear the tracked params set for this invocation
+            TRACKED_PARAMS.get().clear();
+
             for (Object arg : arguments) {
                 if (handler.shouldTrack(arg)) {
                     int metric = handler.getMetric(arg);
@@ -55,6 +64,8 @@ public class ByteBufTrackingAdvice {
                         methodName,
                         metric
                     );
+                    // Record that we tracked this object
+                    TRACKED_PARAMS.get().add(System.identityHashCode(arg));
                 }
             }
         } finally {
@@ -63,7 +74,8 @@ public class ByteBufTrackingAdvice {
     }
 
     /**
-     * Method exit advice - tracks objects in return values and final state
+     * Method exit advice - tracks return values with _return suffix
+     * This shows when objects "go up the stack" (returned from methods)
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
@@ -83,20 +95,24 @@ public class ByteBufTrackingAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Only track return values on exit
-            // Tracking arguments on exit creates noise and orphaned flows
-            // when the object state has changed (e.g., after release())
+            // Track return values with _return suffix
+            // Only track if it wasn't already tracked as a parameter (to avoid duplicates)
             if (handler.shouldTrack(returnValue)) {
-                int metric = handler.getMetric(returnValue);
-                tracker.recordMethodCall(
-                    returnValue,
-                    clazz.getSimpleName(),
-                    methodName + "_return",
-                    metric
-                );
+                int hashCode = System.identityHashCode(returnValue);
+                if (!TRACKED_PARAMS.get().contains(hashCode)) {
+                    int metric = handler.getMetric(returnValue);
+                    tracker.recordMethodCall(
+                        returnValue,
+                        clazz.getSimpleName(),
+                        methodName + "_return",
+                        metric
+                    );
+                }
             }
         } finally {
             IS_TRACKING.set(false);
+            // Clear the tracked params for this thread
+            TRACKED_PARAMS.get().clear();
         }
     }
 }

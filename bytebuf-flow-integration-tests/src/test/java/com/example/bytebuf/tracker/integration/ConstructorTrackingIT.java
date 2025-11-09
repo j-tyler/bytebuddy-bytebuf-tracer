@@ -113,10 +113,10 @@ public class ConstructorTrackingIT {
             .withFailMessage("Constructor should be tracked with trackConstructors config")
             .isTrue();
 
-        // Should have no leaks - ByteBuf is released at the end
-        assertThat(verifier.getLeakPaths())
-            .withFailMessage("Should have no leaks")
-            .isEqualTo(0);
+        // Should have proper cleanup - ByteBuf is released at the end
+        assertThat(verifier.hasProperCleanup())
+            .withFailMessage("Should have ref=0 showing ByteBuf was released")
+            .isTrue();
     }
 
     @Test

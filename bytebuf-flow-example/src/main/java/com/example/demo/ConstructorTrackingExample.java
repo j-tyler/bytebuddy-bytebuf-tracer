@@ -22,8 +22,10 @@ import com.example.bytebuf.tracker.view.TrieRenderer;
  *     -Dexec.args="-javaagent:bytebuf-flow-tracker-agent.jar=include=com.example.demo;trackConstructors=com.example.demo.ConstructorTrackingExample$TrackedMessage"
  *
  * Expected flow with constructor tracking:
- * allocate -> prepareForWrapping -> TrackedMessage.<init> -> processMessage -> validateMessage -> cleanup
+ * allocate_return -> prepareForWrapping -> TrackedMessage.<init> -> TrackedMessage.<init>_return ->
+ * processMessage -> validateMessage -> cleanup -> release
  *
+ * Note: Methods returning ByteBuf show with '_return' suffix.
  * All steps visible in one continuous path!
  */
 public class ConstructorTrackingExample {
@@ -147,7 +149,7 @@ public class ConstructorTrackingExample {
          *
          * WITH constructor tracking:
          *   - Agent automatically tracks ByteBuf parameter
-         *   - Appears as TrackedMessage.<init> in flow tree
+         *   - Appears as TrackedMessage.<init> (entry) and TrackedMessage.<init>_return (exit) in flow tree
          *   - Flow remains continuous
          */
         public TrackedMessage(ByteBuf data, String messageId) {

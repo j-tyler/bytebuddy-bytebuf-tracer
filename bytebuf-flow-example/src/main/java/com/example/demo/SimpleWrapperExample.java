@@ -100,11 +100,14 @@ public class SimpleWrapperExample {
 
         System.out.println("\n=== Explanation ===");
         System.out.println("The flow tree shows the complete path of the ByteBuf:");
-        System.out.println("1. allocateBuffer() - Where the ByteBuf was created");
-        System.out.println("2. DataPacket.<init> - Where it was wrapped in the custom object");
-        System.out.println("3. handlePacket() - Where the wrapper was received");
-        System.out.println("4. getData() - Where the ByteBuf was extracted");
-        System.out.println("5. release() - Where the ByteBuf was properly released [ref=0]");
+        System.out.println("1. UnpooledByteBufAllocator.heapBuffer - ROOT: Allocator that created the ByteBuf");
+        System.out.println("2. allocateBuffer_return - Where allocateBuffer() returned the ByteBuf");
+        System.out.println("3. DataPacket.<init> - Entry: ByteBuf passed as constructor parameter");
+        System.out.println("4. DataPacket.<init>_return - Exit: Constructor finished (ByteBuf stored in wrapper)");
+        System.out.println("5. getData_return - Where getData() returned the ByteBuf from the wrapper");
+        System.out.println("6. release - Where the ByteBuf was properly released [ref=0]");
+        System.out.println("\nNote: Methods that return ByteBuf show with '_return' suffix.");
+        System.out.println("      handlePacket() doesn't appear because it receives DataPacket, not ByteBuf.");
         System.out.println("\nNo leaks detected! The ByteBuf was properly released.");
     }
 

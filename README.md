@@ -5,96 +5,140 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 ## Features
 
 - **Zero allocation overhead**: No stack trace collection or allocation site tracking
-- **First-touch root**: The first method that handles a ByteBuf becomes the Trie root
+- **Allocator root tracking**: ByteBuf allocator methods (Unpooled.buffer, ByteBufAllocator.heapBuffer, etc.) serve as Trie roots
 - **Intelligent release tracking**: Tracks `release()` only when refCnt drops to 0, eliminating leak ambiguity
+- **Entry/Exit tracking**: Methods returning tracked objects show with `_return` suffix for complete flow visibility
 - **Memory efficient**: Trie structure shares common prefixes, minimizing memory usage
 - **Real-time monitoring**: JMX MBean for runtime analysis
 - **Dual output formats**: Human-readable tree view and LLM-optimized structured format
 
 ## Prerequisites
 
-- **Java 8+**
+- **Java 8+** (JDK 8, 11, 17, 21, or later)
 - **Maven 3.6+** or **Gradle 6+**
 - **Netty ByteBuf** in your application (or custom objects to track)
 - **Not published to Maven Central** - must build from source
 
+## Java Version Requirements
+
+This project requires **Java 8+** (compiled with Java 8 source/target compatibility). Recommended: **Java 11, 17, or 21 LTS**.
+
+```bash
+# Check your Java version
+java -version
+
+# Use a specific JDK for Maven (if you have multiple versions)
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean install
+
+# Find installed JDKs
+ls /usr/lib/jvm/                      # Linux
+/usr/libexec/java_home -V             # macOS
+update-alternatives --list java        # Debian/Ubuntu
+```
+
+**Note:** ByteBuddy 1.14.9 officially supports Java 8-22. For Java 21+ you may need `export MAVEN_OPTS="-Dnet.bytebuddy.experimental=true"` if you encounter version warnings.
+
 ## Quick Start
 
-### Build and Run Example
+### 1. Clone and Build
 
-**Using Gradle (Recommended):**
 ```bash
-# Clone and navigate to examples
-git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
-cd bytebuddy-bytebuf-tracer/bytebuf-flow-example
-
-# List all available examples
-gradle listExamples
-
-# Run basic ByteBuf tracking example
-gradle runBasicExample
-
-# Run custom object tracking (programmatic)
-gradle runCustomObjectExample
-
-# Run custom object tracking (Gradle config - zero code changes!)
-gradle runCustomObjectViaGradle
-```
-
-**Using Maven (Alternative):**
-```bash
-# Clone and build
+# Clone the repository
 git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
 cd bytebuddy-bytebuf-tracer
+
+# Build everything (library + examples)
 mvn clean install
-
-# Run ByteBuf example
-cd bytebuf-flow-example
-mvn exec:java
-
-# Run custom object example (file handles)
-mvn exec:java -Dexec.mainClass="com.example.demo.custom.CustomObjectExample"
 ```
+
+**Expected output:** `BUILD SUCCESS` for all modules
+
+### 2. Run Tests
+
+```bash
+# Run all tests (unit + integration)
+mvn test
+
+# Run only integration tests
+cd bytebuf-flow-integration-tests
+mvn test
+```
+
+**Expected output:** All 29+ tests passing
+
+### 3. Run Examples
+
+```bash
+# Navigate to examples and build classpath
+cd bytebuf-flow-example
+mvn dependency:build-classpath -Dmdep.outputFile=/tmp/cp.txt -q
+
+# Define helper function for classpath
+CP_CMD='$(pwd)/target/classes:$(cat /tmp/cp.txt)'
+
+# Run basic example (shows leak detection)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -cp "$(pwd)/target/classes:$(cat /tmp/cp.txt)" \
+  com.example.demo.DemoApplication
+
+# Run wrapper example with constructor tracking
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo;trackConstructors=com.example.demo.SimpleWrapperExample\$DataPacket" \
+  -cp "$(pwd)/target/classes:$(cat /tmp/cp.txt)" \
+  com.example.demo.SimpleWrapperExample
+
+# Run custom object tracking example
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -Dobject.tracker.handler=com.example.demo.custom.FileHandleTracker \
+  -cp "$(pwd)/target/classes:$(cat /tmp/cp.txt)" \
+  com.example.demo.custom.CustomObjectExample
+```
+
+**Note:** Examples must run with the `-javaagent` argument to enable tracking. The basic example demonstrates intentional leaks and proper cleanup. The `$(pwd)` ensures the classpath uses absolute paths.
 
 ### Expected Output
 
 ```
 === ByteBuf Flow Summary ===
 Total Root Methods: 2
-Total Traversals: 9
-Unique Paths: 3
-Leak Paths: 1
+Total Traversals: 10
+Total Paths: 4
+Leak Paths: 2
+Leak Percentage: 50.00%
 
 === Flow Tree ===
-ROOT: DemoApplication.handleNormalRequest [count=5]
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=9]
 └── MessageProcessor.process [ref=1, count=5]
-    └── MessageProcessor.validate [ref=1, count=5]
-        └── MessageProcessor.parseContent [ref=1, count=5]
-            └── MessageProcessor.store [ref=0, count=5]
+    └── InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=5]
+└── MessageProcessor.processWithPotentialError [ref=1, count=3]
+    └── InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=3]
+└── LeakyService.forgetsToRelease [ref=1, count=1] ⚠️ LEAK
 
-ROOT: DemoApplication.createLeak [count=1]
-└── LeakyService.forgetsToRelease [ref=1, count=1]
-    └── LeakyService.processData [ref=1, count=1] ⚠️ LEAK
+ROOT: UnpooledByteBufAllocator.directBuffer [count=1]
 ```
 
-**Leak Detection**: Leaf nodes with `⚠️ LEAK` (non-zero metric) indicate unreleased resources.
+**Key Points**:
+- **Allocator Roots**: Netty allocator methods (UnpooledByteBufAllocator.heapBuffer, etc.) are roots
+- **Return Values**: Methods returning ByteBuf show with `_return` suffix (e.g., `allocateBuffer_return`)
+- **Leak Detection**: Leaf nodes with non-zero ref count (⚠️ LEAK) indicate unreleased resources
 
 ## How It Works
 
 ### Architecture
 
 1. **ByteBuddy Instrumentation**: Agent intercepts all public/protected methods in specified packages
-2. **First Touch = Root**: First method to handle an object becomes its Trie root
-3. **Path Building**: Each subsequent method call adds a node to the tree
-4. **Metric Tracking**: Each node records object's metric (refCount for ByteBuf, open/closed for others)
-5. **Leak Detection**: Leaf nodes with non-zero metric indicate leaks
+2. **Allocator Roots**: ByteBuf construction methods (Unpooled.buffer, ByteBufAllocator.heapBuffer, etc.) become Trie roots
+3. **Entry/Exit Tracking**: Methods are tracked at entry (parameters) and exit (returns with `_return` suffix)
+4. **Path Building**: Each subsequent method call adds a node to the tree
+5. **Metric Tracking**: Each node records object's metric (refCount for ByteBuf, open/closed for others)
+6. **Leak Detection**: Leaf nodes with non-zero metric indicate leaks
 
 ### Components
 
 - **`FlowTrie`**: Pure Trie data structure for storing method call paths
-- **`ByteBufFlowTracker`**: Main tracking logic using first-touch-as-root approach
+- **`ByteBufFlowTracker`**: Main tracking logic with allocator-root tracking and entry/exit recording
 - **`ByteBufFlowAgent`**: Java agent entry point for ByteBuddy instrumentation
-- **`ByteBufTrackingAdvice`**: ByteBuddy advice that intercepts methods
+- **`ByteBufTrackingAdvice`**: ByteBuddy advice that intercepts methods (entry/exit with `_return` suffix)
+- **`ByteBufConstructorAdvice`**: Tracks ByteBuf through allocator constructors
 - **`ObjectTrackerHandler`**: Interface for tracking custom objects
 - **`TrieRenderer`**: Formats Trie data into tree, flat, CSV, JSON views
 - **`ByteBufFlowMBean`**: JMX interface for runtime monitoring
@@ -154,16 +198,21 @@ buffer.release();                                // ref=1 -> 0 ✓ TRACKED (fina
 
 **Flow Tree**:
 ```
-ROOT: Processor.process [count=1]
-└── UnpooledHeapByteBuf.retain [ref=2, count=1]
-    └── Worker.work [ref=3, count=1]
-        └── UnpooledHeapByteBuf.retain [ref=3, count=1]
-            └── Worker.cleanup [ref=2, count=1]
-                └── Processor.finish [ref=1, count=1]
-                    └── UnpooledHeapByteBuf.release [ref=0, count=1]  ✓ Clean
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=1]
+└── Processor.process [ref=1, count=1]
+    └── UnpooledHeapByteBuf.retain [ref=2, count=1]
+        └── Worker.work [ref=3, count=1]
+            └── UnpooledHeapByteBuf.retain [ref=3, count=1]
+                └── Worker.cleanup [ref=2, count=1]
+                    └── Processor.finish [ref=1, count=1]
+                        └── UnpooledHeapByteBuf.release [ref=0, count=1]  ✓ Clean
 ```
 
-**Note**: Only retain calls and the FINAL release are tracked. Intermediate releases are skipped to keep the tree clean.
+**Note**:
+- Allocator methods (UnpooledByteBufAllocator.heapBuffer, Unpooled.buffer, etc.) are roots
+- Methods returning ByteBuf show with `_return` suffix (e.g., `allocateBuffer_return`)
+- Only retain calls and the FINAL release are tracked
+- Intermediate releases are skipped to keep the tree clean
 
 ### Static Method Tracking
 
@@ -528,7 +577,7 @@ System.out.println("Active flows: " + activeObjects + ", Roots: " + rootMethods)
 
 **Human-Readable Tree:**
 ```
-ROOT: DemoApplication.handleRequest [count=5]
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=5]
 └── MessageProcessor.process [ref=1, count=5]
     └── MessageProcessor.cleanup [ref=0, count=5]
 ```
@@ -536,15 +585,17 @@ ROOT: DemoApplication.handleRequest [count=5]
 **LLM-Optimized Format:**
 ```
 METADATA:
-total_roots=6
+total_roots=2
 total_traversals=210
-leak_percentage=37.50%
+total_paths=50
+leak_paths=12
+leak_percentage=24.00%
 
 LEAKS:
-leak|root=LeakyExample.allocate|final_ref=1|path=LeakyExample.allocate[ref=1] -> Logger.logError[ref=1]
+leak|root=UnpooledByteBufAllocator.heapBuffer|final_ref=1|path=UnpooledByteBufAllocator.heapBuffer[ref=1] -> Logger.logError[ref=1]
 
 FLOWS:
-flow|root=DirectExample.allocate|final_ref=0|is_leak=false|path=DirectExample.allocate[ref=1] -> cleanup[ref=0]
+flow|root=UnpooledByteBufAllocator.directBuffer|final_ref=0|is_leak=false|path=UnpooledByteBufAllocator.directBuffer[ref=1] -> cleanup[ref=0]
 ```
 
 ### Automatic Shutdown Report
@@ -568,19 +619,20 @@ Generated: Thu Nov 08 12:34:56 UTC 2025
 ================================================================================
 
 === ByteBuf Flow Summary ===
-Total Root Methods: 3
+Total Root Methods: 2
 Total Traversals: 15
-Unique Paths: 4
+Total Paths: 4
 Leak Paths: 1
 Leak Percentage: 25.00%
 
 === Flow Tree ===
-ROOT: Client.allocate [count=10]
-└── Handler.process [ref=1, count=10]
-    └── Handler.cleanup [ref=0, count=9]
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=10]
+└── Client.allocate_return [ref=1, count=10]
+    └── Handler.process [ref=1, count=10]
+        └── Handler.cleanup [ref=0, count=9]
 
 === Potential Leaks ===
-[count=1] [LEAK:ref=1] Client.allocate -> Handler.process[1]
+[LEAK:ref=1] UnpooledByteBufAllocator.heapBuffer[ref=1] -> Client.allocate_return[ref=1] -> Handler.process[ref=1]
 ```
 
 **Note**: This report is printed to stdout during JVM shutdown. To disable, you would need to modify the agent code (not configurable via arguments).

@@ -32,7 +32,7 @@ bytebuddy-bytebuf-tracer/
 
 ### 1. ByteBufFlowTracker
 
-**Purpose**: Main tracking logic using first-touch-as-root approach
+**Purpose**: Main tracking logic with allocator-root tracking and entry/exit recording
 
 **Key Methods**:
 - `recordMethodCall(Object, String, String, int)` - Track a method call
@@ -44,7 +44,10 @@ bytebuddy-bytebuf-tracer/
 - Singleton pattern for global access
 - Thread-safe using ConcurrentHashMap for object-to-root mapping
 - Uses `System.identityHashCode()` to track object identity
-- First method to handle an object becomes its root node
+- ByteBuf allocator methods (UnpooledByteBufAllocator.heapBuffer, Unpooled.buffer, etc.) become root nodes
+- Entry tracking: methods receiving ByteBuf as parameters
+- Exit tracking: methods returning ByteBuf (tracked with `_return` suffix)
+- TRACKED_PARAMS ThreadLocal prevents duplicate tracking when object is both parameter and return value
 
 **Active Flow Monitoring**:
 
@@ -131,16 +134,18 @@ This provides:
 2. Check parameters - any tracked objects?
 3. For each tracked object:
    - Extract metric
-   - Record method call in tracker
+   - Record method call in tracker (no suffix)
+   - Store identity hash in TRACKED_PARAMS ThreadLocal
 
 @OnMethodExit (runs after method completes)
   ↓
 1. Check re-entrance guard
-2. Check parameters - track exit state with "_exit" suffix
-3. Check return value - track with "_return" suffix
-4. For each tracked object:
+2. Check return value - track with "_return" suffix
+   - Only if NOT already tracked as parameter (avoid duplicates)
+3. For each tracked object:
    - Extract current metric
    - Record in tracker
+4. Clear TRACKED_PARAMS ThreadLocal
 ```
 
 **Re-entrance Guard Mechanism**:
@@ -163,19 +168,26 @@ try {
 - Uses ThreadLocal for thread safety without locks
 - Explains why some methods might not appear in traces (called during tracking)
 
-**Method Exit Tracking with Suffixes**:
+**Method Entry/Exit Tracking with Suffixes**:
 
-The advice tracks BOTH method entry and exit, appending suffixes to differentiate:
-- `methodName` - Tracked at method entry (from parameters)
-- `methodName_exit` - Tracked at method exit (parameter state changes)
-- `methodName_return` - Tracked at method exit (return values)
+The advice tracks BOTH method entry and exit, using suffixes to differentiate:
+- `methodName` - Tracked at method entry (ByteBuf received as parameter)
+- `methodName_return` - Tracked at method exit (ByteBuf returned from method)
+- `<init>` - Constructor entry (ByteBuf passed to constructor)
+- `<init>_return` - Constructor exit (constructor finished storing ByteBuf)
+
+**Duplicate Prevention**:
+When a method both receives ByteBuf as parameter AND returns it (e.g., fluent API), the TRACKED_PARAMS ThreadLocal prevents double-tracking by recording identity hashes of parameters. The return value is only tracked if it's a different object.
 
 **Example flow tree**:
 ```
-allocate → process_exit → process_return → cleanup
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=1]
+└── Client.allocate_return [ref=1, count=1]
+    └── Handler.process [ref=1, count=1]
+        └── Handler.cleanup_return [ref=0, count=1]
 ```
 
-This allows tracking state changes across method execution. Users will see these suffixes in their flow trees.
+This allows tracking complete object flow - both down the stack (parameters) and up the stack (returns). Users will see `_return` suffixes in their flow trees for methods that return ByteBuf.
 
 **Special Cases**:
 - **release()**: Only tracked when refCnt drops to 0 (prevents tree clutter)
@@ -237,27 +249,36 @@ public interface ObjectTrackerHandler {
    - Records in ByteBufFlowTracker
    ↓
 5. Tracker updates Trie structure:
-   - First call for object creates root
+   - Allocator methods create root nodes
    - Subsequent calls add child nodes
    - Metric tracked at each step
 ```
 
-### First-Touch Root Strategy
+### Allocator Root Strategy
 
-**Why**: Avoids allocation site tracking (expensive) while still identifying leak sources
+**Why**: Tracks ByteBuf from creation (allocator) through entire lifecycle while avoiding expensive stack trace collection
 
 **How**:
-1. When ByteBuf first encountered, create root node
-2. Root = first method that handled this object
-3. All subsequent methods become children/descendants
-4. Result: Clear flow from entry point to leak
+1. ByteBuf construction methods are instrumented (UnpooledByteBufAllocator.heapBuffer, Unpooled.buffer, etc.)
+2. Allocator methods automatically become root nodes in the Trie
+3. All subsequent application methods that handle the ByteBuf become children/descendants
+4. Result: Complete flow from allocation to release (or leak)
+
+**Allocator Root Transformers**:
+- **ByteBufConstructionTransformer**: Instruments allocator methods
+  - Targets: UnpooledByteBufAllocator, PooledByteBufAllocator, Unpooled
+  - Only terminal methods (2-arg versions) to avoid telescoping constructor duplicates
+- **ByteBufConstructorAdvice**: Tracks ByteBuf through allocator constructors
+  - Entry: ByteBuf passed to constructor (`<init>`)
+  - Exit: Constructor complete (`<init>_return`)
 
 **Example**:
 ```
-allocate()           ← Root (first touch)
-  └── prepare()      ← Child
-      └── send()     ← Grandchild
-          └── LEAK   ← Leaf with refCnt=1
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=1]
+  └── Client.allocate_return [ref=1, count=1]
+      └── Handler.prepare [ref=1, count=1]
+          └── Sender.send [ref=1, count=1]
+              └── LEAK [ref=1]  ← Leaf with refCnt=1
 ```
 
 ### Release Tracking Algorithm
@@ -561,18 +582,21 @@ jconsole localhost:9999
 - Efficient path lookup
 - Easy to render as tree
 
-### Why First-Touch Root?
+### Why Allocator Root?
 
 **Alternatives considered**:
-- Allocation site tracking: Expensive (stack traces)
+- Allocation site tracking with stack traces: Expensive (high overhead)
+- First-touch application method: Loses allocator context, can't see which allocator created the object
 - Manual root marking: Requires code changes
 - Thread-based roots: Doesn't match object flow
 
-**First-touch advantages**:
-- Zero overhead (no stack traces)
-- Automatic (no code changes)
-- Intuitive (matches developer mental model)
-- Works across threads
+**Allocator root advantages**:
+- Complete lifecycle visibility: Tracks from creation (allocator) to release/leak
+- Zero stack trace overhead: Instruments specific allocator methods instead
+- Automatic: No code changes required
+- Allocator context: Clearly shows which allocator (heap vs direct, pooled vs unpooled) created the ByteBuf
+- Works across threads: Object identity tracking follows ByteBuf regardless of thread
+- Telescoping prevention: Only instruments terminal methods (2-arg versions) to avoid constructor call duplicates
 
 ### Why Release-Only-When-Zero?
 

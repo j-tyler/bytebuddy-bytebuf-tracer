@@ -21,41 +21,60 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 
 ## Quick Start
 
-### Build and Run Example
+### 1. Clone and Build
 
-**Using Gradle (Recommended):**
 ```bash
-# Clone and navigate to examples
-git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
-cd bytebuddy-bytebuf-tracer/bytebuf-flow-example
-
-# List all available examples
-gradle listExamples
-
-# Run basic ByteBuf tracking example
-gradle runBasicExample
-
-# Run custom object tracking (programmatic)
-gradle runCustomObjectExample
-
-# Run custom object tracking (Gradle config - zero code changes!)
-gradle runCustomObjectViaGradle
-```
-
-**Using Maven (Alternative):**
-```bash
-# Clone and build
+# Clone the repository
 git clone https://github.com/j-tyler/bytebuddy-bytebuf-tracer.git
 cd bytebuddy-bytebuf-tracer
+
+# Build everything (library + examples)
 mvn clean install
-
-# Run ByteBuf example
-cd bytebuf-flow-example
-mvn exec:java
-
-# Run custom object example (file handles)
-mvn exec:java -Dexec.mainClass="com.example.demo.custom.CustomObjectExample"
 ```
+
+**Expected output:** `BUILD SUCCESS` for all modules
+
+### 2. Run Tests
+
+```bash
+# Run all tests (unit + integration)
+mvn test
+
+# Run only integration tests
+cd bytebuf-flow-integration-tests
+mvn test
+```
+
+**Expected output:** All 29+ tests passing
+
+### 3. Run Examples
+
+```bash
+# Navigate to examples and build classpath
+cd bytebuf-flow-example
+mvn dependency:build-classpath -Dmdep.outputFile=/tmp/cp.txt -q
+
+# Define helper function for classpath
+CP_CMD='$(pwd)/target/classes:$(cat /tmp/cp.txt)'
+
+# Run basic example (shows leak detection)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -cp "$(pwd)/target/classes:$(cat /tmp/cp.txt)" \
+  com.example.demo.DemoApplication
+
+# Run wrapper example with constructor tracking
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo;trackConstructors=com.example.demo.SimpleWrapperExample\$DataPacket" \
+  -cp "$(pwd)/target/classes:$(cat /tmp/cp.txt)" \
+  com.example.demo.SimpleWrapperExample
+
+# Run custom object tracking example
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -Dobject.tracker.handler=com.example.demo.custom.FileHandleTracker \
+  -cp "$(pwd)/target/classes:$(cat /tmp/cp.txt)" \
+  com.example.demo.custom.CustomObjectExample
+```
+
+**Note:** Examples must run with the `-javaagent` argument to enable tracking. The basic example demonstrates intentional leaks and proper cleanup. The `$(pwd)` ensures the classpath uses absolute paths.
 
 ### Expected Output
 

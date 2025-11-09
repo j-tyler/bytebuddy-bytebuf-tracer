@@ -25,6 +25,13 @@ public class TrieRenderer {
      */
     private static final int MAX_RECURSION_DEPTH = 100;
 
+    /**
+     * Direct buffer allocation methods that allocate off-heap memory (never GC'd).
+     * These represent critical leaks when not properly released.
+     */
+    private static final String DIRECT_BUFFER_METHOD = ".directBuffer";
+    private static final String IO_BUFFER_METHOD = ".ioBuffer";
+
     private final FlowTrie trie;
 
     public TrieRenderer(FlowTrie trie) {
@@ -36,23 +43,24 @@ public class TrieRenderer {
      */
     public String renderIndentedTree() {
         StringBuilder sb = new StringBuilder();
-        
+
         // Sort roots by traversal count for better visibility
         List<Map.Entry<String, TrieNode>> sortedRoots = trie.getRoots().entrySet().stream()
-            .sorted((a, b) -> Long.compare(b.getValue().getTraversalCount(), 
+            .sorted((a, b) -> Long.compare(b.getValue().getTraversalCount(),
                                           a.getValue().getTraversalCount()))
             .collect(Collectors.toList());
-        
+
         for (Map.Entry<String, TrieNode> entry : sortedRoots) {
-            sb.append("ROOT: ").append(entry.getKey());
+            String rootSignature = entry.getKey();
+            sb.append("ROOT: ").append(rootSignature);
             sb.append(" [count=").append(entry.getValue().getTraversalCount()).append("]\n");
-            renderNode(sb, entry.getValue(), "", true, true, 0);
+            renderNode(sb, entry.getValue(), "", true, true, 0, rootSignature);
         }
-        
+
         return sb.toString();
     }
     
-    private void renderNode(StringBuilder sb, TrieNode node, String prefix, boolean isLast, boolean isRoot, int depth) {
+    private void renderNode(StringBuilder sb, TrieNode node, String prefix, boolean isLast, boolean isRoot, int depth, String rootSignature) {
         // Prevent stack overflow from cyclic graphs or very deep trees
         if (depth >= MAX_RECURSION_DEPTH) {
             if (!isRoot) {
@@ -66,7 +74,7 @@ public class TrieRenderer {
         if (!isRoot) {
             sb.append(prefix);
             sb.append(isLast ? "└── " : "├── ");
-            sb.append(formatNode(node));
+            sb.append(formatNode(node, rootSignature));
             sb.append("\n");
         }
 
@@ -80,22 +88,48 @@ public class TrieRenderer {
         for (int i = 0; i < children.size(); i++) {
             Map.Entry<NodeKey, TrieNode> child = children.get(i);
             boolean isLastChild = (i == children.size() - 1);
-            renderNode(sb, child.getValue(), childPrefix, isLastChild, false, depth + 1);
+            renderNode(sb, child.getValue(), childPrefix, isLastChild, false, depth + 1, rootSignature);
         }
     }
     
-    private String formatNode(TrieNode node) {
+    private String formatNode(TrieNode node, String rootSignature) {
         StringBuilder sb = new StringBuilder();
         sb.append(node.getClassName()).append(".").append(node.getMethodName());
         sb.append(" [ref=").append(node.getRefCount());
         sb.append(", count=").append(node.getTraversalCount()).append("]");
-        
+
         // Add indicators for potential issues
         if (node.isLeaf() && node.getRefCount() != 0) {
-            sb.append(" ⚠️ LEAK");
+            // Check if this leak is from a direct buffer allocation
+            if (isDirectBufferRoot(rootSignature)) {
+                sb.append(" 🚨 LEAK");  // Critical: direct memory not GC'd
+            } else {
+                sb.append(" ⚠️ LEAK");   // Warning: heap memory will GC
+            }
         }
-        
+
         return sb.toString();
+    }
+
+    /**
+     * Check if a root signature indicates a direct buffer allocation.
+     * Direct buffers are NOT garbage collected and represent critical leaks.
+     *
+     * @param rootSignature The root method signature (e.g., "UnpooledByteBufAllocator.directBuffer")
+     * @return true if this is a direct buffer allocation
+     */
+    private boolean isDirectBufferRoot(String rootSignature) {
+        if (rootSignature == null) {
+            return false;
+        }
+
+        // Check for direct buffer allocation methods
+        // These allocate off-heap memory that will NOT be GC'd
+        // Match method names precisely to avoid false positives
+        return rootSignature.endsWith(DIRECT_BUFFER_METHOD) ||
+               rootSignature.endsWith(IO_BUFFER_METHOD) ||
+               rootSignature.contains(DIRECT_BUFFER_METHOD + "(") ||
+               rootSignature.contains(IO_BUFFER_METHOD + "(");
     }
     
     /**
@@ -105,27 +139,45 @@ public class TrieRenderer {
         StringBuilder sb = new StringBuilder();
         sb.append("=== ByteBuf Flow Summary ===\n");
         sb.append("Total Root Methods: ").append(trie.getRootCount()).append("\n");
-        
+
         long totalTraversals = 0;
         int totalPaths = 0;
         int leakPaths = 0;
-        
-        for (TrieNode root : trie.getRoots().values()) {
+        int criticalLeaks = 0;
+        int moderateLeaks = 0;
+
+        for (Map.Entry<String, TrieNode> entry : trie.getRoots().entrySet()) {
+            String rootSignature = entry.getKey();
+            TrieNode root = entry.getValue();
             PathStats stats = calculatePathStats(root, 0);
             totalTraversals += root.getTraversalCount();
             totalPaths += stats.pathCount;
             leakPaths += stats.leakCount;
+
+            // Count critical vs moderate leaks
+            if (stats.leakCount > 0) {
+                if (isDirectBufferRoot(rootSignature)) {
+                    criticalLeaks += stats.leakCount;
+                } else {
+                    moderateLeaks += stats.leakCount;
+                }
+            }
         }
-        
+
         sb.append("Total Traversals: ").append(totalTraversals).append("\n");
         sb.append("Total Paths: ").append(totalPaths).append("\n");
         sb.append("Leak Paths: ").append(leakPaths).append("\n");
-        
+
+        if (leakPaths > 0) {
+            sb.append("  Critical Leaks (🚨): ").append(criticalLeaks).append(" (direct buffers - never GC'd)\n");
+            sb.append("  Moderate Leaks (⚠️): ").append(moderateLeaks).append(" (heap buffers - will GC)\n");
+        }
+
         if (totalPaths > 0) {
             double leakPercentage = (leakPaths * 100.0) / totalPaths;
             sb.append(String.format("Leak Percentage: %.2f%%\n", leakPercentage));
         }
-        
+
         return sb.toString();
     }
     
@@ -207,7 +259,9 @@ public class TrieRenderer {
         boolean hasLeaks = false;
         for (PathInfo path : allPaths) {
             if (path.isLeak) {
-                sb.append("leak|root=").append(path.root)
+                // Mark direct buffer leaks as critical
+                String leakType = isDirectBufferRoot(path.root) ? "CRITICAL_LEAK" : "leak";
+                sb.append(leakType).append("|root=").append(path.root)
                   .append("|final_ref=").append(path.finalRef)
                   .append("|path=").append(path.path)
                   .append("\n");

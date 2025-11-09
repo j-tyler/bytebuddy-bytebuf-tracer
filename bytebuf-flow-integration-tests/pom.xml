@@ -57,6 +57,15 @@
             <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Mockito for testing agent compatibility with mocking frameworks -->
+        <!-- Scope is compile (not test) because the test app is in src/main/java -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.8.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

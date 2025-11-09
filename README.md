@@ -113,13 +113,17 @@ ROOT: UnpooledByteBufAllocator.heapBuffer [count=9]
     └── InstrumentedUnpooledUnsafeHeapByteBuf.release [ref=0, count=3]
 └── LeakyService.forgetsToRelease [ref=1, count=1] ⚠️ LEAK
 
-ROOT: UnpooledByteBufAllocator.directBuffer [count=1]
+ROOT: UnpooledByteBufAllocator.directBuffer [count=2]
+└── DirectLeakyService.forgetsToReleaseDirect [ref=1, count=1] 🚨 LEAK
+└── Handler.cleanupProperly [ref=1, count=1]
+    └── InstrumentedUnpooledUnsafeDirectByteBuf.release [ref=0, count=1]
 ```
 
 **Key Points**:
 - **Allocator Roots**: Netty allocator methods (UnpooledByteBufAllocator.heapBuffer, etc.) are roots
 - **Return Values**: Methods returning ByteBuf show with `_return` suffix (e.g., `allocateBuffer_return`)
-- **Leak Detection**: Leaf nodes with non-zero ref count (⚠️ LEAK) indicate unreleased resources
+- **Leak Severity**: Direct buffer leaks (🚨 LEAK) are critical (never GC'd), heap leaks (⚠️ LEAK) are moderate (will GC)
+- **Note**: `compositeBuffer` leaks show ⚠️ (treated as heap) since they may contain mixed buffer types
 
 ## How It Works
 

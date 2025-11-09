@@ -8,12 +8,17 @@ package com.example.demo;
 import com.example.bytebuf.tracker.ByteBufFlowTracker;
 import com.example.bytebuf.tracker.view.TrieRenderer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 /**
  * Demo application showing ByteBuf Flow Tracker in action.
  *
  * This demonstrates how an external project would use the tracker.
+ * Shows BOTH heap and direct buffer leaks with emoji differentiation:
+ * - Heap buffer leaks: ⚠️ LEAK (moderate - will GC)
+ * - Direct buffer leaks: 🚨 LEAK (critical - never GC'd!)
  *
  * Run with:
  *   mvn exec:java
@@ -25,8 +30,11 @@ import io.netty.buffer.Unpooled;
  */
 public class DemoApplication {
 
+    private final ByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
+
     public static void main(String[] args) throws InterruptedException {
-        System.out.println("=== ByteBuf Flow Tracker Demo ===\n");
+        System.out.println("=== ByteBuf Flow Tracker Demo ===");
+        System.out.println("=== Demonstrating Direct vs Heap Buffer Leak Detection ===\n");
 
         DemoApplication app = new DemoApplication();
 
@@ -43,9 +51,13 @@ public class DemoApplication {
             app.handleRequestWithError();
         }
 
-        // Intentional leak for demonstration
-        System.out.println("Creating intentional leak for demonstration...\n");
-        app.createLeak();
+        // CRITICAL: Direct buffer leak (🚨)
+        System.out.println("Creating CRITICAL direct buffer leak...\n");
+        app.createDirectBufferLeak();
+
+        // MODERATE: Heap buffer leak (⚠️)
+        System.out.println("Creating moderate heap buffer leak...\n");
+        app.createHeapBufferLeak();
 
         // Give the agent a moment to finish tracking
         Thread.sleep(100);
@@ -89,18 +101,36 @@ public class DemoApplication {
     }
 
     /**
-     * Intentional leak - ByteBuf is never released
-     * The tracker will detect this as a leak
+     * CRITICAL: Direct buffer leak - memory is NEVER garbage collected!
+     * Shows 🚨 LEAK emoji to indicate critical severity
      */
-    public void createLeak() {
-        ByteBuf leakyBuffer = Unpooled.buffer(256);
-        leakyBuffer.writeBytes("This will leak".getBytes());
+    public void createDirectBufferLeak() {
+        ByteBuf directBuffer = allocator.directBuffer(1024);
+        directBuffer.writeBytes("CRITICAL: Direct memory leak - never GC'd!".getBytes());
+
+        DirectLeakyService directLeaky = new DirectLeakyService();
+        directLeaky.forgetsToReleaseDirect(directBuffer);
+
+        // BUG: Direct buffer never released!
+        // This is CRITICAL - direct memory is NOT garbage collected
+        // The tracker will show this with 🚨 LEAK
+    }
+
+    /**
+     * MODERATE: Heap buffer leak - will eventually be garbage collected
+     * Shows ⚠️ LEAK emoji to indicate moderate severity (still a bug!)
+     */
+    public void createHeapBufferLeak() {
+        ByteBuf heapBuffer = allocator.heapBuffer(256);
+        heapBuffer.writeBytes("Moderate: Heap leak - will GC".getBytes());
 
         LeakyService leakyService = new LeakyService();
-        leakyService.forgetsToRelease(leakyBuffer);
+        leakyService.forgetsToRelease(heapBuffer);
 
-        // Oops! We forgot to release the buffer
-        // The tracker will show this as a leaf node with non-zero refCount
+        // BUG: Heap buffer never released!
+        // This is moderate severity - heap memory will eventually GC
+        // But still a bug that should be fixed!
+        // The tracker will show this with ⚠️ LEAK
     }
 
     /**
@@ -124,7 +154,12 @@ public class DemoApplication {
         System.out.println(renderer.renderForLLM());
         System.out.println();
 
-        System.out.println("Look for leaf nodes with non-zero refCount - those are leaks!");
-        System.out.println("In this example, LeakyService.forgetsToRelease should show as a leak.");
+        System.out.println("=== Leak Severity Guide ===");
+        System.out.println("🚨 LEAK - CRITICAL: Direct buffer leak (memory never GC'd - fix IMMEDIATELY!)");
+        System.out.println("⚠️ LEAK  - MODERATE: Heap buffer leak (will GC, but still a bug - fix soon!)");
+        System.out.println();
+        System.out.println("Look for:");
+        System.out.println("- DirectLeakyService.forgetsToReleaseDirect -> 🚨 CRITICAL");
+        System.out.println("- LeakyService.forgetsToRelease -> ⚠️ MODERATE");
     }
 }

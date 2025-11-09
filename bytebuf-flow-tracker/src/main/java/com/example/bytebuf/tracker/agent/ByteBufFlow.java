@@ -139,7 +139,8 @@ class ByteBufFlowReporter {
                     String line = lines[i];
                     if (!line.trim().equals("(none)") && !line.trim().isEmpty()) {
                         // Parse LLM format: leak|root=X|final_ref=Y|path=Z
-                        if (line.startsWith("leak|")) {
+                        // Also parse CRITICAL_LEAK| for direct buffer leaks
+                        if (line.startsWith("leak|") || line.startsWith("CRITICAL_LEAK|")) {
                             String[] parts = line.split("\\|");
                             String path = "";
                             String finalRef = "";
@@ -167,6 +168,10 @@ class ByteBufFlowReporter {
             report.append("No leaks detected\n");
         }
         report.append("\n");
+
+        // LLM format section - for programmatic analysis
+        report.append("=== LLM Format ===\n");
+        report.append(llmView).append("\n");
 
         return report.toString();
     }

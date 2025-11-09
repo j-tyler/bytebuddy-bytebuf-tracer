@@ -153,4 +153,116 @@ public class WrapperObjectTrackingIT {
             .withFailMessage("Should have ref=0 showing ByteBuf was released")
             .isTrue();
     }
+
+    /**
+     * Comprehensive test validating the _return suffix behavior for method exit tracking.
+     *
+     * This test differs from testWithConstructorTracking() by explicitly validating:
+     * 1. Entry tracking (<init>) AND exit tracking (<init>_return) with _return suffix
+     * 2. Getter return tracking (getPayload_return) with _return suffix
+     * 3. Method sequencing and ordering in the flow tree
+     * 4. Complete path validation from allocation to cleanup
+     *
+     * testWithConstructorTracking() only validates that constructor tracking works at all,
+     * while this test validates the complete entry/exit tracking mechanism including
+     * the _return suffix convention for tracking return values.
+     */
+    @Test
+    public void testCompleteWrapperFlowWithConstructorAndGetterTracking() throws Exception {
+        // Run with constructor tracking for Envelope to get complete visibility
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp",
+            "include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp$Envelope");
+
+        assertThat(result.isSuccess())
+            .withFailMessage("Application should exit successfully. Output:\n" + result.getOutput())
+            .isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+        String flowTree = verifier.getFlowTree();
+
+        // Verify the complete sequence appears in the flow tree
+        // Expected path: allocator root -> allocate_return -> wrap -> <init> -> <init>_return ->
+        //                unwrap -> getPayload_return -> release [ref=0]
+
+        // Verify allocate and its return tracking
+        assertThat(flowTree)
+            .withFailMessage("Flow tree should show allocate method")
+            .contains("allocate");
+
+        assertThat(verifier.hasMethodExitTracked("allocate"))
+            .withFailMessage("Flow tree should contain allocate_return for exit tracking")
+            .isTrue();
+
+        // Verify wrap and its return tracking
+        assertThat(flowTree)
+            .withFailMessage("Flow tree should show wrap method")
+            .contains("wrap");
+
+        assertThat(verifier.hasMethodExitTracked("wrap"))
+            .withFailMessage("Flow tree should contain wrap_return for exit tracking")
+            .isTrue();
+
+        // Verify constructor entry is tracked
+        assertThat(flowTree)
+            .withFailMessage("Flow tree should contain constructor entry (<init>)")
+            .contains("<init>");
+
+        // Verify constructor exit is tracked with _return suffix
+        assertThat(verifier.hasMethodExitTracked("init"))
+            .withFailMessage("Flow tree should contain constructor exit (<init>_return)")
+            .isTrue();
+
+        // Verify unwrap method is tracked
+        assertThat(flowTree)
+            .withFailMessage("Flow tree should show unwrap method")
+            .contains("unwrap");
+
+        assertThat(verifier.hasMethodExitTracked("unwrap"))
+            .withFailMessage("Flow tree should contain unwrap_return for exit tracking")
+            .isTrue();
+
+        // Verify getter returns are tracked with _return suffix
+        // getPayload() is called by unwrap(), so it should appear in the flow
+        assertThat(verifier.hasMethodExitTracked("getPayload"))
+            .withFailMessage("Flow tree should contain getPayload_return (called by unwrap)")
+            .isTrue();
+
+        // Verify cleanup
+        assertThat(flowTree)
+            .withFailMessage("Flow tree should show release method")
+            .contains("release");
+
+        assertThat(flowTree)
+            .withFailMessage("Flow tree should show ref=0 indicating proper cleanup")
+            .contains("[ref=0");
+
+        // Verify methods appear in expected sequence (not full tree structure validation,
+        // just linear ordering to catch major flow issues)
+        int allocatePos = flowTree.indexOf("allocate");
+        int initPos = flowTree.indexOf("<init>");
+        int unwrapPos = flowTree.indexOf("unwrap");
+        int releasePos = flowTree.indexOf("release");
+
+        assertThat(allocatePos)
+            .withFailMessage("allocate should appear in flow tree")
+            .isGreaterThan(-1);
+
+        assertThat(initPos)
+            .withFailMessage("<init> should appear after allocate in flow output")
+            .isGreaterThan(allocatePos);
+
+        assertThat(unwrapPos)
+            .withFailMessage("unwrap should appear after <init> in flow output")
+            .isGreaterThan(initPos);
+
+        assertThat(releasePos)
+            .withFailMessage("release should appear after unwrap in flow output")
+            .isGreaterThan(unwrapPos);
+
+        // Verify no leaks - the flow should end with proper cleanup
+        assertThat(verifier.hasProperCleanup())
+            .withFailMessage("Should have ref=0 showing ByteBuf was properly released")
+            .isTrue();
+    }
 }

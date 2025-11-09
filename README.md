@@ -14,10 +14,77 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 
 ## Prerequisites
 
-- **Java 8+**
+- **Java 8+** (JDK 8, 11, 17, 21, or later)
 - **Maven 3.6+** or **Gradle 6+**
 - **Netty ByteBuf** in your application (or custom objects to track)
 - **Not published to Maven Central** - must build from source
+
+## Java Version Requirements
+
+This project is compiled with Java 8 source/target compatibility, making it compatible with **Java 8 through Java 21+**.
+
+### Check Your Java Version
+
+```bash
+# Check the Java version Maven will use
+java -version
+
+# Check where JAVA_HOME points (if set)
+echo $JAVA_HOME
+```
+
+**Expected output:**
+```
+openjdk version "1.8.0_XXX" or higher
+OpenJDK Runtime Environment ...
+```
+
+### Setting the JVM for Maven
+
+Maven uses the `java` command from your `PATH` by default. If you have multiple JDK installations, you can control which JVM Maven uses by setting `JAVA_HOME`:
+
+```bash
+# Option 1: Set JAVA_HOME for current session
+export JAVA_HOME=/path/to/your/jdk
+export PATH=$JAVA_HOME/bin:$PATH
+
+# Verify it's set correctly
+java -version
+mvn -version
+
+# Option 2: Set JAVA_HOME for a single command
+JAVA_HOME=/path/to/jdk8 mvn clean install
+
+# Option 3: Add to ~/.bashrc or ~/.zshrc for persistence
+echo 'export JAVA_HOME=/usr/lib/jvm/java-8-openjdk' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Common JDK locations:**
+- **Ubuntu/Debian**: `/usr/lib/jvm/java-8-openjdk-amd64`, `/usr/lib/jvm/java-11-openjdk-amd64`
+- **macOS (Homebrew)**: `/opt/homebrew/opt/openjdk@8`, `/opt/homebrew/opt/openjdk@11`
+- **macOS (system)**: `/Library/Java/JavaVirtualMachines/jdk-1.8.jdk/Contents/Home`
+- **Windows**: `C:\Program Files\Java\jdk1.8.0_XXX`
+
+**How to find your JDK installations:**
+```bash
+# Linux/macOS
+/usr/libexec/java_home -V  # macOS only
+ls /usr/lib/jvm/            # Linux
+update-alternatives --list java  # Debian/Ubuntu
+
+# Windows
+dir "C:\Program Files\Java"
+```
+
+### Compatibility Notes
+
+- **Java 8**: Minimum required version (project is compiled for Java 8)
+- **Java 11+**: Fully compatible, recommended for production
+- **Java 17+**: Fully compatible, LTS version
+- **Java 21+**: Fully compatible, latest LTS version
+
+The agent uses ByteBuddy 1.14.9, which supports Java 8 through Java 21+.
 
 ## Quick Start
 

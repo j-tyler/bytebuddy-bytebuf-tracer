@@ -108,10 +108,10 @@ public class StaticMethodTrackingIT {
 
         OutputVerifier verifier = new OutputVerifier(result.getOutput());
 
-        // Should have no leaks - all ByteBufs are released
-        assertThat(verifier.getLeakPaths())
-            .withFailMessage("Should have no leak paths - all flows call release")
-            .isEqualTo(0);
+        // Should have proper cleanup - all ByteBufs are released
+        assertThat(verifier.hasProperCleanup())
+            .withFailMessage("Should have ref=0 showing ByteBufs were released")
+            .isTrue();
 
         // Verify release methods are called
         assertThat(verifier.hasMethodInFlow("releaseInstance"))

@@ -178,4 +178,28 @@ public class OutputVerifier {
         }
         return output.substring(start, end).trim();
     }
+
+    /**
+     * Check if a method's exit/return is being tracked in the output.
+     * This validates that method exit tracking is working by looking for the _return suffix.
+     *
+     * <p>Usage examples:</p>
+     * <ul>
+     *   <li>For regular methods: pass method name as-is (e.g., "allocate" checks for "allocate_return")</li>
+     *   <li>For constructors: pass "init" without angle brackets (checks for both "init_return" and "&lt;init&gt;_return")</li>
+     * </ul>
+     *
+     * @param methodName The method name without _return suffix or angle brackets.
+     *                   For constructors, use "init" not "&lt;init&gt;".
+     * @return true if methodName_return or &lt;methodName&gt;_return appears in output
+     * @throws IllegalArgumentException if methodName is null or empty
+     */
+    public boolean hasMethodExitTracked(String methodName) {
+        if (methodName == null || methodName.isEmpty()) {
+            throw new IllegalArgumentException("Method name cannot be null or empty");
+        }
+
+        return output.contains(methodName + "_return") ||
+               output.contains("<" + methodName + ">_return");
+    }
 }

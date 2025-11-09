@@ -13,16 +13,17 @@ import com.example.bytebuf.tracker.view.TrieRenderer;
 /**
  * Demonstrates ByteBuf flow tracking when ByteBuf is wrapped in custom objects.
  *
- * This example illustrates two key limitations:
- * 1. Constructors are not tracked (excluded by .and(not(isConstructor())))
- * 2. When ByteBuf is wrapped in a non-ByteBuf object, tracking breaks
+ * This example illustrates tracking behavior with wrapper objects:
+ * 1. Constructors CAN be tracked if configured via trackConstructors=<ClassName>
+ * 2. When ByteBuf is wrapped in a non-ByteBuf object, automatic tracking breaks
+ *    (unless constructor tracking is enabled for that class)
  *
  * Scenario:
  * - ByteBuf allocated
  * - Passed to method A (tracked)
- * - Method A wraps ByteBuf in Message object via constructor (NOT tracked)
+ * - Method A wraps ByteBuf in Message object via constructor (tracked if configured)
  * - Message object passed to method B (tracking BREAKS - Message is not a ByteBuf)
- * - Need manual tracking to maintain flow visibility
+ * - Need manual tracking OR constructor tracking to maintain flow visibility
  */
 public class WrappedObjectFlowExample {
 
@@ -68,7 +69,7 @@ public class WrappedObjectFlowExample {
         // Step 2: Pass to method (tracked - ByteBuf is parameter)
         processBuffer(buffer);
 
-        // Step 3: Wrap in Message object (constructor NOT tracked)
+        // Step 3: Wrap in Message object (constructor tracked only if configured with trackConstructors)
         Message message = new Message(buffer);
 
         // Step 4: Pass Message to method (NOT tracked - Message is not a ByteBuf)
@@ -161,7 +162,7 @@ public class WrappedObjectFlowExample {
         public Message(ByteBuf buffer) {
             this.buffer = buffer;
             this.id = "MSG-" + System.currentTimeMillis();
-            // Constructor NOT tracked by agent
+            // Constructor tracked only if configured: trackConstructors=com.example.demo.WrappedObjectFlowExample$Message
         }
 
         public ByteBuf getBuffer() {
@@ -184,7 +185,7 @@ public class WrappedObjectFlowExample {
             this.buffer = buffer;
             this.id = "MSG-" + System.currentTimeMillis();
 
-            // Manual tracking since constructors are excluded
+            // Manual tracking (alternative: configure trackConstructors=...MessageWithTracking)
             ByteBufFlowTracker.getInstance().recordMethodCall(
                 buffer, "MessageWithTracking", "<init>", buffer.refCnt());
         }
@@ -232,20 +233,20 @@ public class WrappedObjectFlowExample {
 
         /**
          * Encode: ByteBuf -> Message
-         * Constructor call is not tracked
+         * Constructor call tracked only if configured via trackConstructors
          */
         public Message encode(ByteBuf buffer) {
             // This is tracked (ByteBuf parameter)
-            return new Message(buffer);  // Constructor NOT tracked
+            return new Message(buffer);  // Constructor tracked only if configured
         }
 
         /**
          * Decode: Message -> ByteBuf
-         * Return value is tracked
+         * Return value is tracked with _return suffix
          */
         public ByteBuf decode(Message message) {
             // This is NOT tracked (Message parameter, not ByteBuf)
-            return message.getBuffer();  // Return value IS tracked
+            return message.getBuffer();  // Return value IS tracked as decode_return
         }
     }
 }

@@ -79,6 +79,7 @@ public class StaticMethodExample {
     /**
      * Static factory method - common pattern in ByteBuf usage.
      * Would NOT be tracked before the fix.
+     * Shows as createAndInitialize_return in flow (methods returning ByteBuf get _return suffix).
      */
     public static ByteBuf createAndInitialize(String content) {
         ByteBuf buffer = Unpooled.buffer(256);

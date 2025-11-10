@@ -32,7 +32,7 @@ public class AppLauncher {
      * Launch an application with the agent and default config.
      */
     public AppResult launch(String mainClass) throws IOException, InterruptedException {
-        return launch(mainClass, "include=com.example.bytebuf.tracker.integration.testapp");
+        return launch(mainClass, "include=com.example.bytebuf.tracker.integration.testapp.*");
     }
 
     /**

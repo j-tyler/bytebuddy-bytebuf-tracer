@@ -460,34 +460,63 @@ Then follow the same pom.xml configuration as Method 2 (for Maven) or Method 3 (
 
 ### Agent Arguments
 
-Format: `include=package1,package2;exclude=package3,package4;trackConstructors=class1,class2`
+Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstructors=class1,class2`
 
 **Parameters:**
-- `include` - Packages to instrument (required)
-- `exclude` - Packages to skip (optional)
+- `include` - Packages or specific classes to instrument (required)
+  - Package inclusion: `com.example.package.*` (requires .* suffix)
+  - Class inclusion: `com.example.package.SpecificClass` (no .* suffix)
+  - Inner class inclusion: `com.example.Outer$Inner` (use $ separator)
+- `exclude` - Packages or specific classes to skip (optional)
+  - Package exclusion: `com.example.package.*` (requires .* suffix)
+  - Class exclusion: `com.example.package.SpecificClass` (no .* suffix)
+  - Inner class exclusion: `com.example.Outer$Inner` (use $ separator)
 - `trackConstructors` - Classes to enable constructor tracking (optional)
 
 **Examples:**
 
 ```bash
-# Track single package
--javaagent:tracker.jar=include=com.example
+# Track single package (use .* suffix for packages)
+-javaagent:tracker.jar=include=com.example.*
 
-# Track multiple packages
--javaagent:tracker.jar=include=com.example,org.myapp
+# Track multiple packages (use .* suffix for packages)
+-javaagent:tracker.jar=include=com.example.*,org.myapp.*
 
-# Exclude subpackages
--javaagent:tracker.jar=include=com.example;exclude=com.example.legacy,com.example.test
+# Track only specific classes (no .* suffix means class, not package)
+-javaagent:tracker.jar=include=com.example.MyService,com.example.MyHandler
 
-# Exclude protocol/DTO classes to avoid Mockito conflicts
--javaagent:tracker.jar=include=com.github.ambry;exclude=com.github.ambry.protocol
+# Mix package and class includes
+-javaagent:tracker.jar=include=com.example.services.*,com.example.SpecificClass
+
+# Exclude packages (requires .* suffix for packages)
+-javaagent:tracker.jar=include=com.example.*;exclude=com.example.legacy.*,com.example.test.*
+
+# Exclude specific class (no .* suffix means class, not package)
+-javaagent:tracker.jar=include=com.example.*;exclude=com.example.protocol.ProtocolHandler
+
+# Exclude inner class (use $ separator, no .* suffix)
+-javaagent:tracker.jar=include=com.example.*;exclude=com.example.Outer$Inner
+
+# Mix package and class exclusions (use .* only for packages)
+-javaagent:tracker.jar=include=com.example.*;exclude=com.example.protocol.*,com.example.MockHelper
+
+# Exclude protocol/DTO package to avoid Mockito conflicts
+-javaagent:tracker.jar=include=com.github.ambry.*;exclude=com.github.ambry.protocol.*
 
 # Enable constructor tracking for wrapper classes
--javaagent:tracker.jar=include=com.example;trackConstructors=com.example.Message,com.example.Request
+-javaagent:tracker.jar=include=com.example.*;trackConstructors=com.example.Message,com.example.Request
 
 # Use wildcards for constructor tracking
--javaagent:tracker.jar=include=com.example;trackConstructors=com.example.dto.*
+-javaagent:tracker.jar=include=com.example.*;trackConstructors=com.example.dto.*
 ```
+
+**Important Notes:**
+- Both `include` and `exclude` support the same syntax for packages and classes
+- Package matching **requires** the `.*` suffix: `com.example.foo.*` matches all classes in that package and subpackages
+- Class matching has **no** `.*` suffix: `com.example.Foo` matches only that specific class
+- The `.*` suffix makes the distinction between packages and classes explicit and unambiguous
+- Inner classes use the `$` separator: `com.example.Outer$Inner`
+- **Precedence**: Exclusions take precedence over inclusions. If a class matches both `include` and `exclude`, it will be excluded
 
 ### JMX Monitoring
 

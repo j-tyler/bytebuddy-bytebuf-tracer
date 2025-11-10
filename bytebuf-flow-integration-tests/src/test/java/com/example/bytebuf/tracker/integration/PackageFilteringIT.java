@@ -34,7 +34,7 @@ public class PackageFilteringIT {
         // Run with include config
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.BasicFlowApp",
-            "include=com.example.bytebuf.tracker.integration.testapp");
+            "include=com.example.bytebuf.tracker.integration.testapp.*");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -55,7 +55,7 @@ public class PackageFilteringIT {
         // This should result in no methods being tracked
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.BasicFlowApp",
-            "include=com.example;exclude=com.example.bytebuf.tracker.integration.testapp");
+            "include=com.example.*;exclude=com.example.bytebuf.tracker.integration.testapp.*");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -85,7 +85,7 @@ public class PackageFilteringIT {
         // Run with multiple include packages
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.BasicFlowApp",
-            "include=com.example.bytebuf.tracker.integration.testapp,com.example.demo");
+            "include=com.example.bytebuf.tracker.integration.testapp.*,com.example.demo.*");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -100,11 +100,11 @@ public class PackageFilteringIT {
     }
 
     @Test
-    public void testBroadInclude() throws Exception {
-        // Run with broad include
+    public void testIncludeParentPackage() throws Exception {
+        // Run with parent package inclusion
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.BasicFlowApp",
-            "include=com.example");
+            "include=com.example.*");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -116,8 +116,8 @@ public class PackageFilteringIT {
     }
 
     @Test
-    public void testNarrowInclude() throws Exception {
-        // Run with very specific include
+    public void testIncludeSingleClassOnly() throws Exception {
+        // Run with single class inclusion (no .* suffix)
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.BasicFlowApp",
             "include=com.example.bytebuf.tracker.integration.testapp.BasicFlowApp");
@@ -129,5 +129,309 @@ public class PackageFilteringIT {
         // Should still track methods from BasicFlowApp
         assertThat(verifier.hasMethodInFlow("allocate"))
             .isTrue();
+    }
+
+    @Test
+    public void testExcludeSpecificClass() throws Exception {
+        // Run with specific class exclusion (no .* suffix means class, not package)
+        // OptionallyExcludedHelper should be excluded, but ExclusionTestApp methods should be tracked
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.OptionallyExcludedHelper");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Included methods should be tracked
+        assertThat(verifier.hasMethodInFlow("includedProcess"))
+            .withFailMessage("includedProcess should be tracked")
+            .isTrue();
+
+        assertThat(verifier.hasMethodInFlow("anotherIncludedProcess"))
+            .withFailMessage("anotherIncludedProcess should be tracked")
+            .isTrue();
+
+        // Excluded class methods should NOT be tracked in flow tree
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("processInExcludedClass"))
+            .withFailMessage("processInExcludedClass should NOT be tracked when class is excluded")
+            .isFalse();
+    }
+
+    @Test
+    public void testExcludePackageWithWildcard() throws Exception {
+        // Run with package exclusion using .* notation
+        // All classes in the excluded package should be excluded
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.excluded.*");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Included methods should be tracked
+        assertThat(verifier.hasMethodInFlow("includedProcess"))
+            .withFailMessage("includedProcess should be tracked")
+            .isTrue();
+
+        // Excluded package methods should NOT be tracked in flow tree
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("processInExcludedPackage"))
+            .withFailMessage("processInExcludedPackage should NOT be tracked when package is excluded")
+            .isFalse();
+
+        assertThat(flowTree.contains("additionalProcessing"))
+            .withFailMessage("additionalProcessing should NOT be tracked when package is excluded")
+            .isFalse();
+    }
+
+    @Test
+    public void testMixedClassAndPackageExclusions() throws Exception {
+        // Run with both class and package exclusions (no .* = class, with .* = package)
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.OptionallyExcludedHelper,com.example.bytebuf.tracker.integration.testapp.excluded.*");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Included methods should be tracked
+        assertThat(verifier.hasMethodInFlow("includedProcess"))
+            .withFailMessage("includedProcess should be tracked")
+            .isTrue();
+
+        assertThat(verifier.hasMethodInFlow("anotherIncludedProcess"))
+            .withFailMessage("anotherIncludedProcess should be tracked")
+            .isTrue();
+
+        // Excluded class and package methods should NOT be tracked in flow tree
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("processInExcludedClass"))
+            .withFailMessage("processInExcludedClass should NOT be tracked when class is excluded")
+            .isFalse();
+
+        assertThat(flowTree.contains("processInExcludedPackage"))
+            .withFailMessage("processInExcludedPackage should NOT be tracked when package is excluded")
+            .isFalse();
+    }
+
+    @Test
+    public void testExcludeSubpackages() throws Exception {
+        // Run with package exclusion that should also exclude subpackages
+        // Excluding "com.example.bytebuf.tracker.integration.testapp.excluded.*" should
+        // also exclude "com.example.bytebuf.tracker.integration.testapp.excluded.subpkg" if it existed
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.excluded.*");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Excluded package and all subpackages should NOT be tracked in flow tree
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("ExcludedPackageHelper"))
+            .withFailMessage("Classes in excluded package should NOT be tracked")
+            .isFalse();
+
+        // Even classes in the excluded package namespace should be excluded
+        assertThat(flowTree.contains("AnotherExcludedClass"))
+            .withFailMessage("All classes in excluded package should NOT be tracked")
+            .isFalse();
+    }
+
+    @Test
+    public void testExcludeInnerClass() throws Exception {
+        // Run with inner class exclusion using $ separator (no .* suffix means class, not package)
+        // InnerHelper (inner class) should be excluded, but outer class methods should be tracked
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.InnerClassTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.InnerClassTestApp$InnerHelper");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Outer class methods should be tracked
+        assertThat(verifier.hasMethodInFlow("outerProcess"))
+            .withFailMessage("outerProcess should be tracked")
+            .isTrue();
+
+        assertThat(verifier.hasMethodInFlow("anotherOuterProcess"))
+            .withFailMessage("anotherOuterProcess should be tracked")
+            .isTrue();
+
+        // Inner class methods should NOT be tracked in flow tree
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("processInInnerClass"))
+            .withFailMessage("processInInnerClass should NOT be tracked when inner class is excluded")
+            .isFalse();
+    }
+
+    @Test
+    public void testIncludeSpecificClass() throws Exception {
+        // Run with specific class inclusion (no .* suffix means class, not package)
+        // Only ExclusionTestApp should be instrumented, not OptionallyExcludedHelper
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // ExclusionTestApp methods should be tracked
+        assertThat(verifier.hasMethodInFlow("includedProcess"))
+            .withFailMessage("includedProcess should be tracked when its class is included")
+            .isTrue();
+
+        // OptionallyExcludedHelper should NOT be tracked (not in include list)
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("processInExcludedClass"))
+            .withFailMessage("processInExcludedClass should NOT be tracked when its class is not included")
+            .isFalse();
+    }
+
+    @Test
+    public void testIncludeMultipleClasses() throws Exception {
+        // Run with multiple specific class inclusions (no .* suffix)
+        // Both ExclusionTestApp and OptionallyExcludedHelper should be instrumented
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp,com.example.bytebuf.tracker.integration.testapp.OptionallyExcludedHelper");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Both classes' methods should be tracked
+        assertThat(verifier.hasMethodInFlow("includedProcess"))
+            .withFailMessage("includedProcess should be tracked")
+            .isTrue();
+
+        assertThat(verifier.hasMethodInFlow("processInExcludedClass"))
+            .withFailMessage("processInExcludedClass should be tracked when its class is explicitly included")
+            .isTrue();
+    }
+
+    @Test
+    public void testMixedPackageAndClassIncludes() throws Exception {
+        // Run with mixed package and class includes
+        // Include the testapp package with .* suffix, and a specific class without .*
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*,com.example.bytebuf.tracker.integration.testapp.OptionallyExcludedHelper");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // All methods should be tracked (package .* includes everything anyway)
+        assertThat(verifier.hasMethodInFlow("includedProcess"))
+            .isTrue();
+
+        assertThat(verifier.hasMethodInFlow("processInExcludedClass"))
+            .isTrue();
+    }
+
+    @Test
+    public void testIncludeInnerClass() throws Exception {
+        // Run with inner class inclusion using $ separator (no .* suffix means class, not package)
+        // Only the inner class should be instrumented, not outer class methods
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.InnerClassTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.InnerClassTestApp$InnerHelper");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Inner class methods should be tracked
+        assertThat(verifier.hasMethodInFlow("processInInnerClass"))
+            .withFailMessage("processInInnerClass should be tracked when inner class is explicitly included")
+            .isTrue();
+
+        // Outer class methods should NOT be tracked in flow tree (not in include list)
+        // Note: We check the flow tree specifically (not console output) to avoid false positives
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("outerProcess"))
+            .withFailMessage("outerProcess should NOT be tracked when outer class is not included")
+            .isFalse();
+
+        assertThat(flowTree.contains("anotherOuterProcess"))
+            .withFailMessage("anotherOuterProcess should NOT be tracked when outer class is not included")
+            .isFalse();
+    }
+
+    @Test
+    public void testExcludeTakesPrecedenceOverInclude() throws Exception {
+        // Run with conflicting include and exclude (exclude should win)
+        // Include com.example.*, but exclude specific class
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.ExclusionTestApp");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // ExclusionTestApp methods should NOT be tracked (excluded despite being in include pattern)
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("includedProcess"))
+            .withFailMessage("includedProcess should NOT be tracked when its class is excluded (exclude takes precedence)")
+            .isFalse();
+
+        assertThat(flowTree.contains("anotherIncludedProcess"))
+            .withFailMessage("anotherIncludedProcess should NOT be tracked when its class is excluded")
+            .isFalse();
     }
 }

@@ -434,4 +434,78 @@ public class PackageFilteringIT {
             .withFailMessage("anotherIncludedProcess should NOT be tracked when its class is excluded")
             .isFalse();
     }
+
+    @Test
+    public void testConstructorTrackingRespectsExclusions() throws Exception {
+        // Run with trackConstructors but exclude the class
+        // This tests that exclusions take precedence over trackConstructors
+        // IMPORTANT: This verifies the fix for the bug where constructor tracking
+        // ignored exclusion patterns
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp",
+            "include=com.example.bytebuf.tracker.integration.testapp.*;exclude=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Outer class methods should still be tracked (ConstructorTrackingApp is included)
+        assertThat(verifier.hasMethodInFlow("allocate"))
+            .withFailMessage("allocate should be tracked (outer class is included)")
+            .isTrue();
+
+        assertThat(verifier.hasMethodInFlow("prepare"))
+            .withFailMessage("prepare should be tracked (outer class is included)")
+            .isTrue();
+
+        // Message constructor should NOT be tracked (excluded despite being in trackConstructors)
+        // Why check flow tree: If the constructor were instrumented, the ByteBuf passed through
+        // Message.<init> would appear as a node in the flow tree. Absence from the tree proves
+        // the constructor was not instrumented, confirming exclusion took precedence.
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("Message.<init>"))
+            .withFailMessage("Message constructor should NOT be tracked when class is excluded (exclude takes precedence over trackConstructors)")
+            .isFalse();
+
+        // Message.getBuffer() should also NOT be tracked (class is excluded)
+        assertThat(flowTree.contains("getBuffer"))
+            .withFailMessage("getBuffer should NOT be tracked when class is excluded")
+            .isFalse();
+    }
+
+    @Test
+    public void testConstructorTrackingRespectsPackageExclusions() throws Exception {
+        // Run with trackConstructors pattern but exclude the package
+        // This tests that package-level exclusions apply to constructor tracking
+        AppLauncher.AppResult result = launcher.launch(
+            "com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp",
+            "include=com.example.*;exclude=com.example.bytebuf.tracker.integration.testapp.*;trackConstructors=com.example.bytebuf.tracker.integration.testapp.*");
+
+        assertThat(result.isSuccess()).isTrue();
+
+        OutputVerifier verifier = new OutputVerifier(result.getOutput());
+
+        // Agent should start
+        assertThat(verifier.hasAgentStarted())
+            .isTrue();
+
+        // Application methods should NOT be tracked (package is excluded)
+        String flowTree = verifier.getFlowTree();
+        assertThat(flowTree.contains("allocate"))
+            .withFailMessage("allocate should NOT be tracked when package is excluded")
+            .isFalse();
+
+        assertThat(flowTree.contains("prepare"))
+            .withFailMessage("prepare should NOT be tracked when package is excluded")
+            .isFalse();
+
+        // Constructors should also NOT be tracked (package is excluded despite trackConstructors)
+        assertThat(flowTree.contains("Message.<init>"))
+            .withFailMessage("Message constructor should NOT be tracked when package is excluded (exclude takes precedence)")
+            .isFalse();
+    }
 }

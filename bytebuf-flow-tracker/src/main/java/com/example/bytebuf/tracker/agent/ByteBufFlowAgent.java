@@ -428,6 +428,31 @@ class AgentConfig {
     }
 
     /**
+     * Applies exclusion patterns to a matcher.
+     * Exclusions support both package-level and class-level patterns:
+     * - Package: "com.example.protocol.*" excludes all classes in package/subpackages
+     * - Class: "com.example.protocol.SpecificClass" excludes only that specific class
+     * - Inner class: "com.example.Outer$Inner" excludes specific inner class
+     *
+     * @param matcher The matcher to apply exclusions to
+     * @return The matcher with exclusions applied
+     */
+    private ElementMatcher.Junction<TypeDescription> applyExclusions(
+            ElementMatcher.Junction<TypeDescription> matcher) {
+        for (String exclude : excludePatterns) {
+            if (exclude.endsWith(PACKAGE_WILDCARD_SUFFIX)) {
+                // Package exclusion - prefix match
+                String prefix = exclude.substring(0, exclude.length() - PACKAGE_WILDCARD_SUFFIX.length());
+                matcher = matcher.and(not(nameStartsWith(prefix)));
+            } else {
+                // Class exclusion - exact match (supports inner classes with $)
+                matcher = matcher.and(not(named(exclude)));
+            }
+        }
+        return matcher;
+    }
+
+    /**
      * Get type matcher based on configuration.
      * Supports both package-level and class-level includes/exclusions:
      * - Package: "com.example.protocol.*" matches all classes in package/subpackages (requires .* suffix)
@@ -454,40 +479,30 @@ class AgentConfig {
             }
         }
 
-        // Exclude packages and classes
-        for (String exclude : excludePatterns) {
-            if (exclude.endsWith(PACKAGE_WILDCARD_SUFFIX)) {
-                // Package exclusion - prefix match
-                String prefix = exclude.substring(0, exclude.length() - PACKAGE_WILDCARD_SUFFIX.length());
-                matcher = matcher.and(not(nameStartsWith(prefix)));
-            } else {
-                // Class exclusion - exact match (supports inner classes with $)
-                matcher = matcher.and(not(named(exclude)));
-            }
-        }
-
-        return matcher;
+        return applyExclusions(matcher);
     }
 
     /**
-     * Get matcher for classes that should have constructor tracking
+     * Get matcher for classes that should have constructor tracking.
+     * Applies both trackConstructors patterns and exclude patterns.
+     *
+     * IMPORTANT: Exclusions take precedence - if a class is both in trackConstructors
+     * and in exclude patterns, it will NOT be instrumented. This ensures consistency
+     * with regular method instrumentation and prevents conflicts with Mockito.
      */
     public ElementMatcher.Junction<TypeDescription> getConstructorTrackingMatcher() {
         ElementMatcher.Junction<TypeDescription> matcher = none();
 
         for (String className : constructorTrackingClasses) {
-            // Support both exact matches and pattern matches (consistent with include/exclude)
             if (className.endsWith(PACKAGE_WILDCARD_SUFFIX)) {
-                // Package pattern: com.example.* matches all classes in package
                 String prefix = className.substring(0, className.length() - PACKAGE_WILDCARD_SUFFIX.length());
                 matcher = matcher.or(nameStartsWith(prefix));
             } else {
-                // Exact class match (supports inner classes with $)
                 matcher = matcher.or(named(className));
             }
         }
 
-        return matcher;
+        return applyExclusions(matcher);
     }
 
     /**

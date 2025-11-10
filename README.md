@@ -517,6 +517,7 @@ Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstruc
 - The `.*` suffix makes the distinction between packages and classes explicit and unambiguous
 - Inner classes use the `$` separator: `com.example.Outer$Inner`
 - **Precedence**: Exclusions take precedence over inclusions. If a class matches both `include` and `exclude`, it will be excluded
+- **Constructor Tracking**: Exclusions also take precedence over `trackConstructors`. If a class is in both `trackConstructors` and `exclude` patterns, it will NOT be instrumented
 
 ### JMX Monitoring
 

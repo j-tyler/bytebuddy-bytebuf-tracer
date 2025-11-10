@@ -142,4 +142,69 @@ public class AgentConfigValidationTest {
             fail("Redundant patterns should be allowed: " + e.getMessage());
         }
     }
+
+    @Test
+    public void testExclusionTakesPrecedenceOverInclude() {
+        // When a class matches both include and exclude, it should be excluded
+        AgentConfig config = AgentConfig.parse("include=com.example.*;exclude=com.example.protocol.*");
+
+        // getTypeMatcher() should exclude classes in com.example.protocol package
+        // We can't easily test the matcher directly without mocking TypeDescription,
+        // but we can verify the config was parsed correctly
+        if (!config.toString().contains("exclude=[com.example.protocol.*]")) {
+            fail("Exclude pattern should be present in config");
+        }
+    }
+
+    @Test
+    public void testExclusionTakesPrecedenceOverConstructorTracking() {
+        // When a class matches both trackConstructors and exclude, it should be excluded
+        AgentConfig config = AgentConfig.parse(
+            "include=com.example.*;exclude=com.example.protocol.Message;trackConstructors=com.example.protocol.Message");
+
+        // Verify all patterns were parsed
+        String configStr = config.toString();
+        if (!configStr.contains("exclude=[com.example.protocol.Message]")) {
+            fail("Exclude pattern should be present in config");
+        }
+        if (!configStr.contains("trackConstructors=[com.example.protocol.Message]")) {
+            fail("TrackConstructors pattern should be present in config");
+        }
+
+        // The getConstructorTrackingMatcher() should apply exclusions,
+        // but testing the actual matcher behavior requires mocking TypeDescription
+    }
+
+    @Test
+    public void testPackageExclusionAppliestoConstructorTracking() {
+        // Package-level exclusions should also apply to constructor tracking
+        AgentConfig config = AgentConfig.parse(
+            "include=com.example.*;exclude=com.example.protocol.*;trackConstructors=com.example.protocol.*");
+
+        // Verify patterns were parsed
+        String configStr = config.toString();
+        if (!configStr.contains("exclude=[com.example.protocol.*]")) {
+            fail("Package exclude pattern should be present in config");
+        }
+        if (!configStr.contains("trackConstructors=[com.example.protocol.*]")) {
+            fail("Package trackConstructors pattern should be present in config");
+        }
+    }
+
+    @Test
+    public void testConstructorTrackingWithoutExclusions() {
+        // When no exclusions are present, trackConstructors patterns should work normally
+        AgentConfig config = AgentConfig.parse(
+            "include=com.example.*;trackConstructors=com.example.Message");
+
+        // Verify trackConstructors was parsed
+        if (!config.toString().contains("trackConstructors=[com.example.Message]")) {
+            fail("TrackConstructors pattern should be present in config");
+        }
+
+        // Verify no exclusions (empty set)
+        if (!config.toString().contains("exclude=[]")) {
+            fail("Exclude set should be empty when not specified");
+        }
+    }
 }

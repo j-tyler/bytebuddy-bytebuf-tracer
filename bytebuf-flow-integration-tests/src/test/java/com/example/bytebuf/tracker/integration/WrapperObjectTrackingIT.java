@@ -101,7 +101,7 @@ public class WrapperObjectTrackingIT {
         // Run with constructor tracking for Envelope
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp",
-            "include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp$Envelope");
+            "include=com.example.bytebuf.tracker.integration.testapp.*;trackConstructors=com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp$Envelope");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -172,7 +172,7 @@ public class WrapperObjectTrackingIT {
         // Run with constructor tracking for Envelope to get complete visibility
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp",
-            "include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp$Envelope");
+            "include=com.example.bytebuf.tracker.integration.testapp.*;trackConstructors=com.example.bytebuf.tracker.integration.testapp.WrapperObjectApp$Envelope");
 
         assertThat(result.isSuccess())
             .withFailMessage("Application should exit successfully. Output:\n" + result.getOutput())

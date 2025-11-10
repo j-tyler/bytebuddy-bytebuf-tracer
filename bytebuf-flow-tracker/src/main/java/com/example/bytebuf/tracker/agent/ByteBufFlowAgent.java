@@ -314,20 +314,69 @@ public class ByteBufFlowAgent {
  * Configuration for the agent
  */
 class AgentConfig {
-    private final Set<String> includePackages;
-    private final Set<String> excludePackages;
+    /** Suffix for package wildcard notation (e.g., "com.example.*") */
+    private static final String PACKAGE_WILDCARD_SUFFIX = ".*";
+
+    /** Parameter names for agent configuration */
+    private static final String PARAM_INCLUDE = "include";
+    private static final String PARAM_EXCLUDE = "exclude";
+    private static final String PARAM_TRACK_CONSTRUCTORS = "trackConstructors";
+
+    private final Set<String> includePatterns;  // Contains both package and class inclusions
+    private final Set<String> excludePatterns;  // Contains both package and class exclusions
     private final Set<String> constructorTrackingClasses;
 
-    private AgentConfig(Set<String> includePackages, Set<String> excludePackages,
+    private AgentConfig(Set<String> includePatterns, Set<String> excludePatterns,
                         Set<String> constructorTrackingClasses) {
-        this.includePackages = includePackages;
-        this.excludePackages = excludePackages;
+        this.includePatterns = includePatterns;
+        this.excludePatterns = excludePatterns;
         this.constructorTrackingClasses = constructorTrackingClasses;
     }
 
     /**
-     * Parse agent arguments
-     * Format: include=com.example,com.myapp;exclude=com.example.legacy;trackConstructors=com.example.Message,com.example.Request
+     * Validate a pattern string for include/exclude/trackConstructors.
+     * @param pattern The pattern to validate
+     * @param paramName The parameter name (for error messages)
+     * @throws IllegalArgumentException if the pattern is invalid
+     */
+    private static void validatePattern(String pattern, String paramName) {
+        if (pattern.isEmpty()) {
+            throw new IllegalArgumentException(
+                paramName + ": Empty pattern not allowed");
+        }
+
+        if (pattern.contains("..")) {
+            throw new IllegalArgumentException(
+                paramName + ": Invalid pattern with consecutive dots: " + pattern);
+        }
+
+        if (pattern.equals(".*") || pattern.equals("*")) {
+            throw new IllegalArgumentException(
+                paramName + ": Global wildcard not allowed (would match all classes): " + pattern);
+        }
+
+        if (pattern.endsWith(".") && !pattern.endsWith(".*")) {
+            throw new IllegalArgumentException(
+                paramName + ": Package patterns must end with .* not just . : " + pattern);
+        }
+
+        // Check for double wildcard
+        if (pattern.contains(".**")) {
+            throw new IllegalArgumentException(
+                paramName + ": Invalid pattern with .** (use .* instead): " + pattern);
+        }
+    }
+
+    /**
+     * Parse agent arguments.
+     * Format: include=package.*,SpecificClass;exclude=package.*,SpecificClass;trackConstructors=SpecificClass,package.*
+     *
+     * Examples:
+     * - include=com.example.* (package with .* suffix)
+     * - include=com.example.MyClass (specific class without .* suffix)
+     * - include=com.example.Outer$Inner (inner class with $ separator)
+     * - exclude=com.example.test.* (package exclusion)
+     * - exclude=com.example.MockHelper (class exclusion)
      */
     public static AgentConfig parse(String arguments) {
         Set<String> include = new HashSet<>();
@@ -342,14 +391,26 @@ class AgentConfig {
                     String key = kv[0].trim();
                     String value = kv[1].trim();
 
-                    if ("include".equals(key)) {
-                        include.addAll(Arrays.asList(value.split(",")));
-                    } else if ("exclude".equals(key)) {
-                        exclude.addAll(Arrays.asList(value.split(",")));
-                    } else if ("trackConstructors".equals(key)) {
-                        // Parse class names, trimming whitespace
+                    if (PARAM_INCLUDE.equals(key)) {
+                        // Parse patterns, trimming whitespace and validating
+                        for (String pattern : value.split(",")) {
+                            String trimmed = pattern.trim();
+                            validatePattern(trimmed, PARAM_INCLUDE);
+                            include.add(trimmed);
+                        }
+                    } else if (PARAM_EXCLUDE.equals(key)) {
+                        // Parse patterns, trimming whitespace and validating
+                        for (String pattern : value.split(",")) {
+                            String trimmed = pattern.trim();
+                            validatePattern(trimmed, PARAM_EXCLUDE);
+                            exclude.add(trimmed);
+                        }
+                    } else if (PARAM_TRACK_CONSTRUCTORS.equals(key)) {
+                        // Parse class names, trimming whitespace and validating
                         for (String className : value.split(",")) {
-                            trackConstructors.add(className.trim());
+                            String trimmed = className.trim();
+                            validatePattern(trimmed, PARAM_TRACK_CONSTRUCTORS);
+                            trackConstructors.add(trimmed);
                         }
                     }
                 }
@@ -358,28 +419,51 @@ class AgentConfig {
 
         // Default to common application packages if none specified
         if (include.isEmpty()) {
-            include.add("com.");
-            include.add("org.");
-            include.add("net.");
+            include.add("com.*");
+            include.add("org.*");
+            include.add("net.*");
         }
 
         return new AgentConfig(include, exclude, trackConstructors);
     }
 
     /**
-     * Get type matcher based on configuration
+     * Get type matcher based on configuration.
+     * Supports both package-level and class-level includes/exclusions:
+     * - Package: "com.example.protocol.*" matches all classes in package/subpackages (requires .* suffix)
+     * - Class: "com.example.protocol.SpecificClass" matches only that specific class (no .* suffix)
+     * - Inner class: "com.example.Outer$Inner" matches specific inner class ($ separator)
+     *
+     * The .* suffix distinguishes packages from classes, making intent explicit.
+     *
+     * Precedence: Exclusions take precedence over inclusions. If a class matches both include
+     * and exclude patterns, it will be excluded.
      */
     public ElementMatcher.Junction<TypeDescription> getTypeMatcher() {
         ElementMatcher.Junction<TypeDescription> matcher = none();
 
-        // Include packages
-        for (String pkg : includePackages) {
-            matcher = matcher.or(nameStartsWith(pkg));
+        // Include packages and classes
+        for (String include : includePatterns) {
+            if (include.endsWith(PACKAGE_WILDCARD_SUFFIX)) {
+                // Package inclusion - prefix match
+                String prefix = include.substring(0, include.length() - PACKAGE_WILDCARD_SUFFIX.length());
+                matcher = matcher.or(nameStartsWith(prefix));
+            } else {
+                // Class inclusion - exact match (supports inner classes with $)
+                matcher = matcher.or(named(include));
+            }
         }
 
-        // Exclude packages
-        for (String pkg : excludePackages) {
-            matcher = matcher.and(not(nameStartsWith(pkg)));
+        // Exclude packages and classes
+        for (String exclude : excludePatterns) {
+            if (exclude.endsWith(PACKAGE_WILDCARD_SUFFIX)) {
+                // Package exclusion - prefix match
+                String prefix = exclude.substring(0, exclude.length() - PACKAGE_WILDCARD_SUFFIX.length());
+                matcher = matcher.and(not(nameStartsWith(prefix)));
+            } else {
+                // Class exclusion - exact match (supports inner classes with $)
+                matcher = matcher.and(not(named(exclude)));
+            }
         }
 
         return matcher;
@@ -392,13 +476,13 @@ class AgentConfig {
         ElementMatcher.Junction<TypeDescription> matcher = none();
 
         for (String className : constructorTrackingClasses) {
-            // Support both exact matches and pattern matches
-            if (className.endsWith("*")) {
-                // Wildcard pattern: com.example.* matches all classes in package
-                String prefix = className.substring(0, className.length() - 1);
+            // Support both exact matches and pattern matches (consistent with include/exclude)
+            if (className.endsWith(PACKAGE_WILDCARD_SUFFIX)) {
+                // Package pattern: com.example.* matches all classes in package
+                String prefix = className.substring(0, className.length() - PACKAGE_WILDCARD_SUFFIX.length());
                 matcher = matcher.or(nameStartsWith(prefix));
             } else {
-                // Exact match
+                // Exact class match (supports inner classes with $)
                 matcher = matcher.or(named(className));
             }
         }
@@ -415,8 +499,8 @@ class AgentConfig {
 
     @Override
     public String toString() {
-        return "AgentConfig{include=" + includePackages +
-               ", exclude=" + excludePackages +
+        return "AgentConfig{include=" + includePatterns +
+               ", exclude=" + excludePatterns +
                ", trackConstructors=" + constructorTrackingClasses + "}";
     }
 }

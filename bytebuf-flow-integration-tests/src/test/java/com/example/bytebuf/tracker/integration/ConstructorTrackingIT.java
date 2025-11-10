@@ -34,7 +34,7 @@ public class ConstructorTrackingIT {
         // Run without trackConstructors config
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp",
-            "include=com.example.bytebuf.tracker.integration.testapp");
+            "include=com.example.bytebuf.tracker.integration.testapp.*");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -63,7 +63,7 @@ public class ConstructorTrackingIT {
         // Run WITH trackConstructors config
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp",
-            "include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message");
+            "include=com.example.bytebuf.tracker.integration.testapp.*;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -92,7 +92,7 @@ public class ConstructorTrackingIT {
         // Run WITH trackConstructors config
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp",
-            "include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message");
+            "include=com.example.bytebuf.tracker.integration.testapp.*;trackConstructors=com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp$Message");
 
         assertThat(result.isSuccess()).isTrue();
 
@@ -124,7 +124,7 @@ public class ConstructorTrackingIT {
         // Run with wildcard pattern for trackConstructors
         AppLauncher.AppResult result = launcher.launch(
             "com.example.bytebuf.tracker.integration.testapp.ConstructorTrackingApp",
-            "include=com.example.bytebuf.tracker.integration.testapp;trackConstructors=com.example.bytebuf.tracker.integration.testapp.*");
+            "include=com.example.bytebuf.tracker.integration.testapp.*;trackConstructors=com.example.bytebuf.tracker.integration.testapp.*");
 
         assertThat(result.isSuccess()).isTrue();
 

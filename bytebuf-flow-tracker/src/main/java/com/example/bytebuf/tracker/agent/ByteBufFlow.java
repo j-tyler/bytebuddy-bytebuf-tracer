@@ -29,18 +29,21 @@ public class ByteBufFlow implements ByteBufFlowMBean {
 
     @Override
     public String getTreeView() {
+        tracker.ensureGCProcessed();
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         return renderer.renderIndentedTree();
     }
 
     @Override
     public String getLLMView() {
+        tracker.ensureGCProcessed();
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         return renderer.renderForLLM();
     }
 
     @Override
     public String getSummary() {
+        tracker.ensureGCProcessed();
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         StringBuilder sb = new StringBuilder();
 
@@ -66,6 +69,7 @@ public class ByteBufFlow implements ByteBufFlowMBean {
 
     @Override
     public void exportToFile(String filepath, String format) {
+        tracker.ensureGCProcessed();
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String content;
 
@@ -107,6 +111,7 @@ class ByteBufFlowReporter {
      * Generate a comprehensive report
      */
     public String generateReport() {
+        tracker.ensureGCProcessed();
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         StringBuilder report = new StringBuilder();
 

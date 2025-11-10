@@ -5,6 +5,7 @@
 
 package com.example.bytebuf.tracker.agent;
 
+import com.example.bytebuf.tracker.ByteBufFlowTracker;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
@@ -303,6 +304,9 @@ public class ByteBufFlowAgent {
      */
     private static void setupShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Mark remaining flows as leaks before generating report
+            ByteBufFlowTracker.getInstance().onShutdown();
+
             System.out.println("\n=== ByteBuf Flow Final Report ===");
             ByteBufFlowReporter reporter = new ByteBufFlowReporter();
             System.out.println(reporter.generateReport());

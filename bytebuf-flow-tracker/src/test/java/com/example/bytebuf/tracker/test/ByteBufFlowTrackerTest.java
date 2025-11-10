@@ -6,11 +6,15 @@
 package com.example.bytebuf.tracker.test;
 
 import com.example.bytebuf.tracker.ByteBufFlowTracker;
+import com.example.bytebuf.tracker.trie.BoundedImprintTrie;
+import com.example.bytebuf.tracker.trie.ImprintNode;
 import com.example.bytebuf.tracker.view.TrieRenderer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -42,6 +46,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "BusinessService", "process", buffer.refCnt());
         
         // Verify the tree structure
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
         
@@ -73,6 +78,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(goodBuffer, "ResponseWriter", "write", goodBuffer.refCnt());
         
         // Get the LLM view to see leaks
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String llmView = renderer.renderForLLM();
 
@@ -82,41 +88,51 @@ public class ByteBufFlowTrackerTest {
         // The leaky path should be in the LEAKS section
         assertTrue(llmView.contains("LEAKS:"));
         assertTrue(llmView.contains("ErrorLogger.log"));
-        // The good path should have final_ref=0
-        assertTrue(llmView.contains("final_ref=0"));
+        // The good path should have has_leak=false
+        assertTrue(llmView.contains("has_leak=false"));
     }
     
     @Test
     public void testRefCountAnomalies() {
-        // Simulate the same path with different refCounts
+        // Simulate the same path with different refCounts in different buckets
         ByteBuf buffer1 = Unpooled.buffer(256);
         buffer1.retain(); // refCount = 2
-        
+        buffer1.retain(); // refCount = 3 (MEDIUM bucket)
+
+        System.out.println("buffer1 refCnt after retains: " + buffer1.refCnt());
         tracker.recordMethodCall(buffer1, "MessageDecoder", "decode", buffer1.refCnt());
         tracker.recordMethodCall(buffer1, "MessageValidator", "validate", buffer1.refCnt());
         buffer1.release();
+        System.out.println("buffer1 refCnt after 1st release: " + buffer1.refCnt());
         tracker.recordMethodCall(buffer1, "MessageProcessor", "process", buffer1.refCnt());
         buffer1.release();
+        buffer1.release();
+        System.out.println("buffer1 refCnt after 3 releases: " + buffer1.refCnt());
         tracker.recordMethodCall(buffer1, "MessageProcessor", "process", buffer1.refCnt());
-        
-        // Same path but different refCount pattern
+
+        // Same path but different refCount pattern (LOW bucket)
         ByteBuf buffer2 = Unpooled.buffer(256);
         // refCount = 1 (no extra retain)
-        
+
+        System.out.println("buffer2 refCnt at start: " + buffer2.refCnt());
         tracker.recordMethodCall(buffer2, "MessageDecoder", "decode", buffer2.refCnt());
         tracker.recordMethodCall(buffer2, "MessageValidator", "validate", buffer2.refCnt());
         tracker.recordMethodCall(buffer2, "MessageProcessor", "process", buffer2.refCnt());
         buffer2.release();
+        System.out.println("buffer2 refCnt after release: " + buffer2.refCnt());
         tracker.recordMethodCall(buffer2, "MessageProcessor", "process", buffer2.refCnt());
-        
+
+        tracker.onShutdown();  // Finalize flows before rendering
+
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
-        
+
         System.out.println("\nRefCount Anomaly Detection:");
         System.out.println(tree);
-        
-        // Should show MessageValidator appearing twice with different refCounts
-        assertTrue(tree.contains("MessageValidator.validate [ref=2"));
+
+        // Should show MessageValidator appearing twice with different refCount buckets
+        // Buckets: LOW (1-2) displays as 1, MEDIUM (3-5) displays as 3
+        assertTrue(tree.contains("MessageValidator.validate [ref=3"));
         assertTrue(tree.contains("MessageValidator.validate [ref=1"));
     }
     
@@ -137,6 +153,8 @@ public class ByteBufFlowTrackerTest {
             buffer.release();
             tracker.recordMethodCall(buffer, "FastProcessor", "process", buffer.refCnt());
         }
+        
+        tracker.onShutdown();  // Finalize flows before rendering
         
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String summary = renderer.renderSummary();
@@ -165,6 +183,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "StaticMethodExample", "cleanup", buffer.refCnt());
 
         // Verify the tree structure includes static method
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -194,6 +213,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "TestClass", "cleanup", buffer.refCnt());
 
         // Verify the tree structure
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -241,6 +261,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(extracted, "Client", "release", extracted.refCnt());
 
         // Analyze the flow
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
         String llmView = renderer.renderForLLM();
@@ -296,6 +317,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "TestClient", "cleanup", buffer.refCnt());
 
         // Check the flow
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -438,6 +460,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(extracted, "TestClient", "cleanup", extracted.refCnt());
 
         // Verify continuous flow
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
         String llmView = renderer.renderForLLM();
@@ -582,6 +605,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "Handler", "release", buffer.refCnt()); // ref=0
 
         // Verify the flow
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
         String llmView = renderer.renderForLLM();
@@ -604,7 +628,7 @@ public class ByteBufFlowTrackerTest {
                    tree.contains("release") && tree.contains("[ref=0"));
 
         // 4. The leaf node shows ref=0 (properly released)
-        assertTrue("Leaf should show ref=0 (not a leak)", llmView.contains("final_ref=0"));
+        assertTrue("Leaf should show ref=0 (not a leak)", llmView.contains("leak_rate=0"));
 
         System.out.println("\n✓ Release tracking verified: Only final release (refCnt->0) is tracked");
         System.out.println("✓ Intermediate releases are skipped to avoid tree clutter");
@@ -631,6 +655,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(goodBuffer, "Service", "release", goodBuffer.refCnt());   // ref=0
 
         // Verify the flow
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
         String llmView = renderer.renderForLLM();
@@ -642,13 +667,14 @@ public class ByteBufFlowTrackerTest {
         System.out.println(llmView);
 
         // Verify leak detection
-        // Leaky path should be in LEAKS section with final_ref=1
+        // Leaky path should be in LEAKS section with leak_rate
         assertTrue("LEAKS section should exist", llmView.contains("LEAKS:"));
-        assertTrue("Leaky path should have final_ref=1", llmView.contains("final_ref=1"));
+        assertTrue("Leaky path should have leak entry", llmView.contains("leak|"));
         assertTrue("Leaky path should mention store", llmView.contains("store"));
 
-        // Good path should have final_ref=0
-        assertTrue("Good path should have final_ref=0", llmView.contains("final_ref=0"));
+        // Good path should have has_leak=false and show ref=0 in path
+        assertTrue("Good path should have has_leak=false", llmView.contains("has_leak=false"));
+        assertTrue("Good path should show [ref=0] in path", llmView.contains("[ref=0]"));
 
         System.out.println("\n✓ Leak detection verified:");
         System.out.println("  - Leaf with ref=1 (store) = LEAK");
@@ -675,6 +701,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(cleanBuffer, "Service", "cleanup", cleanBuffer.refCnt());
 
         // Render in LLM format
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String llmView = renderer.renderForLLM();
 
@@ -690,26 +717,31 @@ public class ByteBufFlowTrackerTest {
         assertTrue("Should contain total_roots", llmView.contains("total_roots="));
         assertTrue("Should contain total_traversals", llmView.contains("total_traversals="));
         assertTrue("Should contain total_paths", llmView.contains("total_paths="));
-        assertTrue("Should contain leak_paths", llmView.contains("leak_paths="));
-        assertTrue("Should contain leak_percentage", llmView.contains("leak_percentage="));
+        assertTrue("Should contain leak_count", llmView.contains("leak_count="));
+        assertTrue("Should contain leak_rate", llmView.contains("leak_rate="));
 
         // Verify leak detection
-        assertTrue("Should have leak with final_ref=1", llmView.contains("leak|") && llmView.contains("final_ref=1"));
+        assertTrue("Should have leak entry", llmView.contains("leak|") && llmView.contains("leak_rate="));
         assertTrue("Leak should mention forget method", llmView.contains("forget"));
 
         // Verify flows section contains both leaks and clean paths
         assertTrue("Should have flow entries", llmView.contains("flow|"));
-        assertTrue("Should have is_leak=true", llmView.contains("is_leak=true"));
-        assertTrue("Should have is_leak=false", llmView.contains("is_leak=false"));
-        assertTrue("Clean flow should have final_ref=0", llmView.contains("final_ref=0"));
+        assertTrue("Should have has_leak=true", llmView.contains("has_leak=true"));
+        assertTrue("Should have has_leak=false", llmView.contains("has_leak=false"));
+        assertTrue("Clean flow should show ref=0 in path", llmView.contains("[ref=0]"));
 
         // Verify the format is pipe-delimited
         String[] lines = llmView.split("\n");
         for (String line : lines) {
-            if (line.startsWith("leak|") || line.startsWith("flow|")) {
-                assertTrue("Flow/leak lines should be pipe-delimited", line.contains("|"));
+            if (line.startsWith("leak|")) {
+                assertTrue("Leak lines should be pipe-delimited", line.contains("|"));
                 assertTrue("Should contain root field", line.contains("root="));
-                assertTrue("Should contain final_ref field", line.contains("final_ref="));
+                assertTrue("Should contain leak_rate field", line.contains("leak_rate="));
+                assertTrue("Should contain path field", line.contains("path="));
+            } else if (line.startsWith("flow|")) {
+                assertTrue("Flow lines should be pipe-delimited", line.contains("|"));
+                assertTrue("Should contain root field", line.contains("root="));
+                assertTrue("Should contain has_leak field", line.contains("has_leak="));
                 assertTrue("Should contain path field", line.contains("path="));
             }
         }
@@ -770,6 +802,7 @@ public class ByteBufFlowTrackerTest {
         tracker.recordMethodCall(buffer, "Manager", "release", buffer.refCnt()); // ref=0
 
         // Verify the flow
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 

@@ -138,7 +138,7 @@ ROOT: UnpooledByteBufAllocator.directBuffer [count=2]
 
 ### Components
 
-- **`FlowTrie`**: Pure Trie data structure for storing method call paths
+- **`BoundedImprintTrie`**: Bounded Trie data structure for storing method call paths with memory limits
 - **`ByteBufFlowTracker`**: Main tracking logic with allocator-root tracking and entry/exit recording
 - **`ByteBufFlowAgent`**: Java agent entry point for ByteBuddy instrumentation
 - **`ByteBufTrackingAdvice`**: ByteBuddy advice that intercepts methods (entry/exit with `_return` suffix)

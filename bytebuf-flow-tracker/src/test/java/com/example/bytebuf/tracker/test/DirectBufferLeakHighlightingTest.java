@@ -41,6 +41,7 @@ public class DirectBufferLeakHighlightingTest {
         tracker.recordMethodCall(heapBuf, "TestService", "processData", heapBuf.refCnt());
         // Intentionally NOT releasing - heap buffer leak
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -62,6 +63,7 @@ public class DirectBufferLeakHighlightingTest {
         tracker.recordMethodCall(directBuf, "NetworkService", "sendData", directBuf.refCnt());
         // Intentionally NOT releasing - CRITICAL direct buffer leak
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -87,6 +89,7 @@ public class DirectBufferLeakHighlightingTest {
         tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
         tracker.recordMethodCall(directBuf, "IOHandler", "write", directBuf.refCnt());
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -127,6 +130,7 @@ public class DirectBufferLeakHighlightingTest {
         tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
         tracker.recordMethodCall(directBuf, "CriticalService", "handleRequest", directBuf.refCnt());
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String llmFormat = renderer.renderForLLM();
 
@@ -149,6 +153,7 @@ public class DirectBufferLeakHighlightingTest {
         tracker.recordMethodCall(ioBuf, "UnpooledByteBufAllocator", "ioBuffer", ioBuf.refCnt());
         tracker.recordMethodCall(ioBuf, "SocketHandler", "read", ioBuf.refCnt());
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -176,6 +181,7 @@ public class DirectBufferLeakHighlightingTest {
         directBuf.release();
         tracker.recordMethodCall(directBuf, "UnpooledDirectByteBuf", "release", 0);
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 
@@ -214,6 +220,7 @@ public class DirectBufferLeakHighlightingTest {
         goodDirectBuf.release();
         tracker.recordMethodCall(goodDirectBuf, "UnpooledDirectByteBuf", "release", 0);
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
         String summary = renderer.renderSummary();

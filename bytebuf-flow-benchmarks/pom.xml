@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.example.bytebuf</groupId>
+        <artifactId>bytebuf-flow-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>bytebuf-flow-benchmarks</artifactId>
+    <packaging>jar</packaging>
+
+    <name>ByteBuf Flow Tracker Benchmarks</name>
+    <description>JMH benchmarks for ByteBuf Flow Tracker</description>
+
+    <properties>
+        <jmh.version>1.37</jmh.version>
+        <uberjar.name>benchmarks</uberjar.name>
+    </properties>
+
+    <dependencies>
+        <!-- ByteBuf Flow Tracker -->
+        <dependency>
+            <groupId>com.example.bytebuf</groupId>
+            <artifactId>bytebuf-flow-tracker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- JMH Core -->
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Netty (for ByteBuf) -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Shade Plugin - Create executable JAR with JMH -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${uberjar.name}</finalName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.openjdk.jmh.Main</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <!-- Exclude signatures to prevent security exceptions -->
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Exec Plugin - Run benchmarks with default settings -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>run-benchmarks</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-jar</argument>
+                                <argument>target/benchmarks.jar</argument>
+                                <!-- Mode: Throughput -->
+                                <argument>-bm</argument>
+                                <argument>thrpt</argument>
+                                <!-- Forks: 1 -->
+                                <argument>-f</argument>
+                                <argument>1</argument>
+                                <!-- Warmup: 5 seconds -->
+                                <argument>-wi</argument>
+                                <argument>1</argument>
+                                <argument>-w</argument>
+                                <argument>5s</argument>
+                                <!-- Iterations: 3 at 5s each -->
+                                <argument>-i</argument>
+                                <argument>3</argument>
+                                <argument>-r</argument>
+                                <argument>5s</argument>
+                                <!-- GC Profiling -->
+                                <argument>-prof</argument>
+                                <argument>gc</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

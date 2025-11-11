@@ -41,6 +41,7 @@
         <module>bytebuf-flow-tracker</module>
         <module>bytebuf-flow-example</module>
         <module>bytebuf-flow-integration-tests</module>
+        <module>bytebuf-flow-benchmarks</module>
     </modules>
 
     <dependencyManagement>

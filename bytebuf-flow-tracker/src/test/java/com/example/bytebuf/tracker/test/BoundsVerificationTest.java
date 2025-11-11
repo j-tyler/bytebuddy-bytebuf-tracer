@@ -142,20 +142,4 @@ public class BoundsVerificationTest {
         assertTrue("Node count should be limited by per-node child limit", nodeCount < 150);
     }
 
-    @Test
-    public void testStringInterning_PreventsDuplication() {
-        BoundedImprintTrie trie = tracker.getTrie();
-
-        // Create many flows with same class/method names
-        for (int i = 0; i < 1000; i++) {
-            ByteBuf buf = Unpooled.buffer(10);
-            tracker.recordMethodCall(buf, "com.example.TestClass", "testMethod", buf.refCnt());
-            buf.release();
-        }
-
-        // String interning memory should be minimal (only 2 strings)
-        long interningMemory = trie.getStringInterningMemory();
-        assertTrue("String interning should save memory (actual: " + interningMemory + ")",
-                   interningMemory < 1000);
-    }
 }

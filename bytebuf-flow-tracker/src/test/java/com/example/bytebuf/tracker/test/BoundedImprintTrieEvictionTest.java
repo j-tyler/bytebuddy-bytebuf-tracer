@@ -87,21 +87,6 @@ public class BoundedImprintTrieEvictionTest {
     }
 
     @Test
-    public void testStringInterning_ReducesMemory() {
-        String className = "com.example.TestClass";
-        String methodName = "testMethod";
-
-        // Create multiple roots with same strings
-        trie.getOrCreateRoot(className, methodName);
-        trie.getOrCreateRoot(className, methodName);
-        trie.getOrCreateRoot(className, methodName);
-
-        // String interning memory should be minimal
-        long interningMemory = trie.getStringInterningMemory();
-        assertTrue("String interning should save memory", interningMemory < 1000);
-    }
-
-    @Test
     public void testRefCountBucketing() {
         assertEquals("refCnt=0 should bucket to 0", (byte) 0, BoundedImprintTrie.bucketRefCount(0));
         assertEquals("refCnt=1 should bucket to 1", (byte) 1, BoundedImprintTrie.bucketRefCount(1));

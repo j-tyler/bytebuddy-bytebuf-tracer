@@ -33,8 +33,8 @@ public class BoundedImprintTrie {
     // Global node counter for hard limit enforcement
     private final AtomicInteger totalNodeCount = new AtomicInteger(0);
 
-    // String interning for memory efficiency
-    private final ConcurrentHashMap<String, String> stringIntern = new ConcurrentHashMap<>();
+    // String interning for memory efficiency (bounded, sized to match node limit)
+    private final FixedArrayStringInterner stringInterner;
 
     // Root nodes (allocator methods)
     private final ConcurrentHashMap<String, ImprintNode> roots = new ConcurrentHashMap<>();
@@ -42,6 +42,9 @@ public class BoundedImprintTrie {
     public BoundedImprintTrie(int maxTotalNodes, int maxDepth) {
         this.maxTotalNodes = maxTotalNodes;
         this.maxDepth = maxDepth;
+        // Size the interner to the number of allowed nodes
+        // Each node has className + methodName, so we need roughly 2x capacity
+        this.stringInterner = new FixedArrayStringInterner(maxTotalNodes * 2);
     }
 
     /**
@@ -134,8 +137,7 @@ public class BoundedImprintTrie {
      * Intern strings to reduce memory usage.
      */
     private String intern(String s) {
-        if (s == null) return null;
-        return stringIntern.computeIfAbsent(s, k -> k);
+        return stringInterner.intern(s);
     }
 
     /**
@@ -210,14 +212,9 @@ public class BoundedImprintTrie {
         return maxDepth;
     }
 
-    public long getStringInterningMemory() {
-        // Approximate: avg string length * count
-        return stringIntern.size() * 30L;
-    }
-
     public void clear() {
         roots.clear();
-        stringIntern.clear();
+        stringInterner.clear();
         totalNodeCount.set(0);
     }
 }

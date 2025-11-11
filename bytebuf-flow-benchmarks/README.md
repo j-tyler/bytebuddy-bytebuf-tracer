@@ -19,6 +19,38 @@ Tests accumulated overhead across multiple method calls.
 Stress test with 100 allocations and releases in a tight loop.
 Tests throughput under high allocation pressure.
 
+### 5. `RandomWalkBenchmark.randomWalk` (NEW)
+**Stress test for complex flow patterns** - This benchmark simulates realistic, varied object flows:
+
+- **50 different methods** that accept and return ByteBuf
+- **Random path length** (5-50 method calls per iteration)
+- **Random method selection** - each iteration takes a unique path
+- **ThreadLocal Random** for thread-safe randomization
+
+This pushes the tracker's internal optimizations to their limits by testing:
+- Trie depth handling with variable-length paths
+- Path diversity with thousands of unique flows
+- Hash map performance under varied access patterns
+- Memory efficiency with highly branching Trie structures
+
+**Why this matters**: Real applications don't follow predictable paths. This benchmark represents worst-case complexity where every execution takes a different route through your code, maximizing the Trie's memory and lookup costs.
+
+**Running the Random Walk Benchmark:**
+
+```bash
+# WITHOUT agent (baseline)
+java -jar target/benchmarks.jar ".*RandomWalkBenchmark.randomWalk" -prof gc
+
+# WITH agent (measure overhead under complex flows)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+  -jar target/benchmarks.jar ".*RandomWalkBenchmark.randomWalk" -prof gc
+```
+
+**What this tests**:
+- Tracker behavior with diverse execution paths
+- Trie structure handling of path explosion
+- Memory scaling characteristics with branching flows
+
 ## Default Configuration
 
 - **Mode**: Throughput (operations per second)

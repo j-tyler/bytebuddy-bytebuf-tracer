@@ -39,6 +39,16 @@ public class ByteBufFlowAgent {
 
         System.out.println("[ByteBufFlowAgent] Starting with config: " + config);
 
+        // Configure direct-only tracking mode
+        if (config.isTrackDirectOnly()) {
+            System.out.println("[ByteBufFlowAgent] Direct-only tracking mode enabled:");
+            System.out.println("  - heapBuffer methods: NOT instrumented (zero overhead)");
+            System.out.println("  - directBuffer/ioBuffer: Instrumented and tracked");
+            System.out.println("  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()");
+            // Enable filtering for ambiguous methods when trackDirectOnly is set
+            ByteBufConstructionAdvice.FILTER_DIRECT_ONLY = true;
+        }
+
         // Setup JMX MBean for monitoring
         setupJmxMonitoring();
 
@@ -100,7 +110,7 @@ public class ByteBufFlowAgent {
                 .or(hasSuperType(named("io.netty.buffer.ByteBufAllocator"))
                     .and(not(isInterface()))
                     .and(not(isAbstract()))))
-            .transform(new ByteBufConstructionTransformer());
+            .transform(new ByteBufConstructionTransformer(config.isTrackDirectOnly()));
 
         agentBuilder.installOn(inst);
 
@@ -237,8 +247,20 @@ public class ByteBufFlowAgent {
      * from telescoping method calls. For example, directBuffer() delegates to
      * directBuffer(int) which delegates to directBuffer(int, int). We only
      * track the terminal directBuffer(int, int) to avoid nested duplicates.
+     *
+     * Performance: When trackDirectOnly is enabled, heapBuffer methods are not
+     * instrumented at all, resulting in zero runtime overhead for heap allocations.
      */
     static class ByteBufConstructionTransformer implements AgentBuilder.Transformer {
+        private final boolean trackDirectOnly;
+
+        /**
+         * @param trackDirectOnly If true, skip instrumentation of heapBuffer (zero overhead)
+         */
+        public ByteBufConstructionTransformer(boolean trackDirectOnly) {
+            this.trackDirectOnly = trackDirectOnly;
+        }
+
         @Override
         public DynamicType.Builder<?> transform(
                 DynamicType.Builder<?> builder,
@@ -247,7 +269,7 @@ public class ByteBufFlowAgent {
                 JavaModule module,
                 java.security.ProtectionDomain protectionDomain) {
 
-            // Determine which methods to instrument based on the class
+            // Determine which methods to instrument based on the class and config
             ElementMatcher.Junction<MethodDescription> methodMatcher;
 
             // For ByteBufAllocator implementations (AbstractByteBufAllocator and subclasses):
@@ -260,6 +282,8 @@ public class ByteBufFlowAgent {
                 // For Unpooled class:
                 // - Skip buffer() and directBuffer() entirely (they delegate to allocator)
                 // - Track wrappedBuffer, copiedBuffer, compositeBuffer (all terminal)
+                // Note: When trackDirectOnly is enabled, these are still instrumented
+                // because they may wrap direct buffers; filtering happens at runtime
                 methodMatcher = (named("wrappedBuffer")
                     .or(named("copiedBuffer"))
                     .or(named("compositeBuffer")))
@@ -269,12 +293,22 @@ public class ByteBufFlowAgent {
             } else {
                 // For ByteBufAllocator implementations:
                 // Only track methods with exactly 2 int parameters (terminal implementations)
-                methodMatcher = (named("directBuffer")
-                    .or(named("heapBuffer")))
-                    .and(isPublic())
-                    .and(not(isAbstract()))
-                    .and(returns(hasSuperType(named("io.netty.buffer.ByteBuf"))))
-                    .and(takesArguments(int.class, int.class)); // Only track 2-arg terminal versions
+                if (trackDirectOnly) {
+                    // OPTIMIZATION: Skip heapBuffer entirely (zero instrumentation overhead)
+                    methodMatcher = named("directBuffer")
+                        .and(isPublic())
+                        .and(not(isAbstract()))
+                        .and(returns(hasSuperType(named("io.netty.buffer.ByteBuf"))))
+                        .and(takesArguments(int.class, int.class));
+                } else {
+                    // Track both direct and heap buffers (default behavior)
+                    methodMatcher = (named("directBuffer")
+                        .or(named("heapBuffer")))
+                        .and(isPublic())
+                        .and(not(isAbstract()))
+                        .and(returns(hasSuperType(named("io.netty.buffer.ByteBuf"))))
+                        .and(takesArguments(int.class, int.class)); // Only track 2-arg terminal versions
+                }
             }
 
             return builder
@@ -325,16 +359,19 @@ class AgentConfig {
     private static final String PARAM_INCLUDE = "include";
     private static final String PARAM_EXCLUDE = "exclude";
     private static final String PARAM_TRACK_CONSTRUCTORS = "trackConstructors";
+    private static final String PARAM_TRACK_DIRECT_ONLY = "trackDirectOnly";
 
     private final Set<String> includePatterns;  // Contains both package and class inclusions
     private final Set<String> excludePatterns;  // Contains both package and class exclusions
     private final Set<String> constructorTrackingClasses;
+    private final boolean trackDirectOnly;      // Skip instrumentation of heap buffers (zero overhead)
 
     private AgentConfig(Set<String> includePatterns, Set<String> excludePatterns,
-                        Set<String> constructorTrackingClasses) {
+                        Set<String> constructorTrackingClasses, boolean trackDirectOnly) {
         this.includePatterns = includePatterns;
         this.excludePatterns = excludePatterns;
         this.constructorTrackingClasses = constructorTrackingClasses;
+        this.trackDirectOnly = trackDirectOnly;
     }
 
     /**
@@ -386,6 +423,7 @@ class AgentConfig {
         Set<String> include = new HashSet<>();
         Set<String> exclude = new HashSet<>();
         Set<String> trackConstructors = new HashSet<>();
+        boolean trackDirectOnly = false;
 
         if (arguments != null && !arguments.isEmpty()) {
             String[] parts = arguments.split(";");
@@ -416,6 +454,9 @@ class AgentConfig {
                             validatePattern(trimmed, PARAM_TRACK_CONSTRUCTORS);
                             trackConstructors.add(trimmed);
                         }
+                    } else if (PARAM_TRACK_DIRECT_ONLY.equals(key)) {
+                        // Parse boolean flag (true/false)
+                        trackDirectOnly = Boolean.parseBoolean(value);
                     }
                 }
             }
@@ -428,7 +469,7 @@ class AgentConfig {
             include.add("net.*");
         }
 
-        return new AgentConfig(include, exclude, trackConstructors);
+        return new AgentConfig(include, exclude, trackConstructors, trackDirectOnly);
     }
 
     /**
@@ -516,10 +557,18 @@ class AgentConfig {
         return constructorTrackingClasses;
     }
 
+    /**
+     * Check if track-direct-only mode is enabled (skip instrumentation of heap buffers)
+     */
+    public boolean isTrackDirectOnly() {
+        return trackDirectOnly;
+    }
+
     @Override
     public String toString() {
         return "AgentConfig{include=" + includePatterns +
                ", exclude=" + excludePatterns +
-               ", trackConstructors=" + constructorTrackingClasses + "}";
+               ", trackConstructors=" + constructorTrackingClasses +
+               ", trackDirectOnly=" + trackDirectOnly + "}";
     }
 }

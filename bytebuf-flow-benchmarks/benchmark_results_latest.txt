@@ -1,0 +1,1240 @@
+[0;34m========================================[0m
+[0;34mDirect Memory Filtering Benchmark[0m
+[0;34m========================================[0m
+
+This benchmark demonstrates the performance benefits of
+tracking only direct memory allocations (critical leaks)
+while skipping heap allocations (80% of workload).
+
+[0;34mRunning QUICK comparison (baseline vs trackDirectOnly)...[0m
+
+[1;33m========================================[0m
+[1;33m1/2 BASELINE: No agent - best performance[0m
+[1;33m========================================[0m
+Running WITHOUT agent (baseline)
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations
+
+# Run progress: 0.00% complete, ETA 00:03:20
+# Fork: 1 of 1
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+4478636.254 ops/s
+# Warmup Iteration   2: 4769890.402 ops/s
+Iteration   1: 4700607.302 ops/s
+                 gc.alloc.rate:      926.016 MB/sec
+                 gc.alloc.rate.norm: 206.578 B/op
+                 gc.count:           56.000 counts
+                 gc.time:            48.000 ms
+
+Iteration   2: 4706491.370 ops/s
+                 gc.alloc.rate:      927.084 MB/sec
+                 gc.alloc.rate.norm: 206.557 B/op
+                 gc.count:           57.000 counts
+                 gc.time:            43.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+4725708.418 ops/s
+                 gc.alloc.rate:      930.830 MB/sec
+                 gc.alloc.rate.norm: 206.563 B/op
+                 gc.count:           56.000 counts
+                 gc.time:            42.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations":
+  4710935.696 ±(99.9%) 239493.972 ops/s [Average]
+  (min, avg, max) = (4700607.302, 4710935.696, 4725708.418), stdev = 13127.473
+  CI (99.9%): [4471441.725, 4950429.668] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate":
+  927.977 ±(99.9%) 46.122 MB/sec [Average]
+  (min, avg, max) = (926.016, 927.977, 930.830), stdev = 2.528
+  CI (99.9%): [881.855, 974.098] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate.norm":
+  206.566 ±(99.9%) 0.189 B/op [Average]
+  (min, avg, max) = (206.557, 206.566, 206.578), stdev = 0.010
+  CI (99.9%): [206.377, 206.755] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.count":
+  169.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (56.000, 56.333, 57.000), stdev = 0.577
+  CI (99.9%): [169.000, 169.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.time":
+  133.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (42.000, 44.333, 48.000), stdev = 3.215
+  CI (99.9%): [133.000, 133.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations
+
+# Run progress: 20.00% complete, ETA 00:02:42
+# Fork: 1 of 1
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+3949757.953 ops/s
+# Warmup Iteration   2: 4107819.511 ops/s
+Iteration   1: 4090550.308 ops/s
+                 gc.alloc.rate:      805.749 MB/sec
+                 gc.alloc.rate.norm: 206.555 B/op
+                 gc.count:           54.000 counts
+                 gc.time:            39.000 ms
+
+Iteration   2: 4181652.491 ops/s
+                 gc.alloc.rate:      823.663 MB/sec
+                 gc.alloc.rate.norm: 206.547 B/op
+                 gc.count:           55.000 counts
+                 gc.time:            42.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+4224721.454 ops/s
+                 gc.alloc.rate:      832.180 MB/sec
+                 gc.alloc.rate.norm: 206.571 B/op
+                 gc.count:           57.000 counts
+                 gc.time:            42.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations":
+  4165641.418 ±(99.9%) 1249760.252 ops/s [Average]
+  (min, avg, max) = (4090550.308, 4165641.418, 4224721.454), stdev = 68503.577
+  CI (99.9%): [2915881.166, 5415401.670] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate":
+  820.531 ±(99.9%) 246.128 MB/sec [Average]
+  (min, avg, max) = (805.749, 820.531, 832.180), stdev = 13.491
+  CI (99.9%): [574.402, 1066.659] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate.norm":
+  206.558 ±(99.9%) 0.223 B/op [Average]
+  (min, avg, max) = (206.547, 206.558, 206.571), stdev = 0.012
+  CI (99.9%): [206.334, 206.781] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.count":
+  166.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (54.000, 55.333, 57.000), stdev = 1.528
+  CI (99.9%): [166.000, 166.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.time":
+  123.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (39.000, 41.000, 42.000), stdev = 1.732
+  CI (99.9%): [123.000, 123.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations
+
+# Run progress: 40.00% complete, ETA 00:02:01
+# Fork: 1 of 1
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+12690618.933 ops/s
+# Warmup Iteration   2: 13979375.451 ops/s
+Iteration   1: 14206595.322 ops/s
+                 gc.alloc.rate:      4335.392 MB/sec
+                 gc.alloc.rate.norm: 320.000 B/op
+                 gc.count:           114.000 counts
+                 gc.time:            108.000 ms
+
+Iteration   2: 14221374.414 ops/s
+                 gc.alloc.rate:      4339.908 MB/sec
+                 gc.alloc.rate.norm: 320.000 B/op
+                 gc.count:           114.000 counts
+                 gc.time:            112.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+14045473.397 ops/s
+                 gc.alloc.rate:      4285.891 MB/sec
+                 gc.alloc.rate.norm: 320.000 B/op
+                 gc.count:           113.000 counts
+                 gc.time:            113.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations":
+  14157814.378 ±(99.9%) 1780046.798 ops/s [Average]
+  (min, avg, max) = (14045473.397, 14157814.378, 14221374.414), stdev = 97570.371
+  CI (99.9%): [12377767.580, 15937861.176] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate":
+  4320.397 ±(99.9%) 546.728 MB/sec [Average]
+  (min, avg, max) = (4285.891, 4320.397, 4339.908), stdev = 29.968
+  CI (99.9%): [3773.669, 4867.125] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate.norm":
+  320.000 ±(99.9%) 0.001 B/op [Average]
+  (min, avg, max) = (320.000, 320.000, 320.000), stdev = 0.001
+  CI (99.9%): [320.000, 320.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.count":
+  341.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (113.000, 113.667, 114.000), stdev = 0.577
+  CI (99.9%): [341.000, 341.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.time":
+  333.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (108.000, 111.000, 113.000), stdev = 2.646
+  CI (99.9%): [333.000, 333.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead
+
+# Run progress: 60.00% complete, ETA 00:01:21
+# Fork: 1 of 1
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+3489771.800 ops/s
+# Warmup Iteration   2: 3812681.368 ops/s
+Iteration   1: 3830283.746 ops/s
+                 gc.alloc.rate:      1923.375 MB/sec
+                 gc.alloc.rate.norm: 526.565 B/op
+                 gc.count:           82.000 counts
+                 gc.time:            72.000 ms
+
+Iteration   2: 3816074.725 ops/s
+                 gc.alloc.rate:      1916.394 MB/sec
+                 gc.alloc.rate.norm: 526.601 B/op
+                 gc.count:           81.000 counts
+                 gc.time:            72.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+3778702.123 ops/s
+                 gc.alloc.rate:      1897.256 MB/sec
+                 gc.alloc.rate.norm: 526.547 B/op
+                 gc.count:           81.000 counts
+                 gc.time:            72.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead":
+  3808353.531 ±(99.9%) 486077.481 ops/s [Average]
+  (min, avg, max) = (3778702.123, 3808353.531, 3830283.746), stdev = 26643.547
+  CI (99.9%): [3322276.050, 4294431.012] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate":
+  1912.342 ±(99.9%) 246.699 MB/sec [Average]
+  (min, avg, max) = (1897.256, 1912.342, 1923.375), stdev = 13.522
+  CI (99.9%): [1665.643, 2159.041] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate.norm":
+  526.571 ±(99.9%) 0.504 B/op [Average]
+  (min, avg, max) = (526.547, 526.571, 526.601), stdev = 0.028
+  CI (99.9%): [526.067, 527.076] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.count":
+  244.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (81.000, 81.333, 82.000), stdev = 0.577
+  CI (99.9%): [244.000, 244.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.time":
+  216.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (72.000, 72.000, 72.000), stdev = 0.001
+  CI (99.9%): [216.000, 216.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload
+
+# Run progress: 80.00% complete, ETA 00:00:40
+# Fork: 1 of 1
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+8371044.757 ops/s
+# Warmup Iteration   2: 8995689.931 ops/s
+Iteration   1: 8997929.974 ops/s
+                 gc.alloc.rate:      2550.946 MB/sec
+                 gc.alloc.rate.norm: 297.318 B/op
+                 gc.count:           97.000 counts
+                 gc.time:            97.000 ms
+
+Iteration   2: 8967920.266 ops/s
+                 gc.alloc.rate:      2542.682 MB/sec
+                 gc.alloc.rate.norm: 297.315 B/op
+                 gc.count:           97.000 counts
+                 gc.time:            98.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+8986141.640 ops/s
+                 gc.alloc.rate:      2547.601 MB/sec
+                 gc.alloc.rate.norm: 297.310 B/op
+                 gc.count:           97.000 counts
+                 gc.time:            93.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload":
+  8983997.293 ±(99.9%) 275832.968 ops/s [Average]
+  (min, avg, max) = (8967920.266, 8983997.293, 8997929.974), stdev = 15119.336
+  CI (99.9%): [8708164.326, 9259830.261] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate":
+  2547.076 ±(99.9%) 75.841 MB/sec [Average]
+  (min, avg, max) = (2542.682, 2547.076, 2550.946), stdev = 4.157
+  CI (99.9%): [2471.235, 2622.917] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate.norm":
+  297.314 ±(99.9%) 0.076 B/op [Average]
+  (min, avg, max) = (297.310, 297.314, 297.318), stdev = 0.004
+  CI (99.9%): [297.238, 297.391] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.count":
+  291.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (97.000, 97.000, 97.000), stdev = 0.001
+  CI (99.9%): [291.000, 291.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.time":
+  288.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (93.000, 96.000, 98.000), stdev = 2.646
+  CI (99.9%): [288.000, 288.000] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:03:22
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                                          Mode  Cnt         Score         Error   Units
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations                         thrpt    3   4710935.696 ±  239493.972   ops/s
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate           thrpt    3       927.977 ±      46.122  MB/sec
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate.norm      thrpt    3       206.566 ±       0.189    B/op
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.count                thrpt    3       169.000                counts
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.time                 thrpt    3       133.000                    ms
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations                     thrpt    3   4165641.418 ± 1249760.252   ops/s
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate       thrpt    3       820.531 ±     246.128  MB/sec
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate.norm  thrpt    3       206.558 ±       0.223    B/op
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.count            thrpt    3       166.000                counts
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.time             thrpt    3       123.000                    ms
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations                       thrpt    3  14157814.378 ± 1780046.798   ops/s
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate         thrpt    3      4320.397 ±     546.728  MB/sec
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate.norm    thrpt    3       320.000 ±       0.001    B/op
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.count              thrpt    3       341.000                counts
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.time               thrpt    3       333.000                    ms
+DirectMemoryFilteringBenchmark.methodChainOverhead                                thrpt    3   3808353.531 ±  486077.481   ops/s
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate                  thrpt    3      1912.342 ±     246.699  MB/sec
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate.norm             thrpt    3       526.571 ±       0.504    B/op
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.count                       thrpt    3       244.000                counts
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.time                        thrpt    3       216.000                    ms
+DirectMemoryFilteringBenchmark.realisticMixedWorkload                             thrpt    3   8983997.293 ±  275832.968   ops/s
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate               thrpt    3      2547.076 ±      75.841  MB/sec
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate.norm          thrpt    3       297.314 ±       0.076    B/op
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.count                    thrpt    3       291.000                counts
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.time                     thrpt    3       288.000                    ms
+
+[0;32m1/2 BASELINE complete![0m
+
+[1;33m========================================[0m
+[1;33m2/2 TRACK DIRECT ONLY: Zero overhead for heap allocations (80% of workload)[0m
+[1;33m========================================[0m
+Running WITH agent: include=com.example.bytebuf.benchmarks;trackDirectOnly=true
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.benchmarks], exclude=[], trackConstructors=[], trackDirectOnly=true}
+[ByteBufFlowAgent] Direct-only tracking mode enabled:
+  - heapBuffer methods: NOT instrumented (zero overhead)
+  - directBuffer/ioBuffer: Instrumented and tracked
+  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()
+[ByteBufFlowAgent] JMX MBean registered
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
+[ByteBufFlowAgent] ByteBuf construction tracking enabled
+[ByteBufFlowAgent] Instrumentation installed successfully
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: -javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations
+
+# Run progress: 0.00% complete, ETA 00:03:20
+# Fork: 1 of 1
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.benchmarks], exclude=[], trackConstructors=[], trackDirectOnly=true}
+[ByteBufFlowAgent] Direct-only tracking mode enabled:
+  - heapBuffer methods: NOT instrumented (zero overhead)
+  - directBuffer/ioBuffer: Instrumented and tracked
+  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()
+[ByteBufFlowAgent] JMX MBean registered
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
+[ByteBufFlowAgent] ByteBuf construction tracking enabled
+[ByteBufFlowAgent] Instrumentation installed successfully
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
+	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
+	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
+	at net.bytebuddy.description.type.TypeDescription$Generic$OfNonGenericType.getSuperClass(TypeDescription.java:3676)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:391)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:357)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:54)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:32)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
+	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
+	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
+	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
+	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
+	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
+	at com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.setup(DirectMemoryFilteringBenchmark.java:60)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_ambiguousBufferAllocations_jmhTest._jmh_tryInit_f_directmemoryfilteringbenchmark0_G(DirectMemoryFilteringBenchmark_ambiguousBufferAllocations_jmhTest.java:444)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_ambiguousBufferAllocations_jmhTest.ambiguousBufferAllocations_Throughput(DirectMemoryFilteringBenchmark_ambiguousBufferAllocations_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeDirectSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations-jmh-worker-1,5,main], loaded=false]
+[ObjectTrackerRegistry] Using default ByteBuf handler
+541305.870 ops/s
+# Warmup Iteration   2: 721197.837 ops/s
+Iteration   1: 756395.670 ops/s
+                 gc.alloc.rate:      608.373 MB/sec
+                 gc.alloc.rate.norm: 843.401 B/op
+                 gc.count:           12.000 counts
+                 gc.time:            441.000 ms
+
+Iteration   2: 736546.750 ops/s
+                 gc.alloc.rate:      593.449 MB/sec
+                 gc.alloc.rate.norm: 844.879 B/op
+                 gc.count:           11.000 counts
+                 gc.time:            429.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+736796.310 ops/s
+                 gc.alloc.rate:      592.664 MB/sec
+                 gc.alloc.rate.norm: 843.553 B/op
+                 gc.count:           10.000 counts
+                 gc.time:            464.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations":
+  743246.243 ±(99.9%) 207767.196 ops/s [Average]
+  (min, avg, max) = (736546.750, 743246.243, 756395.670), stdev = 11388.421
+  CI (99.9%): [535479.048, 951013.439] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate":
+  598.162 ±(99.9%) 161.484 MB/sec [Average]
+  (min, avg, max) = (592.664, 598.162, 608.373), stdev = 8.851
+  CI (99.9%): [436.678, 759.646] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate.norm":
+  843.944 ±(99.9%) 14.829 B/op [Average]
+  (min, avg, max) = (843.401, 843.944, 844.879), stdev = 0.813
+  CI (99.9%): [829.116, 858.773] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.count":
+  33.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (10.000, 11.000, 12.000), stdev = 1.000
+  CI (99.9%): [33.000, 33.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.time":
+  1334.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (429.000, 444.667, 464.000), stdev = 17.786
+  CI (99.9%): [1334.000, 1334.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: -javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations
+
+# Run progress: 20.00% complete, ETA 00:02:48
+# Fork: 1 of 1
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.benchmarks], exclude=[], trackConstructors=[], trackDirectOnly=true}
+[ByteBufFlowAgent] Direct-only tracking mode enabled:
+  - heapBuffer methods: NOT instrumented (zero overhead)
+  - directBuffer/ioBuffer: Instrumented and tracked
+  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()
+[ByteBufFlowAgent] JMX MBean registered
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
+[ByteBufFlowAgent] ByteBuf construction tracking enabled
+[ByteBufFlowAgent] Instrumentation installed successfully
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
+	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
+	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
+	at net.bytebuddy.description.type.TypeDescription$Generic$OfNonGenericType.getSuperClass(TypeDescription.java:3676)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:391)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:357)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:54)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:32)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
+	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
+	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
+	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
+	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
+	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
+	at com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.setup(DirectMemoryFilteringBenchmark.java:60)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_criticalDirectBufferOperations_jmhTest._jmh_tryInit_f_directmemoryfilteringbenchmark0_G(DirectMemoryFilteringBenchmark_criticalDirectBufferOperations_jmhTest.java:444)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_criticalDirectBufferOperations_jmhTest.criticalDirectBufferOperations_Throughput(DirectMemoryFilteringBenchmark_criticalDirectBufferOperations_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeDirectSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations-jmh-worker-1,5,main], loaded=false]
+[ObjectTrackerRegistry] Using default ByteBuf handler
+644673.440 ops/s
+# Warmup Iteration   2: 765951.613 ops/s
+Iteration   1: 801611.445 ops/s
+                 gc.alloc.rate:      645.483 MB/sec
+                 gc.alloc.rate.norm: 844.382 B/op
+                 gc.count:           12.000 counts
+                 gc.time:            478.000 ms
+
+Iteration   2: 766089.668 ops/s
+                 gc.alloc.rate:      616.115 MB/sec
+                 gc.alloc.rate.norm: 843.330 B/op
+                 gc.count:           10.000 counts
+                 gc.time:            487.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+760083.175 ops/s
+                 gc.alloc.rate:      613.515 MB/sec
+                 gc.alloc.rate.norm: 846.474 B/op
+                 gc.count:           10.000 counts
+                 gc.time:            515.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations":
+  775928.096 ±(99.9%) 409467.063 ops/s [Average]
+  (min, avg, max) = (760083.175, 775928.096, 801611.445), stdev = 22444.271
+  CI (99.9%): [366461.032, 1185395.159] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate":
+  625.038 ±(99.9%) 323.896 MB/sec [Average]
+  (min, avg, max) = (613.515, 625.038, 645.483), stdev = 17.754
+  CI (99.9%): [301.142, 948.934] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate.norm":
+  844.729 ±(99.9%) 29.200 B/op [Average]
+  (min, avg, max) = (843.330, 844.729, 846.474), stdev = 1.601
+  CI (99.9%): [815.529, 873.929] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.count":
+  32.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (10.000, 10.667, 12.000), stdev = 1.155
+  CI (99.9%): [32.000, 32.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.time":
+  1480.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (478.000, 493.333, 515.000), stdev = 19.296
+  CI (99.9%): [1480.000, 1480.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: -javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations
+
+# Run progress: 40.00% complete, ETA 00:02:06
+# Fork: 1 of 1
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.benchmarks], exclude=[], trackConstructors=[], trackDirectOnly=true}
+[ByteBufFlowAgent] Direct-only tracking mode enabled:
+  - heapBuffer methods: NOT instrumented (zero overhead)
+  - directBuffer/ioBuffer: Instrumented and tracked
+  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()
+[ByteBufFlowAgent] JMX MBean registered
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
+[ByteBufFlowAgent] ByteBuf construction tracking enabled
+[ByteBufFlowAgent] Instrumentation installed successfully
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
+	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
+	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
+	at net.bytebuddy.description.type.TypeDescription$Generic$OfNonGenericType.getSuperClass(TypeDescription.java:3676)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:391)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:357)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:54)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:32)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
+	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
+	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
+	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
+	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
+	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
+	at com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.setup(DirectMemoryFilteringBenchmark.java:60)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_highFrequencyHeapAllocations_jmhTest._jmh_tryInit_f_directmemoryfilteringbenchmark0_G(DirectMemoryFilteringBenchmark_highFrequencyHeapAllocations_jmhTest.java:444)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_highFrequencyHeapAllocations_jmhTest.highFrequencyHeapAllocations_Throughput(DirectMemoryFilteringBenchmark_highFrequencyHeapAllocations_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations-jmh-worker-1,5,main], loaded=false]
+[ObjectTrackerRegistry] Using default ByteBuf handler
+2891438.066 ops/s
+# Warmup Iteration   2: 2810716.754 ops/s
+Iteration   1: 2851085.349 ops/s
+                 gc.alloc.rate:      1131.071 MB/sec
+                 gc.alloc.rate.norm: 416.000 B/op
+                 gc.count:           42.000 counts
+                 gc.time:            41.000 ms
+
+Iteration   2: 2872574.983 ops/s
+                 gc.alloc.rate:      1139.595 MB/sec
+                 gc.alloc.rate.norm: 416.000 B/op
+                 gc.count:           43.000 counts
+                 gc.time:            46.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+2797348.125 ops/s
+                 gc.alloc.rate:      1109.673 MB/sec
+                 gc.alloc.rate.norm: 416.000 B/op
+                 gc.count:           42.000 counts
+                 gc.time:            42.000 ms
+
+
+=== ByteBuf Flow Final Report ===
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations":
+  2840336.152 ±(99.9%) 706912.815 ops/s [Average]
+  (min, avg, max) = (2797348.125, 2840336.152, 2872574.983), stdev = 38748.277
+  CI (99.9%): [2133423.337, 3547248.967] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate":
+  1126.780 ±(99.9%) 281.244 MB/sec [Average]
+  (min, avg, max) = (1109.673, 1126.780, 1139.595), stdev = 15.416
+  CI (99.9%): [845.535, 1408.024] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate.norm":
+  416.000 ±(99.9%) 0.001 B/op [Average]
+  (min, avg, max) = (416.000, 416.000, 416.000), stdev = 0.001
+  CI (99.9%): [416.000, 416.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.count":
+  127.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (42.000, 42.333, 43.000), stdev = 0.577
+  CI (99.9%): [127.000, 127.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.time":
+  129.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (41.000, 43.000, 46.000), stdev = 2.646
+  CI (99.9%): [129.000, 129.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: -javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead
+
+# Run progress: 60.00% complete, ETA 00:01:24
+# Fork: 1 of 1
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.benchmarks], exclude=[], trackConstructors=[], trackDirectOnly=true}
+[ByteBufFlowAgent] Direct-only tracking mode enabled:
+  - heapBuffer methods: NOT instrumented (zero overhead)
+  - directBuffer/ioBuffer: Instrumented and tracked
+  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()
+[ByteBufFlowAgent] JMX MBean registered
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
+[ByteBufFlowAgent] ByteBuf construction tracking enabled
+[ByteBufFlowAgent] Instrumentation installed successfully
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
+	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
+	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
+	at net.bytebuddy.description.type.TypeDescription$Generic$OfNonGenericType.getSuperClass(TypeDescription.java:3676)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:391)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:357)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:54)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:32)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
+	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
+	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
+	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
+	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
+	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
+	at com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.setup(DirectMemoryFilteringBenchmark.java:60)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_methodChainOverhead_jmhTest._jmh_tryInit_f_directmemoryfilteringbenchmark0_G(DirectMemoryFilteringBenchmark_methodChainOverhead_jmhTest.java:444)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_methodChainOverhead_jmhTest.methodChainOverhead_Throughput(DirectMemoryFilteringBenchmark_methodChainOverhead_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+[ObjectTrackerRegistry] Using default ByteBuf handler
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeDirectSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead-jmh-worker-1,5,main], loaded=false]
+326265.888 ops/s
+# Warmup Iteration   2: 365119.279 ops/s
+Iteration   1: 412180.002 ops/s
+                 gc.alloc.rate:      693.417 MB/sec
+                 gc.alloc.rate.norm: 1764.100 B/op
+                 gc.count:           11.000 counts
+                 gc.time:            483.000 ms
+
+Iteration   2: 417082.335 ops/s
+                 gc.alloc.rate:      701.942 MB/sec
+                 gc.alloc.rate.norm: 1764.790 B/op
+                 gc.count:           11.000 counts
+                 gc.time:            505.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+402128.814 ops/s
+                 gc.alloc.rate:      677.993 MB/sec
+                 gc.alloc.rate.norm: 1768.121 B/op
+                 gc.count:           11.000 counts
+                 gc.time:            540.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead":
+  410463.717 ±(99.9%) 139073.146 ops/s [Average]
+  (min, avg, max) = (402128.814, 410463.717, 417082.335), stdev = 7623.068
+  CI (99.9%): [271390.571, 549536.863] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate":
+  691.118 ±(99.9%) 221.458 MB/sec [Average]
+  (min, avg, max) = (677.993, 691.118, 701.942), stdev = 12.139
+  CI (99.9%): [469.660, 912.575] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate.norm":
+  1765.670 ±(99.9%) 39.226 B/op [Average]
+  (min, avg, max) = (1764.100, 1765.670, 1768.121), stdev = 2.150
+  CI (99.9%): [1726.444, 1804.896] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.count":
+  33.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (11.000, 11.000, 11.000), stdev = 0.001
+  CI (99.9%): [33.000, 33.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.methodChainOverhead:gc.time":
+  1528.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (483.000, 509.333, 540.000), stdev = 28.746
+  CI (99.9%): [1528.000, 1528.000] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: -javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload
+
+# Run progress: 80.00% complete, ETA 00:00:42
+# Fork: 1 of 1
+[ByteBufFlowAgent] Starting with config: AgentConfig{include=[com.example.bytebuf.benchmarks], exclude=[], trackConstructors=[], trackDirectOnly=true}
+[ByteBufFlowAgent] Direct-only tracking mode enabled:
+  - heapBuffer methods: NOT instrumented (zero overhead)
+  - directBuffer/ioBuffer: Instrumented and tracked
+  - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via isDirect()
+[ByteBufFlowAgent] JMX MBean registered
+[ByteBufFlowAgent] ByteBuf lifecycle tracking enabled (release/retain)
+[ByteBufFlowAgent] ByteBuf construction tracking enabled
+[ByteBufFlowAgent] Instrumentation installed successfully
+# Warmup Iteration   1: === Direct Memory Filtering Benchmark Starting ===
+Workload: 80% heap allocations, 20% direct allocations
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.CompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareCompositeByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SimpleLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.WrappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.AdvancedLeakAwareByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.EmptyByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledHeapByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledUnsafeNoCleanerDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledUnsafeDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledByteBufAllocator$InstrumentedUnpooledDirectByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] ERROR io.netty.util.internal.logging.Log4J2Logger [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+net.bytebuddy.pool.TypePool$Resolution$NoSuchTypeException: Cannot resolve type description for org.apache.logging.log4j.spi.ExtendedLoggerWrapper
+	at net.bytebuddy.pool.TypePool$Resolution$Illegal.resolve(TypePool.java:190)
+	at net.bytebuddy.pool.TypePool$Default$WithLazyResolution$LazyTypeDescription.delegate(TypePool.java:1111)
+	at net.bytebuddy.description.type.TypeDescription$AbstractBase$OfSimpleType$WithDelegation.getSuperClass(TypeDescription.java:8440)
+	at net.bytebuddy.description.type.TypeDescription$Generic$OfNonGenericType.getSuperClass(TypeDescription.java:3676)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:391)
+	at net.bytebuddy.description.type.TypeDefinition$SuperClassIterator.next(TypeDefinition.java:357)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:54)
+	at net.bytebuddy.matcher.HasSuperTypeMatcher.doMatch(HasSuperTypeMatcher.java:32)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$ForNonNullValues.matches(ElementMatcher.java:249)
+	at net.bytebuddy.matcher.ElementMatcher$Junction$Conjunction.matches(ElementMatcher.java:146)
+	at net.bytebuddy.agent.builder.AgentBuilder$RawMatcher$ForElementMatchers.matches(AgentBuilder.java:1971)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doTransform(AgentBuilder.java:12427)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12385)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.access$1800(AgentBuilder.java:12094)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12872)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$Java9CapableVmDispatcher.run(AgentBuilder.java:12804)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.doPrivileged(AgentBuilder.java)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer.transform(AgentBuilder.java:12328)
+	at net.bytebuddy.agent.builder.AgentBuilder$Default$ExecutingTransformer$ByteBuddy$ModuleSupport.transform(Unknown Source)
+	at java.instrument/sun.instrument.TransformerManager.transform(TransformerManager.java:188)
+	at java.instrument/sun.instrument.InstrumentationImpl.transform(InstrumentationImpl.java:610)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027)
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:862)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassOnClassPathOrNull(BuiltinClassLoader.java:760)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:681)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at io.netty.util.internal.logging.Log4J2LoggerFactory.newInstance(Log4J2LoggerFactory.java:33)
+	at io.netty.util.internal.logging.InternalLoggerFactory.useLog4J2LoggerFactory(InternalLoggerFactory.java:76)
+	at io.netty.util.internal.logging.InternalLoggerFactory.newDefaultFactory(InternalLoggerFactory.java:47)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getDefaultFactory(InternalLoggerFactory.java:111)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:134)
+	at io.netty.util.internal.logging.InternalLoggerFactory.getInstance(InternalLoggerFactory.java:127)
+	at io.netty.util.ResourceLeakDetector.<clinit>(ResourceLeakDetector.java:101)
+	at io.netty.buffer.AbstractByteBufAllocator.<clinit>(AbstractByteBufAllocator.java:37)
+	at com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.setup(DirectMemoryFilteringBenchmark.java:60)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_realisticMixedWorkload_jmhTest._jmh_tryInit_f_directmemoryfilteringbenchmark0_G(DirectMemoryFilteringBenchmark_realisticMixedWorkload_jmhTest.java:444)
+	at com.example.bytebuf.benchmarks.jmh_generated.DirectMemoryFilteringBenchmark_realisticMixedWorkload_jmhTest.realisticMixedWorkload_Throughput(DirectMemoryFilteringBenchmark_realisticMixedWorkload_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledSlicedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnpooledDuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.DuplicatedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.SwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeHeapSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+[ObjectTrackerRegistry] Using default ByteBuf handler
+[Byte Buddy] TRANSFORM io.netty.buffer.UnsafeDirectSwappedByteBuf [jdk.internal.loader.ClassLoaders$AppClassLoader@5a07e868, unnamed module @5a1c0542, Thread[#36,com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload-jmh-worker-1,5,main], loaded=false]
+601874.666 ops/s
+# Warmup Iteration   2: 777551.114 ops/s
+Iteration   1: 802687.953 ops/s
+                 gc.alloc.rate:      693.289 MB/sec
+                 gc.alloc.rate.norm: 905.699 B/op
+                 gc.count:           11.000 counts
+                 gc.time:            542.000 ms
+
+Iteration   2: 830190.169 ops/s
+                 gc.alloc.rate:      717.698 MB/sec
+                 gc.alloc.rate.norm: 906.522 B/op
+                 gc.count:           10.000 counts
+                 gc.time:            556.000 ms
+
+Iteration   3: === Direct Memory Filtering Benchmark Complete ===
+857596.134 ops/s
+                 gc.alloc.rate:      740.116 MB/sec
+                 gc.alloc.rate.norm: 905.029 B/op
+                 gc.count:           10.000 counts
+                 gc.time:            560.000 ms
+
+
+
+Result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload":
+  830158.085 ±(99.9%) 500865.073 ops/s [Average]
+  (min, avg, max) = (802687.953, 830158.085, 857596.134), stdev = 27454.105
+  CI (99.9%): [329293.012, 1331023.158] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate":
+  717.034 ±(99.9%) 427.282 MB/sec [Average]
+  (min, avg, max) = (693.289, 717.034, 740.116), stdev = 23.421
+  CI (99.9%): [289.752, 1144.316] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate.norm":
+  905.750 ±(99.9%) 13.644 B/op [Average]
+  (min, avg, max) = (905.029, 905.750, 906.522), stdev = 0.748
+  CI (99.9%): [892.106, 919.394] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.count":
+  31.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (10.000, 10.333, 11.000), stdev = 0.577
+  CI (99.9%): [31.000, 31.000] (assumes normal distribution)
+
+Secondary result "com.example.bytebuf.benchmarks.DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.time":
+  1658.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (542.000, 552.667, 560.000), stdev = 9.452
+  CI (99.9%): [1658.000, 1658.000] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:03:30
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                                          Mode  Cnt        Score        Error   Units
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations                         thrpt    3   743246.243 ± 207767.196   ops/s
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate           thrpt    3      598.162 ±    161.484  MB/sec
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.alloc.rate.norm      thrpt    3      843.944 ±     14.829    B/op
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.count                thrpt    3       33.000               counts
+DirectMemoryFilteringBenchmark.ambiguousBufferAllocations:gc.time                 thrpt    3     1334.000                   ms
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations                     thrpt    3   775928.096 ± 409467.063   ops/s
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate       thrpt    3      625.038 ±    323.896  MB/sec
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.alloc.rate.norm  thrpt    3      844.729 ±     29.200    B/op
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.count            thrpt    3       32.000               counts
+DirectMemoryFilteringBenchmark.criticalDirectBufferOperations:gc.time             thrpt    3     1480.000                   ms
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations                       thrpt    3  2840336.152 ± 706912.815   ops/s
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate         thrpt    3     1126.780 ±    281.244  MB/sec
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.alloc.rate.norm    thrpt    3      416.000 ±      0.001    B/op
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.count              thrpt    3      127.000               counts
+DirectMemoryFilteringBenchmark.highFrequencyHeapAllocations:gc.time               thrpt    3      129.000                   ms
+DirectMemoryFilteringBenchmark.methodChainOverhead                                thrpt    3   410463.717 ± 139073.146   ops/s
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate                  thrpt    3      691.118 ±    221.458  MB/sec
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.alloc.rate.norm             thrpt    3     1765.670 ±     39.226    B/op
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.count                       thrpt    3       33.000               counts
+DirectMemoryFilteringBenchmark.methodChainOverhead:gc.time                        thrpt    3     1528.000                   ms
+DirectMemoryFilteringBenchmark.realisticMixedWorkload                             thrpt    3   830158.085 ± 500865.073   ops/s
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate               thrpt    3      717.034 ±    427.282  MB/sec
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.alloc.rate.norm          thrpt    3      905.750 ±     13.644    B/op
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.count                    thrpt    3       31.000               counts
+DirectMemoryFilteringBenchmark.realisticMixedWorkload:gc.time                     thrpt    3     1658.000                   ms
+
+=== ByteBuf Flow Final Report ===
+ByteBuf Flow Analysis Report
+Generated: Tue Nov 11 17:47:26 UTC 2025
+================================================================================
+
+=== ByteBuf Flow Summary ===
+Total Root Methods: 0
+Total Traversals: 0
+Total Paths: 0
+
+=== Flow Tree ===
+
+=== Potential Leaks ===
+No leaks detected
+No leaks detected
+
+=== LLM Format ===
+METADATA:
+total_roots=0
+total_traversals=0
+total_paths=0
+clean_count=0
+leak_count=0
+
+LEAKS:
+(none)
+
+FLOWS:
+
+
+
+[0;32m2/2 TRACK DIRECT ONLY complete![0m
+
+[0;32mQuick comparison complete![0m
+[0;32mDone![0m

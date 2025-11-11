@@ -364,6 +364,101 @@ ls -la ~/.m2/repository/com/example/bytebuf/
 - **Gradle**: Available via `gradle`
 - **Python**: Python 3 available for proxy script
 
+## Direct Memory Tracking (trackDirectOnly)
+
+### Overview
+
+The `trackDirectOnly=true` flag enables production-ready tracking of **only direct memory allocations** (off-heap, never GC'd, will crash JVM if leaked). This provides zero overhead for heap buffers while catching critical leaks.
+
+### Implementation Architecture
+
+**Hybrid Approach**: Combines compile-time exclusion + runtime filtering
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Compile-Time (ByteBufConstructionTransformer)          │
+├─────────────────────────────────────────────────────────┤
+│ heapBuffer() → NOT INSTRUMENTED (zero overhead)        │
+│ directBuffer() → INSTRUMENTED                          │
+│ ioBuffer() → INSTRUMENTED                              │
+│ buffer() → INSTRUMENTED (ambiguous, needs runtime)     │
+│ wrappedBuffer() → INSTRUMENTED (ambiguous, needs runtime)│
+└─────────────────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ Runtime (ByteBufConstructionAdvice)                     │
+├─────────────────────────────────────────────────────────┤
+│ switch (methodName):                                    │
+│   case "heapBuffer": return (safety guard)             │
+│   case "directBuffer": track (known direct)            │
+│   case "ioBuffer": track (known direct)                │
+│   default: if (!buf.isDirect()) return                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Key Technical Decisions
+
+1. **WHY compile-time exclusion for heapBuffer**: 80% of allocations are heap, removing instrumentation entirely provides zero overhead
+
+2. **WHY runtime filtering for ambiguous methods**: Methods like `wrappedBuffer()` can return heap or direct depending on input:
+   - `Unpooled.wrappedBuffer(directBuf)` → returns `UnpooledSlicedByteBuf` with `isDirect()=true`
+   - `Unpooled.wrappedBuffer(byte[])` → returns `UnpooledHeapByteBuf` with `isDirect()=false`
+
+3. **WHY switch statement**: JIT compiles to jump table (single indirect jump) vs if-else chains (multiple branches)
+
+### Critical Insight: Wrapped Buffer Behavior
+
+**Wrapped buffers inherit `isDirect()` from underlying buffer**:
+
+```java
+ByteBuf directBuf = allocator.directBuffer(256);
+directBuf.writeLong(12345L);
+ByteBuf wrapped = Unpooled.wrappedBuffer(directBuf);
+
+wrapped.getClass() // UnpooledSlicedByteBuf
+wrapped.isDirect() // true (inherits from directBuf)
+```
+
+This means runtime filtering via `isDirect()` correctly identifies wrapped direct buffers as direct memory.
+
+### Testing the Feature
+
+```bash
+# Run tests
+cd bytebuf-flow-tracker
+mvn test -Dtest=DirectOnlyFilteringTest
+
+# Run benchmarks
+cd ../bytebuf-flow-benchmarks
+./run-direct-filtering-benchmark.sh quick  # Baseline vs trackDirectOnly
+./run-direct-filtering-benchmark.sh compare # All 3 modes
+```
+
+### Common Mistakes to Avoid
+
+1. **DON'T assume wrapped buffers are always heap**: They inherit the type from the underlying buffer
+2. **DON'T use method name alone for filtering**: Ambiguous methods need `isDirect()` check
+3. **DON'T instrument heapBuffer when trackDirectOnly=true**: Defeats the purpose of zero overhead
+4. **DON'T forget FILTER_DIRECT_ONLY flag**: trackDirectOnly sets this at agent startup for runtime filtering
+
+### Files Involved
+
+- `ByteBufFlowAgent.java` (lines 43-50): Sets FILTER_DIRECT_ONLY flag
+- `ByteBufConstructionTransformer` (lines 302-317): Compile-time method exclusion
+- `ByteBufConstructionAdvice.java` (lines 67-103): Runtime filtering logic
+- `DirectOnlyFilteringTest.java`: Test suite validating behavior
+- `DirectMemoryFilteringBenchmark.java`: Performance validation
+
+### Performance Characteristics
+
+| Scenario | Overhead |
+|----------|----------|
+| heapBuffer() | 0ns (not instrumented) |
+| directBuffer() | ~5ns (tracking) |
+| ioBuffer() | ~5ns (tracking) |
+| buffer() (ambiguous) | ~10ns (isDirect() + tracking) |
+| wrappedBuffer() (ambiguous) | ~10ns (isDirect() + tracking) |
+
 ## Remember
 
 - The Gradle build files are **production-ready and correct**
@@ -371,8 +466,9 @@ ls -la ~/.m2/repository/com/example/bytebuf/
 - Always check if the proxy is running before building
 - The composite build approach is the recommended integration method
 - The agent uses string-based type matching to avoid early class loading
+- **trackDirectOnly is production-ready** - use it when you only care about critical leaks
 
 ---
 
-**Last Updated**: Session 2025-11-08
+**Last Updated**: Session 2025-11-11 (Direct memory tracking cleanup)
 **Created By**: Claude (Anthropic AI Assistant)

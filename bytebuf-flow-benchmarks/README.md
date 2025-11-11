@@ -51,6 +51,51 @@ java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPS
 - Trie structure handling of path explosion
 - Memory scaling characteristics with branching flows
 
+### 6. `DirectMemoryFilteringBenchmark` (NEW - trackDirectOnly Performance)
+**Realistic workload demonstrating direct-only tracking benefits**:
+
+- **80% heap allocations** - temporary data, will eventually GC
+- **20% direct allocations** - critical I/O, off-heap memory (never GC'd)
+- **Multiple scenarios**:
+  - `realisticMixedWorkload` - 80/20 mix simulating typical applications
+  - `highFrequencyHeapAllocations` - Pure heap (shows zero overhead with trackDirectOnly)
+  - `criticalDirectBufferOperations` - Pure direct (always tracked)
+  - `ambiguousBufferAllocations` - Uses `buffer()` method (requires isDirect() check)
+  - `methodChainOverhead` - Tracks flow through method chains
+
+**Why this matters**: In production, direct memory leaks are critical (never GC'd) while heap leaks eventually clean up. Tracking only direct buffers eliminates overhead for the common case (heap) while catching critical leaks (direct).
+
+**Running the Direct Memory Filtering Benchmark:**
+
+```bash
+# BASELINE (no agent)
+java -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
+
+# TRACK ALL (default - tracks both heap and direct)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+  -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
+
+# TRACK DIRECT ONLY (zero overhead for 80% heap allocations)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true" \
+  -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
+
+# FILTER DIRECT ONLY (runtime filtering with fast path)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;filterDirectOnly=true" \
+  -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
+```
+
+**Expected results**:
+- **Baseline**: Best performance (no tracking)
+- **Track all**: Some overhead from tracking 100% of allocations
+- **trackDirectOnly=true**: Near-baseline performance (heap not instrumented)
+- **filterDirectOnly=true**: Slightly slower than trackDirectOnly (runtime checks)
+
+**What this tests**:
+- Performance benefit of skipping heap buffer instrumentation
+- Fast-path filtering with method name heuristics
+- isDirect() overhead for ambiguous allocations (buffer(), compositeBuffer())
+- Real-world 80/20 workload patterns
+
 ## Default Configuration
 
 - **Mode**: Throughput (operations per second)

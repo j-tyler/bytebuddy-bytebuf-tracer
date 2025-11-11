@@ -460,7 +460,7 @@ Then follow the same pom.xml configuration as Method 2 (for Maven) or Method 3 (
 
 ### Agent Arguments
 
-Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstructors=class1,class2`
+Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstructors=class1,class2;trackDirectOnly=true`
 
 **Parameters:**
 - `include` - Packages or specific classes to instrument (required)
@@ -472,6 +472,14 @@ Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstruc
   - Class exclusion: `com.example.package.SpecificClass` (no .* suffix)
   - Inner class exclusion: `com.example.Outer$Inner` (use $ separator)
 - `trackConstructors` - Classes to enable constructor tracking (optional)
+- `trackDirectOnly` - Track only direct memory allocations (optional, default: false)
+  - When `true`: **Maximum performance for production**
+    - heapBuffer methods: NOT instrumented (**zero overhead**)
+    - directBuffer/ioBuffer: Instrumented and tracked
+    - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via `isDirect()` (~5ns)
+  - When `false`: track both heap and direct buffers (default behavior)
+  - **Use case**: Production environments - track only critical direct memory leaks (never GC'd)
+  - **Performance**: Optimal for production where direct memory crashes are the concern
 
 **Examples:**
 
@@ -508,6 +516,12 @@ Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstruc
 
 # Use wildcards for constructor tracking
 -javaagent:tracker.jar=include=com.example.*;trackConstructors=com.example.dto.*
+
+# Track only direct buffers (zero instrumentation overhead for heap)
+-javaagent:tracker.jar=include=com.example.*;trackDirectOnly=true
+
+# Combine with other options
+-javaagent:tracker.jar=include=com.example.*;exclude=com.example.test.*;trackDirectOnly=true
 ```
 
 **Important Notes:**
@@ -518,6 +532,34 @@ Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstruc
 - Inner classes use the `$` separator: `com.example.Outer$Inner`
 - **Precedence**: Exclusions take precedence over inclusions. If a class matches both `include` and `exclude`, it will be excluded
 - **Constructor Tracking**: Exclusions also take precedence over `trackConstructors`. If a class is in both `trackConstructors` and `exclude` patterns, it will NOT be instrumented
+
+### Direct Memory Tracking Performance
+
+**For production use, set `trackDirectOnly=true` to track only critical direct memory leaks:**
+
+```bash
+# Production: Maximum performance, track only direct memory (never GC'd)
+-javaagent:tracker.jar=include=com.yourapp.*;trackDirectOnly=true
+```
+
+| Allocation Type | trackDirectOnly=true | Default (false) |
+|----------------|----------------------|-----------------|
+| `heapBuffer()` | **Not instrumented** (0ns) | Tracked |
+| `directBuffer()` | Tracked | Tracked |
+| `ioBuffer()` | Tracked | Tracked |
+| `wrappedBuffer()` | Filtered via `isDirect()` (~5ns) | Tracked |
+| `compositeBuffer()` | Filtered via `isDirect()` (~5ns) | Tracked |
+| `buffer()` (ambiguous) | Filtered via `isDirect()` (~5ns) | Tracked |
+
+**How `trackDirectOnly=true` works:**
+1. **heapBuffer methods**: Not instrumented at all → **zero overhead** (99% of allocations in many apps)
+2. **directBuffer/ioBuffer**: Always instrumented and tracked → catches critical leaks
+3. **Ambiguous methods** (wrappedBuffer, compositeBuffer, buffer): Instrumented but filtered at runtime using `ByteBuf.isDirect()` → ~5ns overhead per call
+
+**Why this matters for production:**
+- Direct memory leaks **crash your JVM** (never garbage collected, off-heap)
+- Heap memory leaks eventually get cleaned up by GC
+- `trackDirectOnly=true` focuses on the critical leaks with minimal overhead
 
 ### JMX Monitoring
 

@@ -1,0 +1,161 @@
+================================================================================
+ByteBuf Flow Tracker - Benchmark Results v4
+================================================================================
+
+Date: 2025-11-11
+Branch: claude/optimize-direct-memory-tracking-011CV2bWDkuftPZfnXE1MLMJ
+Commit: 51b0f18 (after Stormpot pooling optimizations)
+
+Optimizations included in v4:
+1. WeakActiveFlow bit-packing (depth + completed flag in single byte)
+2. ImprintNode lazy children map with dual-reference pattern
+3. Compressed NodeKey (single methodSignature string vs two strings)
+4. FlowState object pooling using Stormpot 3.2
+
+JVM: OpenJDK 21.0.8 64-Bit Server VM
+OS: Linux 4.4.0
+Hardware: Environment container (variable CPU allocation)
+
+Benchmark Configuration:
+- Forks: 1
+- Warmup iterations: 2 (5s each)
+- Measurement iterations: 3 (5s each)
+- Threads: 1
+
+================================================================================
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 5 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.allocatePassThroughChainAndRelease
+
+# Run progress: 0.00% complete, ETA 00:01:40
+# Fork: 1 of 1
+# Warmup Iteration   1: === ByteBuf Flow Tracker Benchmark Starting ===
+17269721.556 ops/s
+# Warmup Iteration   2: 21687236.171 ops/s
+Iteration   1: 21529624.951 ops/s
+Iteration   2: 21503436.005 ops/s
+Iteration   3: === ByteBuf Flow Tracker Benchmark Complete ===
+21307113.583 ops/s
+
+
+Result "com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.allocatePassThroughChainAndRelease":
+  21446724.846 ±(99.9%) 2218690.502 ops/s [Average]
+  (min, avg, max) = (21307113.583, 21446724.846, 21529624.951), stdev = 121613.913
+  CI (99.9%): [19228034.344, 23665415.348] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 5 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.allocatePassToMethodAndRelease
+
+# Run progress: 25.00% complete, ETA 00:01:16
+# Fork: 1 of 1
+# Warmup Iteration   1: === ByteBuf Flow Tracker Benchmark Starting ===
+17381429.180 ops/s
+# Warmup Iteration   2: 21357044.316 ops/s
+Iteration   1: 21660817.901 ops/s
+Iteration   2: 21327470.610 ops/s
+Iteration   3: === ByteBuf Flow Tracker Benchmark Complete ===
+21387895.902 ops/s
+
+
+Result "com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.allocatePassToMethodAndRelease":
+  21458728.138 ±(99.9%) 3240149.257 ops/s [Average]
+  (min, avg, max) = (21327470.610, 21458728.138, 21660817.901), stdev = 177603.514
+  CI (99.9%): [18218578.881, 24698877.395] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 5 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.simpleAllocateAndRelease
+
+# Run progress: 50.00% complete, ETA 00:00:50
+# Fork: 1 of 1
+# Warmup Iteration   1: === ByteBuf Flow Tracker Benchmark Starting ===
+17144183.710 ops/s
+# Warmup Iteration   2: 19739980.896 ops/s
+Iteration   1: 22002450.800 ops/s
+Iteration   2: 21793828.289 ops/s
+Iteration   3: === ByteBuf Flow Tracker Benchmark Complete ===
+22141920.855 ops/s
+
+
+Result "com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.simpleAllocateAndRelease":
+  21979399.981 ±(99.9%) 3196069.749 ops/s [Average]
+  (min, avg, max) = (21793828.289, 21979399.981, 22141920.855), stdev = 175187.368
+  CI (99.9%): [18783330.233, 25175469.730] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.8, OpenJDK 64-Bit Server VM, 21.0.8+9-Ubuntu-0ubuntu124.04.1
+# VM invoker: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 5 s each
+# Measurement: 3 iterations, 5 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.tightLoopAllocateAndRelease
+
+# Run progress: 75.00% complete, ETA 00:00:25
+# Fork: 1 of 1
+# Warmup Iteration   1: === ByteBuf Flow Tracker Benchmark Starting ===
+17654421.210 ops/s
+# Warmup Iteration   2: 21668423.678 ops/s
+Iteration   1: 21519041.041 ops/s
+Iteration   2: 21201312.898 ops/s
+Iteration   3: === ByteBuf Flow Tracker Benchmark Complete ===
+21308448.237 ops/s
+
+
+Result "com.example.bytebuf.benchmarks.ByteBufFlowBenchmark.tightLoopAllocateAndRelease":
+  21342934.059 ±(99.9%) 2949042.729 ops/s [Average]
+  (min, avg, max) = (21201312.898, 21342934.059, 21519041.041), stdev = 161646.983
+  CI (99.9%): [18393891.330, 24291976.788] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:01:41
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                 Mode  Cnt         Score         Error  Units
+ByteBufFlowBenchmark.allocatePassThroughChainAndRelease  thrpt    3  21446724.846 ± 2218690.502  ops/s
+ByteBufFlowBenchmark.allocatePassToMethodAndRelease      thrpt    3  21458728.138 ± 3240149.257  ops/s
+ByteBufFlowBenchmark.simpleAllocateAndRelease            thrpt    3  21979399.981 ± 3196069.749  ops/s
+ByteBufFlowBenchmark.tightLoopAllocateAndRelease         thrpt    3  21342934.059 ± 2949042.729  ops/s

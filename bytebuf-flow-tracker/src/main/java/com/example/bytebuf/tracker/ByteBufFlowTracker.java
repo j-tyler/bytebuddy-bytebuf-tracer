@@ -115,22 +115,6 @@ public class ByteBufFlowTracker {
     }
 
     /**
-     * Get memory usage statistics.
-     */
-    public MemoryStats getMemoryStats() {
-        long activeMemory = activeTracker.getMemoryUsage();
-        long trieMemory = trie.getNodeCount() * 100L;  // Approx 100 bytes/node
-
-        return new MemoryStats(
-            activeTracker.getActiveCount(),
-            activeMemory,
-            trie.getNodeCount(),
-            trieMemory,
-            activeMemory + trieMemory
-        );
-    }
-
-    /**
      * Get tracking statistics.
      */
     public TrackingStats getTrackingStats() {
@@ -179,36 +163,6 @@ public class ByteBufFlowTracker {
 
     public static ByteBufFlowTracker getInstance() {
         return INSTANCE;
-    }
-
-    /**
-     * Memory usage statistics.
-     */
-    public static class MemoryStats {
-        public final int activeObjects;
-        public final long activeMemory;
-        public final int trieNodes;
-        public final long trieMemory;
-        public final long totalMemory;
-
-        public MemoryStats(int activeObjects, long activeMemory, int trieNodes,
-                          long trieMemory, long totalMemory) {
-            this.activeObjects = activeObjects;
-            this.activeMemory = activeMemory;
-            this.trieNodes = trieNodes;
-            this.trieMemory = trieMemory;
-            this.totalMemory = totalMemory;
-        }
-
-        @Override
-        public String toString() {
-            return String.format(
-                "Active: %d objects (%.2f KB), Trie: %d nodes (%.2f KB), Total: %.2f KB",
-                activeObjects, activeMemory / 1024.0,
-                trieNodes, trieMemory / 1024.0,
-                totalMemory / 1024.0
-            );
-        }
     }
 
     /**

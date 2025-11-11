@@ -73,28 +73,6 @@ public class BoundsVerificationTest {
     }
 
     @Test
-    public void testMemoryUsageUnderLoad() {
-        // Create many concurrent objects
-        ByteBuf[] buffers = new ByteBuf[1000];
-        for (int i = 0; i < buffers.length; i++) {
-            buffers[i] = Unpooled.buffer(10);
-            tracker.recordMethodCall(buffers[i], "TestClass", "method" + (i % 10), buffers[i].refCnt());
-        }
-
-        int activeCount = tracker.getActiveFlowCount();
-        ByteBufFlowTracker.MemoryStats stats = tracker.getMemoryStats();
-
-        // Verify memory usage is proportional to active count
-        long expectedMemory = activeCount * 80L;
-        assertEquals("Memory usage should match expected", expectedMemory, stats.activeMemory);
-
-        // Clean up
-        for (ByteBuf buf : buffers) {
-            buf.release();
-        }
-    }
-
-    @Test
     public void testHighConcurrentLoad_NoUnboundedGrowth() throws InterruptedException {
         final int threadCount = 10;
         final int operationsPerThread = 500;

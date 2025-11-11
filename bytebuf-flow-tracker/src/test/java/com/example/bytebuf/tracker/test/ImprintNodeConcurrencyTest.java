@@ -83,9 +83,13 @@ public class ImprintNodeConcurrencyTest {
             final int threadId = i;
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < childrenPerThread; j++) {
+                    String className = "ChildClass" + threadId;
+                    String methodName = "childMethod" + j;
+                    String methodSignature = className + "." + methodName;
                     ImprintNode child = parent.getOrCreateChild(
-                        "ChildClass" + threadId,
-                        "childMethod" + j,
+                        className,
+                        methodName,
+                        methodSignature,
                         (byte) 1
                     );
                     if (child != null) {
@@ -117,9 +121,13 @@ public class ImprintNodeConcurrencyTest {
             final int threadId = i;
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < operationsPerThread; j++) {
+                    String className = "ChildClass" + threadId + "_" + j;
+                    String methodName = "method";
+                    String methodSignature = className + "." + methodName;
                     parent.getOrCreateChild(
-                        "ChildClass" + threadId + "_" + j,
-                        "method",
+                        className,
+                        methodName,
+                        methodSignature,
                         (byte) 1
                     );
                 }
@@ -142,10 +150,11 @@ public class ImprintNodeConcurrencyTest {
     public void testNodeKeyHashCodeConsistency() {
         String className = "TestClass";
         String methodName = "testMethod";
+        String methodSignature = className + "." + methodName;
         byte refCount = 1;
 
-        ImprintNode.NodeKey key1 = new ImprintNode.NodeKey(className, methodName, refCount);
-        ImprintNode.NodeKey key2 = new ImprintNode.NodeKey(className, methodName, refCount);
+        ImprintNode.NodeKey key1 = new ImprintNode.NodeKey(methodSignature, refCount);
+        ImprintNode.NodeKey key2 = new ImprintNode.NodeKey(methodSignature, refCount);
 
         assertEquals("Hash codes should be equal for equal keys", key1.hashCode(), key2.hashCode());
         assertEquals("Keys should be equal", key1, key2);
@@ -158,13 +167,16 @@ public class ImprintNodeConcurrencyTest {
         String className2 = new String("TestClass").intern();
         String methodName1 = new String("testMethod").intern();
         String methodName2 = new String("testMethod").intern();
+        String methodSignature1 = (className1 + "." + methodName1).intern();
+        String methodSignature2 = (className2 + "." + methodName2).intern();
 
-        ImprintNode.NodeKey key1 = new ImprintNode.NodeKey(className1, methodName1, (byte) 1);
-        ImprintNode.NodeKey key2 = new ImprintNode.NodeKey(className2, methodName2, (byte) 1);
+        ImprintNode.NodeKey key1 = new ImprintNode.NodeKey(methodSignature1, (byte) 1);
+        ImprintNode.NodeKey key2 = new ImprintNode.NodeKey(methodSignature2, (byte) 1);
 
         // Since strings are interned, identity comparison should work
         assertSame("Interned class names should be same object", className1, className2);
         assertSame("Interned method names should be same object", methodName1, methodName2);
+        assertSame("Interned method signatures should be same object", methodSignature1, methodSignature2);
         assertEquals("Keys should be equal", key1, key2);
     }
 }

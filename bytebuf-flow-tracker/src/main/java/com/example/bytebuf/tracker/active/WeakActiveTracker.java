@@ -101,15 +101,18 @@ public class WeakActiveTracker {
 
         WeakActiveFlow flow = activeFlows.get(objectId);
         if (flow == null) {
-            // First time seeing this object - create root in Trie
+            // First time seeing this object - create root in Trie and acquire pooled state
             ImprintNode root = trie.getOrCreateRoot(className, methodName);
-            flow = new WeakActiveFlow(byteBuf, objectId, root, gcQueue);
+            FlowStatePool.PooledFlowState pooledState = FlowStatePool.acquire(root);  // Acquire from pool
+            flow = new WeakActiveFlow(byteBuf, objectId, pooledState, gcQueue);
 
             WeakActiveFlow existing = activeFlows.putIfAbsent(objectId, flow);
             if (existing == null) {
                 totalObjectsSeen.incrementAndGet();
                 return flow;
             }
+            // Lost race - return pooled state to pool and use existing flow
+            FlowStatePool.release(pooledState);
             return existing;
         }
 
@@ -173,6 +176,9 @@ public class WeakActiveTracker {
                 totalGCDetected.incrementAndGet();
             }
 
+            // Return PooledFlowState to pool for reuse
+            FlowStatePool.release(flow.getPooledState());
+
             processed++;
         }
     }
@@ -200,6 +206,9 @@ public class WeakActiveTracker {
                 totalLeaked.incrementAndGet();
                 totalGCDetected.incrementAndGet();
             }
+
+            // Return PooledFlowState to pool for reuse
+            FlowStatePool.release(flow.getPooledState());
         }
     }
 
@@ -213,6 +222,8 @@ public class WeakActiveTracker {
                 flow.getCurrentNode().recordOutcome(false);  // LEAK (never released)
                 totalLeaked.incrementAndGet();
             }
+            // Return PooledFlowState to pool for reuse
+            FlowStatePool.release(flow.getPooledState());
         }
         activeFlows.clear();
     }
@@ -236,13 +247,5 @@ public class WeakActiveTracker {
 
     public long getTotalGCDetected() {
         return totalGCDetected.get();
-    }
-
-    public long getMemoryUsage() {
-        // WeakActiveFlow: 16 (object header) + 8 (WeakReference) + 4 (objectId) +
-        //                 8 (currentNode) + 4 (currentDepth) + 1 (completed) + 7 (padding) = ~48 bytes
-        // ConcurrentHashMap entry: ~32 bytes per entry (Node object + overhead)
-        // Total per active flow: ~80 bytes
-        return activeFlows.size() * 80L;
     }
 }

@@ -587,6 +587,85 @@ if (FILTER_DIRECT_ONLY) {
 
 **Key insight**: `ByteBuf.isDirect()` correctly handles wrapped buffers - they inherit the direct/heap property from the underlying buffer. This means `Unpooled.wrappedBuffer(directBuf)` returns a slice with `isDirect()=true`, correctly identifying it as direct memory.
 
+### FlowState Object Pooling
+
+**Problem**: Every tracked ByteBuf needs a FlowState object to track its position in the trie. Under high ByteBuf churn (thousands/sec), constant FlowState allocation/deallocation creates significant GC pressure.
+
+**Solution**: Pool FlowState objects using Stormpot (battle-tested object pooling library, Apache 2.0 licensed)
+
+**Architecture**:
+```
+WeakActiveFlow (unpoolable)          FlowStatePool (Stormpot-based)
+├─ WeakReference<Object>             ├─ Pool<StormpotPooledFlowState>
+├─ int objectId                      ├─ Size: 1024 (~32KB overhead)
+└─ PooledFlowState (delegated) ─────>└─ Expiration: never (reuse indefinitely)
+                                          ├─ StormpotPooledFlowState (pooled)
+                                          │   ├─ implements Poolable
+                                          │   ├─ FlowState (reusable)
+                                          │   └─ Slot (Stormpot handle)
+                                          └─ UnpooledFlowState (fallback)
+```
+
+**Key design decision**: FlowState is separate from WeakActiveFlow because WeakReference cannot be pooled (lifecycle tied to GC). WeakActiveFlow delegates to a PooledFlowState interface, which can be either pooled (StormpotPooledFlowState) or unpooled (UnpooledFlowState fallback).
+
+**Why Stormpot instead of custom pooling**:
+1. **Proven reliability**: Mature, well-tested library used in production systems
+2. **Lock-free fast path**: Claim/release operations use lock-free algorithms
+3. **Graceful degradation**: Falls back to unpooled allocation when pool exhausted
+4. **Zero maintenance**: No need to maintain custom pooling logic
+5. **Thread-safe**: All synchronization handled internally
+
+**Implementation**:
+```java
+// FlowStatePool.java - Global Stormpot pool
+private static final Pool<StormpotPooledFlowState> POOL;
+
+static {
+    // Stormpot 3.x uses builder pattern (not Config-based like 2.x)
+    POOL = Pool.from(new FlowStateAllocator())
+        .setSize(1024)
+        .setExpiration(Expiration.never())
+        .build();
+}
+
+// Acquire from pool or allocate unpooled on exhaustion
+public static PooledFlowState acquire(ImprintNode rootNode) {
+    try {
+        StormpotPooledFlowState pooled = POOL.claim(new Timeout(1, TimeUnit.MILLISECONDS));
+        if (pooled != null) {
+            pooled.flowState.reset(rootNode);
+            return pooled;
+        }
+    } catch (InterruptedException | PoolException e) {
+        // Fall through to unpooled
+    }
+    FlowState state = new FlowState();
+    state.reset(rootNode);
+    return new UnpooledFlowState(state, rootNode);
+}
+
+// Return to pool for reuse
+public static void release(PooledFlowState state) {
+    if (state instanceof StormpotPooledFlowState) {
+        ((StormpotPooledFlowState) state).release();
+    }
+    // UnpooledFlowState is just GC'd
+}
+```
+
+**Memory tradeoff**:
+- Pool overhead: 1024 slots × 32 bytes = ~32KB globally
+- Per-active-ByteBuf: ~132 bytes (40 WeakActiveFlow + 32 PooledFlowState + 28 FlowState + 32 CHM entry)
+- Savings: Eliminates allocation/GC churn for FlowState objects
+
+**Performance benefit**: Significant for high ByteBuf churn (thousands/sec). Negligible overhead for low churn applications.
+
+**Files involved**:
+- `FlowState.java`: Poolable state object with bit-packed depth + completed flag
+- `FlowStatePool.java`: Stormpot pool wrapper with acquire/release
+- `WeakActiveFlow.java`: Delegates to PooledFlowState
+- `WeakActiveTracker.java`: Acquires from pool on creation, releases on GC/shutdown
+
 ### Best Practices
 
 1. **Narrow include packages**: Only instrument application code

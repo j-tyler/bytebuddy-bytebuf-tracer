@@ -15,6 +15,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * Immutable-identity Trie node that stores clean/leak statistics.
  * Memory-efficient design with string interning and bucketed refCounts.
  *
+ * <p><b>Memory Optimization:</b> Uses lazy children map initialization to save memory
+ * on leaf nodes (~50-70% of all nodes). Dual-reference pattern (volatile + non-volatile)
+ * eliminates memory barrier overhead after initialization while maintaining thread safety:
+ * <ul>
+ *   <li>Fast path: Check non-volatile {@code children} (no memory barrier)</li>
+ *   <li>Slow path: Check volatile {@code visibleChildren} for initialization status</li>
+ *   <li>Memory cost: +8 bytes per node, but saves 32 bytes on 50-70% of nodes (net win)</li>
+ * </ul>
+ *
  * <p><b>Thread Safety:</b> This class is thread-safe. The node identity
  * (className, methodName, refCountBucket) is immutable. Statistics and children
  * are protected using atomic operations and {@link java.util.concurrent.ConcurrentHashMap}.
@@ -39,8 +48,10 @@ public class ImprintNode {
     private final AtomicLong cleanCount = new AtomicLong(0);  // Released properly (refCnt→0)
     private final AtomicLong leakCount = new AtomicLong(0);   // GC'd without release
 
-    // Children (shared Trie structure)
-    private final Map<NodeKey, ImprintNode> children = new ConcurrentHashMap<>();
+    // Children (shared Trie structure) - lazy initialized for memory efficiency
+    // Dual-reference pattern: non-volatile for fast access, volatile for safe initialization
+    private Map<NodeKey, ImprintNode> children;              // Fast path (no memory barrier)
+    private volatile Map<NodeKey, ImprintNode> visibleChildren;  // Safe initialization guard
 
     // Memory bound enforcement
     // Value of 100 chosen based on:
@@ -61,24 +72,66 @@ public class ImprintNode {
     /**
      * Get or create a child node.
      * Enforces per-node branching limit to prevent path explosion.
+     *
+     * <p><b>Performance Optimization:</b> Uses dual-reference pattern for lazy initialization:
+     * <ol>
+     *   <li>Fast path: Check non-volatile {@code children} (no memory barrier)</li>
+     *   <li>If null, check volatile {@code visibleChildren} (with memory barrier)</li>
+     *   <li>If both null, lock and initialize both references</li>
+     * </ol>
+     * This eliminates memory barrier overhead on subsequent accesses by the same thread
+     * after it has observed initialization, while maintaining thread-safe lazy initialization.
+     *
+     * @param className Interned class name (for node identity and rendering)
+     * @param methodName Interned method name (for node identity and rendering)
+     * @param methodSignature Interned method signature (className.methodName, for compressed NodeKey)
+     * @param refCountBucket Reference count bucket (0-3)
+     * @return The child node (existing or newly created)
      */
-    public ImprintNode getOrCreateChild(String className, String methodName, byte refCountBucket) {
-        NodeKey key = new NodeKey(className, methodName, refCountBucket);
+    public ImprintNode getOrCreateChild(String className, String methodName,
+                                       String methodSignature, byte refCountBucket) {
+        // Fast path: Check non-volatile children first (no memory barrier)
+        Map<NodeKey, ImprintNode> localChildren = children;
+        if (localChildren == null) {
+            // Slow path: Check volatile visibleChildren (with memory barrier)
+            localChildren = visibleChildren;
+            if (localChildren == null) {
+                // Double-checked locking: Initialize children map
+                synchronized (this) {
+                    localChildren = visibleChildren;
+                    if (localChildren == null) {
+                        localChildren = new ConcurrentHashMap<>(4);  // Small initial capacity
+                        this.children = localChildren;              // Set non-volatile reference
+                        this.visibleChildren = localChildren;       // Publish via volatile write
+                    } else {
+                        // Another thread initialized it, use their instance
+                        this.children = localChildren;
+                    }
+                }
+            } else {
+                // Another thread initialized it, cache locally
+                this.children = localChildren;
+            }
+        }
 
-        ImprintNode existing = children.get(key);
+        // Now we have a valid children map, proceed with normal logic
+        // Use the pre-interned methodSignature for compressed NodeKey (saves 8 bytes per key)
+        NodeKey key = new NodeKey(methodSignature, refCountBucket);
+
+        ImprintNode existing = localChildren.get(key);
         if (existing != null) {
             return existing;
         }
 
         // Check branching limit
-        if (children.size() >= MAX_CHILDREN_PER_NODE) {
+        if (localChildren.size() >= MAX_CHILDREN_PER_NODE) {
             // Evict least-traversed child
-            evictLeastUsedChild();
+            evictLeastUsedChild(localChildren);
         }
 
         // Create new child
         ImprintNode newChild = new ImprintNode(className, methodName, refCountBucket);
-        ImprintNode result = children.putIfAbsent(key, newChild);
+        ImprintNode result = localChildren.putIfAbsent(key, newChild);
         return result != null ? result : newChild;
     }
 
@@ -104,13 +157,15 @@ public class ImprintNode {
     /**
      * Evict the child with the lowest total traversal count (LFU eviction).
      * Uses key-based removal to avoid fragile identity comparisons.
+     *
+     * @param childrenMap The children map to evict from (passed as parameter for lazy init support)
      */
-    private void evictLeastUsedChild() {
+    private void evictLeastUsedChild(Map<NodeKey, ImprintNode> childrenMap) {
         NodeKey leastUsedKey = null;
         long minCount = Long.MAX_VALUE;
 
         // Find the key of the least used child
-        for (Map.Entry<NodeKey, ImprintNode> entry : children.entrySet()) {
+        for (Map.Entry<NodeKey, ImprintNode> entry : childrenMap.entrySet()) {
             long totalCount = entry.getValue().getTotalCount();
             if (totalCount < minCount) {
                 minCount = totalCount;
@@ -120,7 +175,7 @@ public class ImprintNode {
 
         // Remove by key (more reliable than identity comparison)
         if (leastUsedKey != null) {
-            children.remove(leastUsedKey);
+            childrenMap.remove(leastUsedKey);
         }
     }
 
@@ -132,10 +187,26 @@ public class ImprintNode {
     public long getCleanCount() { return cleanCount.get(); }
     public long getLeakCount() { return leakCount.get(); }
     public long getTotalCount() { return cleanCount.get() + leakCount.get(); }
+
+    /**
+     * Get the children map. Returns empty map if this is a leaf node.
+     * This method checks visibleChildren (volatile) for thread-safe access.
+     */
     public Map<NodeKey, ImprintNode> getChildren() {
-        return Collections.unmodifiableMap(children);
+        Map<NodeKey, ImprintNode> localChildren = visibleChildren;  // Read volatile field
+        if (localChildren == null) {
+            return Collections.emptyMap();  // Leaf node - no children
+        }
+        return Collections.unmodifiableMap(localChildren);
     }
-    public boolean isLeaf() { return children.isEmpty(); }
+
+    /**
+     * Check if this is a leaf node (no children).
+     * Checks visibleChildren (volatile) for thread-safe access.
+     */
+    public boolean isLeaf() {
+        return visibleChildren == null;  // Check volatile field
+    }
 
     /**
      * Get the actual refCount value from the bucket (for display purposes).
@@ -152,20 +223,30 @@ public class ImprintNode {
     }
 
     /**
-     * Node key for child lookup.
-     * Uses interned strings for memory efficiency and identity-based hashing.
+     * Node key for child lookup - compressed to reduce memory overhead.
+     *
+     * <p><b>Memory Optimization:</b> Stores methodSignature as single string
+     * (className + "." + methodName) instead of two separate strings, saving
+     * 8 bytes per NodeKey instance.
+     *
+     * <p>Uses interned strings for memory efficiency and identity-based hashing.
+     *
+     * <p><b>Memory Layout:</b>
+     * <ul>
+     *   <li>Before: className (8) + methodName (8) + refCountBucket (1) + hashCode (4) + padding (3) = 24 bytes</li>
+     *   <li>After: methodSignature (8) + refCountBucket (1) + hashCode (4) + padding (3) = 16 bytes</li>
+     *   <li>Savings: 8 bytes per NodeKey (33% reduction)</li>
+     * </ul>
      */
     public static class NodeKey {
-        public final String className;
-        public final String methodName;
+        public final String methodSignature;  // className.methodName (interned)
         public final byte refCountBucket;
         private final int hashCode;
 
-        public NodeKey(String className, String methodName, byte refCountBucket) {
-            this.className = className;
-            this.methodName = methodName;
+        public NodeKey(String methodSignature, byte refCountBucket) {
+            this.methodSignature = methodSignature;
             this.refCountBucket = refCountBucket;
-            // Use identity hashcodes for consistency with identity-based equals().
+            // Use identity hashcode for consistency with identity-based equals().
             // Since strings are interned and equals() uses ==, identity hashcode is
             // more semantically correct. Performance is equivalent to String.hashCode()
             // (which is cached), so this is chosen for correctness, not performance.
@@ -173,8 +254,7 @@ public class ImprintNode {
         }
 
         private int computeHashCode() {
-            int result = System.identityHashCode(className);
-            result = 31 * result + System.identityHashCode(methodName);
+            int result = System.identityHashCode(methodSignature);
             result = 31 * result + (int) refCountBucket;
             return result;
         }
@@ -186,8 +266,7 @@ public class ImprintNode {
             NodeKey that = (NodeKey) o;
             // Since strings are interned, can use == for comparison
             return refCountBucket == that.refCountBucket &&
-                   className == that.className &&
-                   methodName == that.methodName;
+                   methodSignature == that.methodSignature;
         }
 
         @Override

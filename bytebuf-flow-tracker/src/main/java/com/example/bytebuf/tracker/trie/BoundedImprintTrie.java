@@ -102,9 +102,15 @@ public class BoundedImprintTrie {
         // Check if child already exists
         int childCountBefore = parent.getChildren().size();
 
+        // Intern all strings including the concatenated method signature for NodeKey
+        String internedClassName = intern(className);
+        String internedMethodName = intern(methodName);
+        String internedMethodSignature = intern(internedClassName + "." + internedMethodName);
+
         ImprintNode child = parent.getOrCreateChild(
-            intern(className),
-            intern(methodName),
+            internedClassName,
+            internedMethodName,
+            internedMethodSignature,
             bucket
         );
 

@@ -877,6 +877,7 @@ All source files use [SPDX license identifiers](https://spdx.dev/learn/handling-
 This project bundles the following dependencies:
 - **Byte Buddy** - Apache License 2.0 (Copyright 2014-Present Rafael Winterhalter)
 - **ASM** (bundled within Byte Buddy) - BSD 3-Clause License (Copyright 2000-2011 INRIA, France Telecom)
+- **Stormpot** - Apache License 2.0 (Copyright 2011-2024 Chris Vest)
 
 See the [NOTICE](NOTICE) file for complete attribution details.
 

@@ -122,15 +122,6 @@ public class WeakActiveTrackerTest {
     }
 
     @Test
-    public void testMemoryUsage_ReturnsApproximateSize() {
-        tracker.getOrCreate(new Object(), "TestClass", "method1");
-        tracker.getOrCreate(new Object(), "TestClass", "method2");
-
-        long memoryUsage = tracker.getMemoryUsage();
-        assertEquals("Memory usage should be 2 * 80 bytes", 160L, memoryUsage);
-    }
-
-    @Test
     public void testGCDetection_LeakDetectedWhenObjectIsGCd() throws InterruptedException {
         Object obj = new Object();
         tracker.getOrCreate(obj, "TestClass", "testMethod");

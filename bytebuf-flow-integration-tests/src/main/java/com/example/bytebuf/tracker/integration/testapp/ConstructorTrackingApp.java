@@ -25,6 +25,7 @@ public class ConstructorTrackingApp {
 
         // Print tracking results
         ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
+        tracker.onShutdown();  // Finalize flows and mark leaks
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
 
         System.out.println("\n=== Flow Summary ===");

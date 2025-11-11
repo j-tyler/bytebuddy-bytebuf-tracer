@@ -255,6 +255,7 @@ public class AllocationRootTrackingTest {
             tracker.recordMethodCall(buffer, i % 2 == 0 ? "PathA" : "PathB", "cleanup", buffer.refCnt());
         }
 
+        tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
         String tree = renderer.renderIndentedTree();
 

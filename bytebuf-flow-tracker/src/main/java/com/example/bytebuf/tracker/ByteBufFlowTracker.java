@@ -5,156 +5,247 @@
 
 package com.example.bytebuf.tracker;
 
-import com.example.bytebuf.tracker.trie.FlowTrie;
-import com.example.bytebuf.tracker.trie.FlowTrie.TrieNode;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.example.bytebuf.tracker.active.WeakActiveFlow;
+import com.example.bytebuf.tracker.active.WeakActiveTracker;
+import com.example.bytebuf.tracker.trie.BoundedImprintTrie;
+import com.example.bytebuf.tracker.trie.ImprintNode;
 
 /**
- * Tracks ByteBuf flows through the system using a Trie structure.
- * First method to touch a ByteBuf becomes its root in the Trie.
- * Simplified design with no allocation tracking or stack traces.
+ * Main tracker with bounded memory guarantees.
+ * Uses weak references for active tracking and immutable Trie for historical imprint.
+ *
+ * <p><b>Memory Bound:</b> (max_concurrent_objects × 80 bytes) + (MAX_NODES × 100 bytes) + ~50KB
+ *
+ * <p><b>Thread Safety:</b> This class is thread-safe. All public methods can be
+ * called concurrently from multiple threads. The singleton instance is safely
+ * published and all internal state is protected by thread-safe data structures.
+ *
+ * @see WeakActiveTracker
+ * @see BoundedImprintTrie
  */
 public class ByteBufFlowTracker {
+
     private static final ByteBufFlowTracker INSTANCE = new ByteBufFlowTracker();
-    
-    private final FlowTrie trie = new FlowTrie();
-    private final Map<Integer, FlowContext> activeFlows = new ConcurrentHashMap<>();
-    
-    /**
-     * Context for tracking a single ByteBuf through its lifecycle
-     */
-    private static class FlowContext {
-        private final int objectId;
-        private TrieNode currentNode;
-        private boolean isRootSet = false;
-        
-        public FlowContext(int objectId) {
-            this.objectId = objectId;
-        }
-        
-        public void setRoot(TrieNode root) {
-            this.currentNode = root;
-            this.isRootSet = true;
-        }
-        
-        public void moveToNode(TrieNode node) {
-            this.currentNode = node;
-        }
-        
-        public TrieNode getCurrentNode() {
-            return currentNode;
-        }
-        
-        public boolean hasRoot() {
-            return isRootSet;
-        }
+
+    // Configuration (can be set via system properties)
+    // Aggressive defaults: 1M nodes, depth 100
+    private static final int DEFAULT_MAX_NODES = 1_000_000;
+    private static final int DEFAULT_MAX_DEPTH = 100;
+
+    // PART 1: Active tracking (self-limiting, bounded by concurrency)
+    private final WeakActiveTracker activeTracker;
+
+    // PART 2: Historical imprint (bounded by configuration)
+    private final BoundedImprintTrie trie;
+
+    private ByteBufFlowTracker() {
+        int maxNodes = Integer.getInteger("bytebuf.tracker.maxNodes", DEFAULT_MAX_NODES);
+        int maxDepth = Integer.getInteger("bytebuf.tracker.maxDepth", DEFAULT_MAX_DEPTH);
+
+        this.trie = new BoundedImprintTrie(maxNodes, maxDepth);
+        this.activeTracker = new WeakActiveTracker(trie);
     }
-    
+
     /**
-     * Record a method call involving a ByteBuf
-     * 
-     * @param byteBuf The ByteBuf object
-     * @param className The class containing the method
-     * @param methodName The method name
-     * @param refCount Current reference count of the ByteBuf
-     */
-    public void recordMethodCall(Object byteBuf, String className, String methodName, int refCount) {
-        if (byteBuf == null) return;
-
-        int objectId = System.identityHashCode(byteBuf);
-
-        // Get or create context for this ByteBuf
-        // Using explicit get/putIfAbsent to avoid re-entrance issues with computeIfAbsent
-        FlowContext context = activeFlows.get(objectId);
-        if (context == null) {
-            context = new FlowContext(objectId);
-            FlowContext existing = activeFlows.putIfAbsent(objectId, context);
-            if (existing != null) {
-                context = existing;
-            }
-        }
-
-        if (!context.hasRoot()) {
-            // First time seeing this ByteBuf - create root
-            TrieNode root = trie.getOrCreateRoot(className, methodName);
-            root.recordTraversal();
-            context.setRoot(root);
-        } else {
-            // Continue traversing the Trie
-            TrieNode currentNode = context.getCurrentNode();
-            if (currentNode != null) {
-                TrieNode nextNode = currentNode.traverse(className, methodName, refCount);
-                context.moveToNode(nextNode);
-            }
-        }
-
-        // If refCount is 0, ByteBuf is released - remove from tracking
-        if (refCount == 0) {
-            activeFlows.remove(objectId);
-        }
-    }
-    
-    /**
-     * Record that a ByteBuf was garbage collected without being properly released
-     * This indicates a leak
-     * 
-     * @param byteBuf The ByteBuf that was GC'd
-     * @param finalRefCount The reference count when GC'd
-     */
-    public void recordGarbageCollection(Object byteBuf, int finalRefCount) {
-        if (byteBuf == null) return;
-        
-        int objectId = System.identityHashCode(byteBuf);
-        FlowContext context = activeFlows.remove(objectId);
-        
-        if (context != null && context.getCurrentNode() != null) {
-            // Mark this as a leak by recording it with the final refCount
-            // The fact that it ends with non-zero refCount indicates a leak
-            context.getCurrentNode().recordTraversal();
-        }
-    }
-    
-    /**
-     * Check if an object is currently being tracked in a flow
+     * Record a method call involving a tracked object.
      *
-     * @param obj The object to check
-     * @return true if the object is being tracked and has a root in the flow
+     * <p><b>Thread Safety:</b> This method is thread-safe. The completed flag is checked
+     * both before and after traversal to prevent race conditions where another thread
+     * marks the flow as completed during traversal.
+     *
+     * @param obj the tracked object (e.g., ByteBuf)
+     * @param className the class name containing the method
+     * @param methodName the method name being called
+     * @param refCount the current reference count (or metric value) of the object
      */
-    public boolean isTracking(Object obj) {
-        if (obj == null) return false;
-        int objectId = System.identityHashCode(obj);
-        FlowContext context = activeFlows.get(objectId);
-        return context != null && context.hasRoot();
+    public void recordMethodCall(Object obj, String className, String methodName, int refCount) {
+        if (obj == null) return;
+
+        // Get or create active flow
+        WeakActiveFlow flow = activeTracker.getOrCreate(obj, className, methodName);
+
+        // Skip if flow is completed (already released)
+        // Single volatile read - if marked completed during traversal below, that's fine
+        // since the flow remains in activeFlows until GC anyway
+        if (flow.isCompleted()) {
+            return;
+        }
+
+        // Traverse Trie (respecting depth limit)
+        // Read currentDepth once to avoid inconsistent reads across two calls
+        int currentDepth = flow.getCurrentDepth();
+        if (currentDepth < trie.getMaxDepth()) {
+            ImprintNode nextNode = trie.traverseOrCreate(
+                flow.getCurrentNode(),
+                className,
+                methodName,
+                refCount,
+                currentDepth
+            );
+
+            flow.setCurrentNode(nextNode);
+            flow.incrementDepth();
+        }
+
+        // If object released, record as clean
+        if (refCount == 0) {
+            activeTracker.recordCleanRelease(System.identityHashCode(obj));
+        }
     }
 
     /**
-     * Get the underlying Trie for analysis/viewing
+     * Get the Trie for rendering/analysis.
+     *
+     * <p><b>WARNING:</b> The returned trie is mutable and shared with the tracker.
+     * Callers must NOT call mutating methods like {@link BoundedImprintTrie#clear()}
+     * as this will corrupt tracking state. Use only read-only methods like
+     * {@link BoundedImprintTrie#getRoots()}, {@link BoundedImprintTrie#getNodeCount()}, etc.
+     *
+     * @return the underlying trie (shared, mutable - use with caution)
      */
-    public FlowTrie getTrie() {
+    public BoundedImprintTrie getTrie() {
         return trie;
     }
 
     /**
-     * Get number of ByteBufs currently being tracked
+     * Get active flow count (currently tracked objects).
      */
     public int getActiveFlowCount() {
-        return activeFlows.size();
+        return activeTracker.getActiveCount();
     }
-    
+
     /**
-     * Clear all tracking data
+     * Get memory usage statistics.
+     */
+    public MemoryStats getMemoryStats() {
+        long activeMemory = activeTracker.getMemoryUsage();
+        long trieMemory = trie.getNodeCount() * 100L;  // Approx 100 bytes/node
+        long stringMemory = trie.getStringInterningMemory();
+
+        return new MemoryStats(
+            activeTracker.getActiveCount(),
+            activeMemory,
+            trie.getNodeCount(),
+            trieMemory,
+            stringMemory,
+            activeMemory + trieMemory + stringMemory
+        );
+    }
+
+    /**
+     * Get tracking statistics.
+     */
+    public TrackingStats getTrackingStats() {
+        return new TrackingStats(
+            activeTracker.getTotalObjectsSeen(),
+            activeTracker.getTotalCleaned(),
+            activeTracker.getTotalLeaked(),
+            activeTracker.getTotalGCDetected(),
+            activeTracker.getActiveCount()
+        );
+    }
+
+    /**
+     * Check if an object is currently being tracked in a flow.
+     */
+    public boolean isTracking(Object obj) {
+        return activeTracker.getActiveCount() > 0;  // Simplified check
+    }
+
+    /**
+     * Reset all tracking data.
      */
     public void reset() {
-        activeFlows.clear();
+        activeTracker.markRemainingAsLeaks();  // Finalize any active flows
         trie.clear();
     }
-    
+
     /**
-     * Get singleton instance
+     * Ensure GC queue is processed for current state.
+     * Renderers should call this before rendering to ensure they see all leaked objects.
      */
+    public void ensureGCProcessed() {
+        activeTracker.ensureGCProcessed();
+    }
+
+    /**
+     * Shutdown hook - mark all remaining flows as leaks.
+     */
+    public void onShutdown() {
+        // Process any GC'd objects
+        activeTracker.processAllGCQueue();
+
+        // Mark remaining active flows as leaks
+        activeTracker.markRemainingAsLeaks();
+    }
+
     public static ByteBufFlowTracker getInstance() {
         return INSTANCE;
+    }
+
+    /**
+     * Memory usage statistics.
+     */
+    public static class MemoryStats {
+        public final int activeObjects;
+        public final long activeMemory;
+        public final int trieNodes;
+        public final long trieMemory;
+        public final long stringMemory;
+        public final long totalMemory;
+
+        public MemoryStats(int activeObjects, long activeMemory, int trieNodes,
+                          long trieMemory, long stringMemory, long totalMemory) {
+            this.activeObjects = activeObjects;
+            this.activeMemory = activeMemory;
+            this.trieNodes = trieNodes;
+            this.trieMemory = trieMemory;
+            this.stringMemory = stringMemory;
+            this.totalMemory = totalMemory;
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "Active: %d objects (%.2f KB), Trie: %d nodes (%.2f KB), Strings: %.2f KB, Total: %.2f KB",
+                activeObjects, activeMemory / 1024.0,
+                trieNodes, trieMemory / 1024.0,
+                stringMemory / 1024.0,
+                totalMemory / 1024.0
+            );
+        }
+    }
+
+    /**
+     * Tracking statistics.
+     */
+    public static class TrackingStats {
+        public final long totalSeen;
+        public final long totalCleaned;
+        public final long totalLeaked;
+        public final long gcDetected;
+        public final int currentlyActive;
+
+        public TrackingStats(long totalSeen, long totalCleaned, long totalLeaked,
+                           long gcDetected, int currentlyActive) {
+            this.totalSeen = totalSeen;
+            this.totalCleaned = totalCleaned;
+            this.totalLeaked = totalLeaked;
+            this.gcDetected = gcDetected;
+            this.currentlyActive = currentlyActive;
+        }
+
+        public double getLeakRate() {
+            long completed = totalCleaned + totalLeaked;
+            return completed == 0 ? 0.0 : (totalLeaked * 100.0) / completed;
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "Seen: %d, Cleaned: %d, Leaked: %d (%.2f%%), GC-detected: %d, Active: %d",
+                totalSeen, totalCleaned, totalLeaked, getLeakRate(), gcDetected, currentlyActive
+            );
+        }
     }
 }

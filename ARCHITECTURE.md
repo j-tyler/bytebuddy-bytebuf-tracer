@@ -128,8 +128,8 @@ This provides:
 **Bounded Memory Features**:
 - **Global node limit**: 1M nodes by default (configurable)
 - **Depth limit**: 100 levels by default (configurable)
-- **Child limit per node**: 100 children max
-- **LFU eviction**: Least Frequently Used eviction when limits reached
+- **Child limit per node**: 1000 children max
+- **Stop-on-limit**: When limits reached, nodes stop accepting new children (no eviction overhead)
 - **RefCount bucketing**: Reduces path explosion from slight refCount variations
 
 **Key Features**:

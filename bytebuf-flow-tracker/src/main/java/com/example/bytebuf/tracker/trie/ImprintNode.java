@@ -29,8 +29,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * are protected using atomic operations and {@link java.util.concurrent.ConcurrentHashMap}.
  *
  * <p><b>Memory Bounds:</b> Each node limits children to {@value #MAX_CHILDREN_PER_NODE}
- * to prevent path explosion. When this limit is reached, the least frequently used
- * child is evicted.
+ * to prevent path explosion. When this limit is reached, the node stops accepting new
+ * children to avoid concurrency overhead from eviction (cache coherency, atomic reads).
  *
  * @see BoundedImprintTrie
  */
@@ -54,14 +54,24 @@ public class ImprintNode {
     private volatile Map<NodeKey, ImprintNode> visibleChildren;  // Safe initialization guard
 
     // Memory bound enforcement
-    // Value of 100 chosen based on:
-    // - Typical method calls have 1-10 downstream paths (P50)
-    // - Pathological cases (e.g., switch statements) have 20-50 paths (P95)
-    // - 100 provides headroom for unusual patterns while preventing explosion
-    // - If this limit is hit, LFU eviction kicks in to remove least-used paths
+    // Value of 1000 chosen to provide headroom for pathological branching cases.
+    // Typical observations (not rigorously measured):
+    // - Most method calls: 1-10 downstream paths
+    // - Large switch statements/routers: 100-200 paths
+    // - Extreme cases (e.g., message type dispatchers): 300-500 paths
+    //
+    // Tradeoff analysis:
+    // - GAIN: Eliminates eviction overhead (~50-200ns + cache coherency cost)
+    // - GAIN: Predictable, deterministic behavior (first-N-paths)
+    // - COST: Paths beyond 1000 are dropped (stop-on-limit, not tracked)
+    // - MITIGATION: Global maxTotalNodes (1M default) still enforces memory bounds
+    // - MITIGATION: In practice, first 1000 paths per node cover majority of traffic
+    //
+    // When limit is hit: node stops accepting new children (returns self as leaf)
+    //
     // NOTE: This is currently not configurable to keep memory bounds predictable,
     // but could be made configurable via system property if needed.
-    private static final int MAX_CHILDREN_PER_NODE = 100;
+    private static final int MAX_CHILDREN_PER_NODE = 1000;
 
     public ImprintNode(String className, String methodName, byte refCountBucket) {
         this.className = className;
@@ -105,11 +115,15 @@ public class ImprintNode {
                         this.visibleChildren = localChildren;       // Publish via volatile write
                     } else {
                         // Another thread initialized it, use their instance
+                        // Safe to write non-volatile: the volatile read above establishes
+                        // happens-before, so this write won't be reordered before initialization
                         this.children = localChildren;
                     }
                 }
             } else {
-                // Another thread initialized it, cache locally
+                // Another thread initialized it, cache locally for fast access
+                // Safe to write non-volatile: the volatile read above establishes
+                // happens-before, so this write won't be reordered before initialization
                 this.children = localChildren;
             }
         }
@@ -123,10 +137,11 @@ public class ImprintNode {
             return existing;
         }
 
-        // Check branching limit
+        // Check branching limit - if reached, stop tracking this branch
+        // No eviction to avoid concurrency overhead (cache coherency, atomic reads, map writes)
         if (localChildren.size() >= MAX_CHILDREN_PER_NODE) {
-            // Evict least-traversed child
-            evictLeastUsedChild(localChildren);
+            // Return self to act as leaf node (stops further tracking down this path)
+            return this;
         }
 
         // Create new child
@@ -154,30 +169,6 @@ public class ImprintNode {
         }
     }
 
-    /**
-     * Evict the child with the lowest total traversal count (LFU eviction).
-     * Uses key-based removal to avoid fragile identity comparisons.
-     *
-     * @param childrenMap The children map to evict from (passed as parameter for lazy init support)
-     */
-    private void evictLeastUsedChild(Map<NodeKey, ImprintNode> childrenMap) {
-        NodeKey leastUsedKey = null;
-        long minCount = Long.MAX_VALUE;
-
-        // Find the key of the least used child
-        for (Map.Entry<NodeKey, ImprintNode> entry : childrenMap.entrySet()) {
-            long totalCount = entry.getValue().getTotalCount();
-            if (totalCount < minCount) {
-                minCount = totalCount;
-                leastUsedKey = entry.getKey();
-            }
-        }
-
-        // Remove by key (more reliable than identity comparison)
-        if (leastUsedKey != null) {
-            childrenMap.remove(leastUsedKey);
-        }
-    }
 
     // Getters
     public String getClassName() { return className; }

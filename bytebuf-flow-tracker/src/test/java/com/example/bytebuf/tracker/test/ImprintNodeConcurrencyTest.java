@@ -103,17 +103,17 @@ public class ImprintNodeConcurrencyTest {
 
         latch.await();
 
-        // Should have created many children (up to per-node limit)
+        // Should have created many children (up to per-node limit of 1000)
         assertTrue("Should have created children", parent.getChildren().size() > 0);
-        assertTrue("Should not exceed max children", parent.getChildren().size() <= 100);
+        assertTrue("Should not exceed max children", parent.getChildren().size() <= 1000);
         assertEquals("All operations should succeed", threadCount * childrenPerThread, successCount.get());
     }
 
     @Test
-    public void testConcurrentChildEviction_MaintainsLimit() throws InterruptedException {
+    public void testConcurrentChildStopOnLimit_MaintainsLimit() throws InterruptedException {
         ImprintNode parent = new ImprintNode("ParentClass", "parentMethod", (byte) 1);
-        final int threadCount = 5; // Reduced thread count
-        final int operationsPerThread = 50; // Reduced operations
+        final int threadCount = 5;
+        final int operationsPerThread = 300; // More operations to exceed the 1000 limit
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         Thread[] threads = new Thread[threadCount];
@@ -139,11 +139,13 @@ public class ImprintNodeConcurrencyTest {
         latch.await();
 
         // Verify child limit prevents unbounded growth under concurrent access
-        // Note: Under heavy concurrent load, eviction may lag behind creation.
-        // The important thing is that growth is bounded, not unbounded.
+        // Note: With stop-on-limit (no eviction), the first 1000 unique children are kept.
+        // Attempting to create 1500 children (5 threads × 300 ops) should stop at 1000.
         int childCount = parent.getChildren().size();
-        assertTrue("Child count (" + childCount + ") should be bounded (not grow to 250)",
-                   childCount <= 200); // Allow significant tolerance for concurrent stress
+        assertTrue("Child count (" + childCount + ") should be bounded near 1000 limit",
+                   childCount <= 1100); // Allow some tolerance for concurrent race conditions
+        assertTrue("Should have created many children near the limit",
+                   childCount >= 900); // Verify we actually hit the limit
     }
 
     @Test

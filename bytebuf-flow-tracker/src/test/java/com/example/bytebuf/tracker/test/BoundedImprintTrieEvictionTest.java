@@ -14,7 +14,9 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Tests for BoundedImprintTrie eviction behavior.
+ * Tests for BoundedImprintTrie limit enforcement (stop-on-limit behavior).
+ * Note: Eviction logic has been removed to avoid concurrency overhead.
+ * When limits are reached, the trie stops accepting new nodes.
  */
 public class BoundedImprintTrieEvictionTest {
 
@@ -32,19 +34,20 @@ public class BoundedImprintTrieEvictionTest {
     }
 
     @Test
-    public void testRootEviction_WhenMaxNodesReached() {
+    public void testRootLimitEnforcement_WhenMaxNodesReached() {
         // Fill up to capacity
         for (int i = 0; i < 100; i++) {
             trie.getOrCreateRoot("Class" + i, "method");
         }
 
-        int rootsBeforeEviction = trie.getRootCount();
-        assertTrue("Should have many roots", rootsBeforeEviction > 0);
+        int rootsBeforeLimitHit = trie.getRootCount();
+        assertTrue("Should have many roots", rootsBeforeLimitHit > 0);
 
-        // Create one more root - should trigger eviction
-        trie.getOrCreateRoot("ClassNew", "method");
+        // Try to create one more root - should return existing root (no new root created)
+        ImprintNode limitedRoot = trie.getOrCreateRoot("ClassNew", "method");
+        assertNotNull("Should return a root even when limit hit", limitedRoot);
 
-        // Node count should not exceed max
+        // Node count should not wildly exceed max (may be slightly over due to concurrency)
         assertTrue("Node count should not exceed max", trie.getNodeCount() <= trie.getMaxNodes());
     }
 
@@ -62,7 +65,7 @@ public class BoundedImprintTrieEvictionTest {
     }
 
     @Test
-    public void testLFUEviction_LeastUsedRootRemoved() {
+    public void testStopOnLimit_NoEvictionOccurs() {
         // Create roots with different traversal counts
         ImprintNode root1 = trie.getOrCreateRoot("LowUsage", "method");
         ImprintNode root2 = trie.getOrCreateRoot("HighUsage", "method");
@@ -76,14 +79,20 @@ public class BoundedImprintTrieEvictionTest {
         assertTrue("root1 should have low usage", root1.getTraversalCount() < 10);
         assertTrue("root2 should have high usage", root2.getTraversalCount() > 50);
 
-        // Fill up to capacity with new roots
+        int initialRootCount = trie.getRootCount();
+
+        // Fill up to capacity with new roots - should stop creating new roots
         for (int i = 0; i < 150; i++) {
             trie.getOrCreateRoot("Class" + i, "method");
         }
 
-        // The high-usage root should still exist (or have higher probability of surviving)
-        // This is probabilistic due to concurrent access, so we just verify eviction happened
-        assertTrue("Eviction should have occurred", trie.getNodeCount() <= trie.getMaxNodes());
+        // Verify limit enforcement (node count should not wildly exceed max)
+        assertTrue("Node count should not exceed max", trie.getNodeCount() <= trie.getMaxNodes());
+
+        // With stop-on-limit, both original roots should still exist (no eviction)
+        assertTrue("Original roots should still exist", trie.getRootCount() >= 2);
+        assertNotNull("LowUsage root should still exist", trie.getRoots().get("LowUsage.method"));
+        assertNotNull("HighUsage root should still exist", trie.getRoots().get("HighUsage.method"));
     }
 
     @Test

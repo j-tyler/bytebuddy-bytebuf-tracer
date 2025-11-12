@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link java.util.concurrent.ConcurrentHashMap} and atomic operations.
  *
  * <p><b>Memory Bounds:</b> The total node count is approximate due to concurrent
- * updates, but provides a soft limit that prevents unbounded growth. Eviction
- * happens when limits are approached, using LFU (Least Frequently Used) policy.
+ * updates, but provides a soft limit that prevents unbounded growth. When limits
+ * are reached, nodes stop accepting new children to avoid concurrency overhead.
  *
  * @see ImprintNode
  */
@@ -59,10 +59,14 @@ public class BoundedImprintTrie {
             return existing;
         }
 
-        // Check global limit
+        // Check global limit - if reached, return any existing root to stop growth
+        // No eviction to avoid concurrency overhead (iteration, cache invalidation, subtree traversal)
         if (totalNodeCount.get() >= maxTotalNodes) {
-            // Eviction at global level - remove least-used root
-            evictLeastUsedRoot();
+            // Return first available root - in practice, allocator roots are established early
+            // so this only happens when trie is already saturated with useful data
+            ImprintNode anyRoot = roots.values().iterator().next();
+            anyRoot.recordTraversal();
+            return anyRoot;
         }
 
         ImprintNode newRoot = new ImprintNode(
@@ -146,56 +150,6 @@ public class BoundedImprintTrie {
         return stringInterner.intern(s);
     }
 
-    /**
-     * Evict the root with the lowest total traversal count.
-     */
-    private void evictLeastUsedRoot() {
-        String leastUsedKey = null;
-        long minCount = Long.MAX_VALUE;
-
-        for (Map.Entry<String, ImprintNode> entry : roots.entrySet()) {
-            long totalCount = entry.getValue().getTotalCount();
-            if (totalCount < minCount) {
-                minCount = totalCount;
-                leastUsedKey = entry.getKey();
-            }
-        }
-
-        if (leastUsedKey != null) {
-            ImprintNode removed = roots.remove(leastUsedKey);
-            if (removed != null) {
-                // Decrement counter (approximate, due to tree structure)
-                totalNodeCount.addAndGet(-estimateNodeCount(removed));
-            }
-        }
-    }
-
-    // ThreadLocal pool for stack reuse during node counting (avoids allocation overhead)
-    private static final ThreadLocal<java.util.Deque<ImprintNode>> STACK_POOL =
-        ThreadLocal.withInitial(java.util.ArrayDeque::new);
-
-    /**
-     * Estimate total nodes in a subtree (for eviction accounting).
-     * Uses iterative traversal to prevent stack overflow in deep trees.
-     * Reuses a ThreadLocal deque to avoid allocation overhead during eviction.
-     */
-    private int estimateNodeCount(ImprintNode node) {
-        int count = 0;
-        java.util.Deque<ImprintNode> stack = STACK_POOL.get();
-        stack.clear();  // Reuse from pool
-        stack.push(node);
-
-        while (!stack.isEmpty()) {
-            ImprintNode current = stack.pop();
-            count++;
-            // Add all children to stack for processing
-            for (ImprintNode child : current.getChildren().values()) {
-                stack.push(child);
-            }
-        }
-
-        return count;
-    }
 
     // Getters
     public Map<String, ImprintNode> getRoots() {

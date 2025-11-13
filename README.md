@@ -127,25 +127,14 @@ ROOT: UnpooledByteBufAllocator.directBuffer [count=2]
 
 ## How It Works
 
-### Architecture
+The agent uses ByteBuddy to instrument your application code at runtime:
 
-1. **ByteBuddy Instrumentation**: Agent intercepts all public/protected methods in specified packages
-2. **Allocator Roots**: ByteBuf construction methods (Unpooled.buffer, ByteBufAllocator.heapBuffer, etc.) become Trie roots
-3. **Entry/Exit Tracking**: Methods are tracked at entry (parameters) and exit (returns with `_return` suffix)
-4. **Path Building**: Each subsequent method call adds a node to the tree
-5. **Metric Tracking**: Each node records object's metric (refCount for ByteBuf, open/closed for others)
-6. **Leak Detection**: Leaf nodes with non-zero metric indicate leaks
+1. **Allocator Roots**: ByteBuf construction methods become roots in the flow tree
+2. **Method Tracking**: All methods with ByteBuf parameters/returns are automatically tracked
+3. **Path Building**: Each method call creates a node in the tree showing the object's flow
+4. **Leak Detection**: Objects not released (refCount > 0) at leaf nodes are marked as leaks
 
-### Components
-
-- **`BoundedImprintTrie`**: Bounded Trie data structure for storing method call paths with memory limits
-- **`ByteBufFlowTracker`**: Main tracking logic with allocator-root tracking and entry/exit recording
-- **`ByteBufFlowAgent`**: Java agent entry point for ByteBuddy instrumentation
-- **`ByteBufTrackingAdvice`**: ByteBuddy advice that intercepts methods (entry/exit with `_return` suffix)
-- **`ByteBufConstructorAdvice`**: Tracks ByteBuf through allocator constructors
-- **`ObjectTrackerHandler`**: Interface for tracking custom objects
-- **`TrieRenderer`**: Formats Trie data into tree, flat, CSV, JSON views
-- **`ByteBufFlowMBean`**: JMX interface for runtime monitoring
+For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -835,16 +824,6 @@ If a class has NO ByteBuf methods, it won't be transformed at all.
 2. Add `exclude` patterns for noisy packages
 3. Exclude test, utility, and third-party packages
 
-### Mockito test failures
-
-**Symptoms**: `Mockito cannot mock this class` or `class redefinition failed`
-
-**Root Cause**: The agent transforms classes with ByteBuf. When Mockito 5 tries to retransform an already-transformed class, the JVM rejects it.
-
-**Solution**: Exclude DTO/protocol/response classes that are mocked:
-```bash
--javaagent:tracker.jar=include=com.yourcompany;exclude=com.yourcompany.protocol,com.yourcompany.dto
-```
 
 ### Build fails
 
@@ -912,17 +891,11 @@ If a class has NO ByteBuf methods, it won't be transformed at all.
 
 **Symptoms**: Cannot connect via JConsole
 
-// Get human-readable tree view
-String tree = renderer.renderIndentedTree();
-
-// Get LLM-optimized format
-String llmFormat = renderer.renderForLLM();
-
-// Get summary statistics
-String summary = renderer.renderSummary();
-```
-
-**Test coverage**: Simple flow tracking, leak detection, refCount anomalies, high-volume scenarios, CSV/JSON export.
+**Solutions**:
+1. Verify JMX port is open and not blocked by firewall
+2. Check JMX configuration parameters are correct
+3. Use `jps` to verify process ID
+4. Try `jconsole <pid>` for local connections
 
 ## External Resources
 

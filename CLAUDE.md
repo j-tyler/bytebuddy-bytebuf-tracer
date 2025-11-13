@@ -1,5 +1,11 @@
 # Notes for Future Claude Sessions
 
+**Purpose**: This document contains environment-specific setup instructions for working in this sandboxed environment. For project documentation, see:
+- **User documentation**: [README.md](README.md)
+- **Architecture details**: [ARCHITECTURE.md](ARCHITECTURE.md)
+
+---
+
 ## Network Connectivity Setup
 
 **CRITICAL**: This environment has network restrictions that prevent direct Maven/Gradle builds. You MUST set up a proxy before attempting to download dependencies.
@@ -166,176 +172,40 @@ EOF
 gradle build
 ```
 
-## Project Structure Overview
+---
 
-```
-bytebuddy-bytebuf-tracer/
-├── bytebuf-flow-tracker/        # Main library + agent
-│   ├── pom.xml                  # Maven build (works)
-│   ├── build.gradle             # Gradle build (created, untested due to network)
-│   └── target/
-│       └── *-agent.jar          # Fat JAR with agent
-│
-└── bytebuf-flow-example/        # Example integration
-    ├── pom.xml                  # Maven example (works)
-    ├── build.gradle             # Gradle example with composite build
-    ├── settings.gradle          # Includes tracker as composite build
-    └── src/main/java/
-        └── com/example/demo/
-            ├── DemoApplication.java              # Basic example with leaks
-            ├── SimpleWrapperExample.java         # Wrapper object pattern
-            ├── WrappedObjectFlowExample.java     # Advanced wrapper tracking
-            ├── ConstructorTrackingExample.java   # Constructor tracking demo
-            ├── StaticMethodExample.java          # Static method tracking
-            └── custom/
-                ├── CustomObjectExample.java              # Programmatic tracker registration
-                ├── CustomObjectViaGradleExample.java     # System property tracker
-                ├── FileHandleTracker.java                # Custom tracker for file handles
-                └── DatabaseConnectionTracker.java        # Custom tracker for DB connections
-```
+## Quick Start Checklist
 
-## Available Examples
+Before building or running examples:
 
-| Example Class | Description | Key Features |
-|--------------|-------------|--------------|
-| **DemoApplication** | Basic ByteBuf tracking with intentional leaks | Shows normal flow vs leak detection |
-| **SimpleWrapperExample** | ByteBuf wrapped in custom object | Constructor tracking, wrapper pattern, extraction |
-| **WrappedObjectFlowExample** | Advanced wrapper tracking scenarios | Manual vs automatic tracking |
-| **ConstructorTrackingExample** | Demonstrates constructor tracking | Shows how ByteBuf flows through constructors |
-| **StaticMethodExample** | Static method tracking | Proves static methods work |
-| **CustomObjectExample** | Track custom objects (file handles) | Programmatic handler registration |
-| **CustomObjectViaGradleExample** | Track DB connections | System property configuration |
+1. ☐ Check if proxy is running: `ps aux | grep working_proxy`
+2. ☐ If not running: Start proxy with the Python script above
+3. ☐ Verify Maven settings: `cat ~/.m2/settings.xml`
+4. ☐ Build project: `mvn clean install -DskipTests`
+5. ☐ Verify agent JAR exists: `ls bytebuf-flow-tracker/target/*-agent.jar`
 
-## Running Examples (After Build)
+---
 
-### Quick Start: Running the Default Example
+## Running Examples
+
+See [README.md](README.md) for detailed instructions on running examples. Quick reference:
 
 ```bash
 cd bytebuf-flow-example
 
-# Run default example (DemoApplication) without agent
-mvn exec:java
-
-# Run default example WITH agent tracking
-mvn exec:java -Dexec.args="-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo"
-```
-
-### Running ANY Example Class with Agent
-
-**IMPORTANT**: The `mvn exec:exec` approach in the original docs is problematic. Use this method instead:
-
-#### Step 1: Get the Runtime Classpath
-
-```bash
-cd bytebuf-flow-example
+# Build classpath
 mvn dependency:build-classpath -Dmdep.outputFile=/tmp/cp.txt -q
 export CP="target/classes:$(cat /tmp/cp.txt)"
-```
-
-**Expected output in /tmp/cp.txt:**
-```
-/root/.m2/repository/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar:/root/.m2/repository/io/netty/netty-buffer/4.1.100.Final/netty-buffer-4.1.100.Final.jar:/root/.m2/repository/io/netty/netty-common/4.1.100.Final/netty-common-4.1.100.Final.jar
-```
-
-#### Step 2: Run Any Example with Agent
-
-```bash
-# Basic pattern
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
-  -cp "${CP}" \
-  com.example.demo.YourExampleClass
-
-# Example: Run SimpleWrapperExample with constructor tracking
-# NOTE: Use \$ to escape the $ in inner class names!
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo;trackConstructors=com.example.demo.SimpleWrapperExample\$DataPacket" \
-  -cp "${CP}" \
-  com.example.demo.SimpleWrapperExample
-
-# Example: Run custom object tracking
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
-  -Dobject.tracker.handler=com.example.demo.custom.FileHandleTracker \
-  -cp "${CP}" \
-  com.example.demo.custom.CustomObjectExample
-```
-
-#### Step 3: Alternative - Use mvn exec:java (Simpler but Limited)
-
-This works for examples that don't need special agent configuration:
-
-```bash
-# Run with default agent config
-mvn exec:java -Dexec.mainClass="com.example.demo.SimpleWrapperExample"
-
-# Run with custom object handler via system property
-mvn exec:java \
-  -Dexec.mainClass="com.example.demo.custom.CustomObjectViaGradleExample" \
-  -Dexec.args="-Dobject.tracker.handler=com.example.demo.custom.DatabaseConnectionTracker"
-```
-
-**LIMITATION**: The `mvn exec:java` approach doesn't easily support agent arguments. For examples requiring `trackConstructors`, use the direct `java` command from Step 2.
-
-### Gradle Approach (When Network Works)
-
-```bash
-cd bytebuf-flow-example
-
-# List all examples
-gradle listExamples
 
 # Run basic example
-gradle runBasicExample
-
-# Run custom object tracking (Gradle config)
-gradle runCustomObjectViaGradle
-
-# Run wrapper object example
-gradle runWrappedObjectExample
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.demo" \
+  -cp "${CP}" \
+  com.example.demo.DemoApplication
 ```
 
-### Common Pitfalls
+**Important**: Use `\$` to escape `$` in inner class names when using `trackConstructors` argument.
 
-1. **Shell escaping**: Inner class names contain `$` which must be escaped as `\$`
-   - ❌ Wrong: `trackConstructors=com.example.Foo$Bar`
-   - ✅ Correct: `trackConstructors=com.example.Foo\$Bar`
-
-2. **Classpath order**: Always put `target/classes` BEFORE the dependency JARs
-   - ✅ Correct: `target/classes:/root/.m2/repository/...`
-   - ❌ Wrong: `/root/.m2/repository/.../bytebuf-flow-tracker.jar:target/classes`
-
-3. **Agent JAR path**: Must be the `-agent.jar` (fat JAR), not the regular JAR
-   - ✅ Correct: `bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar`
-   - ❌ Wrong: `bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar`
-
-4. **Quote the javaagent argument**: Prevents shell from interpreting semicolons
-   - ✅ Correct: `"-javaagent:path=include=foo;exclude=bar"`
-   - ❌ Wrong: `-javaagent:path=include=foo;exclude=bar` (shell interprets `;`)
-
-## Gradle Build Files Created
-
-I created comprehensive Gradle build files that demonstrate:
-
-1. **Composite Build Pattern** - `bytebuf-flow-example/settings.gradle` includes the tracker module
-2. **Multiple Example Tasks** - 5 different scenarios showing various configurations
-3. **Custom Object Tracking via Gradle** - Zero-code-change approach using system properties
-4. **Realistic Integration** - Shows how users would actually integrate this in their projects
-
-### Key Gradle Tasks Created:
-
-- `runBasicExample` - Basic ByteBuf tracking
-- `runCustomObjectExample` - Programmatic custom tracker
-- `runCustomObjectViaGradle` - Gradle-configured custom tracker (NO code changes!)
-- `runAdvancedExample` - Exclusions, constructor tracking, JMX
-- `runWrappedObjectExample` - ByteBuf wrapped in custom classes
-- `listExamples` - Show all available examples
-- `showAgentConfig` - Display agent configuration
-
-## Quick Checklist for Next Session
-
-1. ☐ Start the Python CONNECT proxy (`python3 /tmp/working_proxy.py &`)
-2. ☐ Configure Maven settings (`~/.m2/settings.xml`)
-3. ☐ Run `mvn clean install -DskipTests`
-4. ☐ Verify agent JAR exists at `bytebuf-flow-tracker/target/*-agent.jar`
-5. ☐ Run examples to see ByteBuf flow tracking in action
+---
 
 ## Useful Commands
 
@@ -356,6 +226,8 @@ find . -name "*-agent.jar" -type f
 ls -la ~/.m2/repository/com/example/bytebuf/
 ```
 
+---
+
 ## Environment Info
 
 - **OS**: Linux 4.4.0
@@ -364,167 +236,34 @@ ls -la ~/.m2/repository/com/example/bytebuf/
 - **Gradle**: Available via `gradle`
 - **Python**: Python 3 available for proxy script
 
-## Direct Memory Tracking (trackDirectOnly)
-
-### Overview
-
-The `trackDirectOnly=true` flag enables production-ready tracking of **only direct memory allocations** (off-heap, never GC'd, will crash JVM if leaked). This provides zero overhead for heap buffers while catching critical leaks.
-
-### Implementation Architecture
-
-**Hybrid Approach**: Combines compile-time exclusion + runtime filtering
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Compile-Time (ByteBufConstructionTransformer)          │
-├─────────────────────────────────────────────────────────┤
-│ heapBuffer() → NOT INSTRUMENTED (zero overhead)        │
-│ directBuffer() → INSTRUMENTED                          │
-│ ioBuffer() → INSTRUMENTED                              │
-│ buffer() → INSTRUMENTED (ambiguous, needs runtime)     │
-│ wrappedBuffer() → INSTRUMENTED (ambiguous, needs runtime)│
-└─────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────┐
-│ Runtime (ByteBufConstructionAdvice)                     │
-├─────────────────────────────────────────────────────────┤
-│ switch (methodName):                                    │
-│   case "heapBuffer": return (safety guard)             │
-│   case "directBuffer": track (known direct)            │
-│   case "ioBuffer": track (known direct)                │
-│   default: if (!buf.isDirect()) return                 │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Key Technical Decisions
-
-1. **WHY compile-time exclusion for heapBuffer**: 80% of allocations are heap, removing instrumentation entirely provides zero overhead
-
-2. **WHY runtime filtering for ambiguous methods**: Methods like `wrappedBuffer()` can return heap or direct depending on input:
-   - `Unpooled.wrappedBuffer(directBuf)` → returns `UnpooledSlicedByteBuf` with `isDirect()=true`
-   - `Unpooled.wrappedBuffer(byte[])` → returns `UnpooledHeapByteBuf` with `isDirect()=false`
-
-3. **WHY switch statement**: JIT compiles to jump table (single indirect jump) vs if-else chains (multiple branches)
-
-### Critical Insight: Wrapped Buffer Behavior
-
-**Wrapped buffers inherit `isDirect()` from underlying buffer**:
-
-```java
-ByteBuf directBuf = allocator.directBuffer(256);
-directBuf.writeLong(12345L);
-ByteBuf wrapped = Unpooled.wrappedBuffer(directBuf);
-
-wrapped.getClass() // UnpooledSlicedByteBuf
-wrapped.isDirect() // true (inherits from directBuf)
-```
-
-This means runtime filtering via `isDirect()` correctly identifies wrapped direct buffers as direct memory.
-
-### Testing the Feature
-
-```bash
-# Run tests
-cd bytebuf-flow-tracker
-mvn test -Dtest=DirectOnlyFilteringTest
-
-# Run benchmarks
-cd ../bytebuf-flow-benchmarks
-./run-direct-filtering-benchmark.sh quick  # Baseline vs trackDirectOnly
-./run-direct-filtering-benchmark.sh compare # All 3 modes
-```
-
-### Common Mistakes to Avoid
-
-1. **DON'T assume wrapped buffers are always heap**: They inherit the type from the underlying buffer
-2. **DON'T use method name alone for filtering**: Ambiguous methods need `isDirect()` check
-3. **DON'T instrument heapBuffer when trackDirectOnly=true**: Defeats the purpose of zero overhead
-4. **DON'T forget FILTER_DIRECT_ONLY flag**: trackDirectOnly sets this at agent startup for runtime filtering
-
-### Files Involved
-
-- `ByteBufFlowAgent.java` (lines 43-50): Sets FILTER_DIRECT_ONLY flag
-- `ByteBufConstructionTransformer` (lines 302-317): Compile-time method exclusion
-- `ByteBufConstructionAdvice.java` (lines 67-103): Runtime filtering logic
-- `DirectOnlyFilteringTest.java`: Test suite validating behavior
-- `DirectMemoryFilteringBenchmark.java`: Performance validation
-
-### Performance Characteristics
-
-| Scenario | Overhead |
-|----------|----------|
-| heapBuffer() | 0ns (not instrumented) |
-| directBuffer() | ~5ns (tracking) |
-| ioBuffer() | ~5ns (tracking) |
-| buffer() (ambiguous) | ~10ns (isDirect() + tracking) |
-| wrappedBuffer() (ambiguous) | ~10ns (isDirect() + tracking) |
+---
 
 ## Testing
-
-### Running Tests
 
 ```bash
 # Unit tests only (fast)
 mvn clean test -DskipITs
 
 # Integration tests (requires agent JAR built first)
-mvn clean install -DskipTests  # Build agent JAR
+mvn clean install -DskipTests  # Build agent JAR first
 mvn verify -pl bytebuf-flow-integration-tests
 
 # All tests
 mvn clean install
 ```
 
-### Test Structure
-
-**Unit Tests** (bytebuf-flow-api, bytebuf-flow-tracker):
-- `MetricSnapshotTest` - API contract validation (immutability, null handling)
-- `MetricHandlerRegistryTest` - Registration mechanisms (programmatic, multiple handlers)
-- `MetricCollectorTest` - Selective metric capture (direct-only, heap-only, both)
-
-**Integration Tests** (bytebuf-flow-integration-tests):
-- All tests launch separate JVMs with agent attached
-- Tests use `AppLauncher` utility to launch test apps with system properties
-- 2 MetricHandlerIT tests disabled due to known leak detection issue (see below)
-
-### Known Issue: Leak Detection in Tests
-
-**Problem**: MetricHandlerTestApp creates intentional leaks by storing ByteBufs in instance variables, but leak detection shows refCount=0 instead of expected refCount=1.
-
-**Root cause**: Unknown - buffers have strong references but appear released before `onShutdown()` can mark them as leaks.
-
-**Status**: Not a bug in the metric handler API (which works correctly). Issue is in test infrastructure for creating synthetic leaks.
-
-**Workaround**: Tests disabled with `@Disabled` annotation and clear documentation.
-
-### Adding Test Dependencies
-
-Both `bytebuf-flow-api` and `bytebuf-flow-tracker` use JUnit 5. Dependencies must be scoped to `test` to maintain zero-dependency API:
-
-```xml
-<dependency>
-    <groupId>org.junit.jupiter</groupId>
-    <artifactId>junit-jupiter-api</artifactId>
-    <version>5.10.0</version>
-    <scope>test</scope>  <!-- CRITICAL: must be test scope -->
-</dependency>
-```
-
-### Test Isolation
-
-**MetricHandlerRegistry.clearForTesting()** - Package-private method for clearing handlers between tests. Prevents handler leakage across test methods.
-
-## Remember
-
-- The Gradle build files are **production-ready and correct**
-- The network setup is **required** for any build
-- Always check if the proxy is running before building
-- The composite build approach is the recommended integration method
-- The agent uses string-based type matching to avoid early class loading
-- **trackDirectOnly is production-ready** - use it when you only care about critical leaks
-- **Test failures in MetricHandlerTestApp are expected** - known leak detection issue in test infrastructure
+See [ARCHITECTURE.md](ARCHITECTURE.md) for test structure details.
 
 ---
 
-**Last Updated**: Session 2025-11-12 (Production metrics system + comprehensive test suite)
+## Remember
+
+- The network setup is **required** for any build that needs to download dependencies
+- Always check if the proxy is running before building
+- The agent uses string-based type matching to avoid early class loading
+- For project features and architecture, refer to README.md and ARCHITECTURE.md
+
+---
+
+**Last Updated**: Session 2025-11-13 (Documentation cleanup)
 **Created By**: Claude (Anthropic AI Assistant)

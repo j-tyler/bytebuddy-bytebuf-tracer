@@ -1,914 +1,160 @@
 # ByteBuf Flow Tracker - Architecture
 
-## Quick Reference for AI Agents
+## Quick Reference
 
-**New to this codebase?** Start here:
+**Concepts**: Java agent tracks ByteBuf (Netty buffer) flow using ByteBuddy instrumentation. Stores paths in Trie. Leaks = non-zero refCount at leaf nodes.
 
-### Key Concepts (5-minute overview)
-- **Goal**: Track ByteBuf (Netty buffer) flow through applications to detect memory leaks
-- **Method**: Java agent uses ByteBuddy to instrument methods at runtime
-- **Data Structure**: Trie (prefix tree) stores method call paths
-- **Leak Detection**: Objects with non-zero refCount at leaf nodes are leaks
+**Key Files**:
+1. `agent/ByteBufFlowAgent.java` - Entry point, argument parsing
+2. `ByteBufFlowTracker.java` - Core tracking singleton
+3. `agent/ByteBufTrackingAdvice.java` - Method interception
+4. `trie/BoundedImprintTrie.java` - Path storage (bounded, lock-free)
+5. `bytebuf-flow-example/` - Usage examples
 
-### Where to Start
-1. **Entry Point**: `bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/agent/ByteBufFlowAgent.java`
-2. **Core Logic**: `ByteBufFlowTracker.java` - Main tracking singleton
-3. **Instrumentation**: `ByteBufTrackingAdvice.java` - Method interception via ByteBuddy
-4. **Data Structure**: `trie/BoundedImprintTrie.java` - Memory-efficient path storage
-5. **Examples**: `bytebuf-flow-example/src/main/java/com/example/demo/` - Usage patterns
+**Modification Patterns**:
+- New allocator: `ByteBufConstructionTransformer.java`
+- Tracking behavior: `ByteBufTrackingAdvice.java`
+- Memory limits: `BoundedImprintTrie` constructor
+- Custom tracker: Implement `ObjectTrackerHandler`
 
-### Key Files by Component
-| Component | Files | Purpose |
-|-----------|-------|---------|
-| **Agent** | `agent/ByteBufFlowAgent.java` | Java agent entry, argument parsing |
-| **Instrumentation** | `agent/ByteBufTrackingAdvice.java` | Method interception logic |
-| **Tracking** | `ByteBufFlowTracker.java` | Main tracking coordinator |
-| **Storage** | `trie/BoundedImprintTrie.java`, `ImprintNode.java` | Path storage |
-| **Active Tracking** | `active/WeakActiveTracker.java`, `WeakActiveFlow.java` | Live object tracking |
-| **Output** | `view/TrieRenderer.java` | Report generation |
-| **Extensibility** | `ObjectTrackerHandler.java`, `ObjectTrackerRegistry.java` | Custom object support |
-| **Metrics** | `../bytebuf-flow-api/` module | Production metrics integration |
-
-### Common Modification Patterns
-- **Add new allocator tracking**: Modify `agent/ByteBufConstructionTransformer.java`
-- **Change tracking behavior**: Edit `ByteBufTrackingAdvice.java` @OnMethodEnter/@OnMethodExit
-- **Adjust memory limits**: Configure `BoundedImprintTrie` constructor parameters
-- **Add output format**: Extend `TrieRenderer.java`
-- **Create custom tracker**: Implement `ObjectTrackerHandler` interface
-
-### Important Design Patterns
-- **Singleton**: `ByteBufFlowTracker.getInstance()`
-- **ThreadLocal**: Re-entrance guard prevents infinite recursion
-- **WeakReference**: Automatic GC detection for leak tracking
-- **Lock-free**: ConcurrentHashMap for all concurrent operations
-- **Object Pooling**: Stormpot pools FlowState objects (high-churn optimization)
+**Design Patterns**: Singleton, ThreadLocal (re-entrance guard), WeakReference (GC detection), Lock-free (ConcurrentHashMap), Object Pooling (Stormpot for FlowState)
 
 ---
 
 ## Project Structure
 
-Multi-module Maven project with clean separation of concerns:
+Multi-module Maven: `bytebuf-flow-tracker/` (library + agent JAR) and `bytebuf-flow-example/` (demos).
 
-```
-bytebuddy-bytebuf-tracer/
-├── pom.xml                       # Parent POM (dependency management)
-├── bytebuf-flow-tracker/         # Module 1: Reusable library + agent
-│   ├── pom.xml                   # Builds library + fat agent JAR
-│   ├── src/main/java/            # Tracking logic, agent, handlers
-│   │   └── com/example/bytebuf/tracker/
-│   │       ├── ByteBufFlowTracker.java         # Main tracker singleton
-│   │       ├── ObjectTrackerHandler.java       # Interface for custom trackers
-│   │       ├── ObjectTrackerRegistry.java      # Handler registry
-│   │       ├── agent/
-│   │       │   ├── ByteBufFlowAgent.java       # Java agent entry point
-│   │       │   ├── ByteBufFlowMBean.java       # JMX interface
-│   │       │   └── ByteBufTrackingAdvice.java  # ByteBuddy advice
-│   │       ├── active/
-│   │       │   ├── WeakActiveFlow.java         # WeakReference wrapper for objects
-│   │       │   └── WeakActiveTracker.java      # Manages active object tracking
-│   │       ├── trie/
-│   │       │   ├── BoundedImprintTrie.java     # Bounded Trie with memory limits
-│   │       │   └── ImprintNode.java            # Trie node with outcome tracking
-│   │       └── view/
-│   │           └── TrieRenderer.java           # Output formatting
-│   └── src/test/java/            # Comprehensive tests
-└── bytebuf-flow-example/         # Module 2: Usage examples
-    ├── pom.xml                   # Shows integration patterns
-    └── src/main/java/            # Demo apps (ByteBuf & custom objects)
-```
+**Core packages**:
+- `agent/` - ByteBufFlowAgent, ByteBufTrackingAdvice, transformers
+- `active/` - WeakActiveFlow, WeakActiveTracker (live object tracking)
+- `trie/` - BoundedImprintTrie, ImprintNode (path storage)
+- `view/` - TrieRenderer (output formats)
+- Root - ByteBufFlowTracker (main singleton), ObjectTrackerHandler (extensibility)
 
 ## Core Components
 
 ### 1. ByteBufFlowTracker
+Main singleton. Methods: `recordMethodCall()`, `getTrie()`, `getActiveFlowCount()`, `reset()`. Thread-safe (ConcurrentHashMap). Tracks via `identityHashCode()`. Allocator methods = root nodes. Entry (params) and exit (`_return` suffix) tracking. TRACKED_PARAMS ThreadLocal prevents duplicates.
 
-**Purpose**: Main tracking logic with allocator-root tracking and entry/exit recording
+**Active Flow Monitoring**: `WeakActiveTracker` uses `ConcurrentHashMap<Integer, WeakActiveFlow>`. Each flow holds WeakReference, object ID, current trie node, depth (plain int, not volatile).
 
-**Key Methods**:
-- `recordMethodCall(Object, String, String, int)` - Track a method call
-- `getTrie()` - Get the underlying Trie structure
-- `getActiveFlowCount()` - Get count of currently tracked objects
-- `reset()` - Clear all tracking data
+**Lifecycle**: First seen → create flow + root. Each call → update node. Metric=0 → remove (clean). GC'd → enqueue (leak).
 
-**Design**:
-- Singleton pattern for global access
-- Thread-safe using ConcurrentHashMap for object-to-root mapping
-- Uses `System.identityHashCode()` to track object identity
-- ByteBuf allocator methods (UnpooledByteBufAllocator.heapBuffer, Unpooled.buffer, etc.) become root nodes
-- Entry tracking: methods receiving ByteBuf as parameters
-- Exit tracking: methods returning ByteBuf (tracked with `_return` suffix)
-- TRACKED_PARAMS ThreadLocal prevents duplicate tracking when object is both parameter and return value
+**Lazy GC Processing**: Per-thread counter (ThreadLocal). Process GC queue on first call + every 100 calls. Batch size 100. Saves ~200-490ms/sec @ 10M calls/sec. Mutable CallCounter class avoids Integer boxing (~100-300ms/sec savings). First-call safeguard ensures short-lived threads still detect leaks. Call `ensureGCProcessed()` before rendering.
 
-**Active Flow Monitoring**:
-
-The tracker uses **WeakActiveTracker** which maintains a `ConcurrentHashMap<Integer, WeakActiveFlow>` that maps object identity hash codes to weak references.
-
-**WeakActiveFlow** holds:
-- WeakReference to the tracked object
-- Object ID (identity hash code)
-- Current node in the Trie
-- Current depth in the flow (plain `int`, not `volatile` - stale reads are benign, saves ~50ms/sec)
-
-**Lifecycle**:
-1. When object first seen → Create WeakActiveFlow, create root node
-2. On each method call → Update WeakActiveFlow to point to new node
-3. When metric reaches 0 (e.g., refCnt=0) → Remove from activeFlows (clean release)
-4. When object is GC'd → Automatically enqueued to ReferenceQueue (leak detected)
-
-**Lazy GC Queue Processing**:
-
-The tracker uses a **lazy processing strategy** to minimize overhead on the hot path (every tracked method call):
-
-- **Per-thread counter**: Each thread maintains an independent call counter via `ThreadLocal<CallCounter>`
-- **First call on new thread**: Processes GC queue immediately (critical for short-lived threads)
-- **Subsequent calls**: Processes GC queue every 100 calls (low overhead for long-running threads)
-- **Batch size**: Processes up to 100 GC'd objects per batch (prevents blocking)
-
-**Why this strategy**:
-- Saves ~200-490ms/sec @ 10M calls/sec by avoiding queue polling on every call
-- Mutable `CallCounter` class avoids Integer boxing/unboxing overhead (~100-300ms/sec savings)
-- First-call safeguard ensures short-lived threads still detect leaks
-- Balance between performance and timely leak detection
-
-**For renderers**: Call `ensureGCProcessed()` before rendering to get current state
-
-**Real-time monitoring**:
-```java
-tracker.getActiveFlowCount()  // Returns activeFlows.size()
-```
-
-This provides:
-- Count of objects currently being tracked (not yet released/closed)
-- Detection of object accumulation before they become leaks
-- Available via programmatic API and JMX MBean
-- Useful for debugging and runtime monitoring
-
-**Memory management**: Objects automatically removed from tracking when:
-- Their metric reaches 0 (e.g., ByteBuf.refCnt() == 0) → Marked as clean release
-- They are garbage collected → Automatically detected and marked as leak
-- They are explicitly removed via reset()
-- JVM shuts down (map cleared)
-
-**Bounded Memory Guarantees**:
-- Active tracking: `O(concurrent_objects) × 80 bytes per object`
-  - WeakActiveFlow object: ~48 bytes
-  - ConcurrentHashMap entry overhead: ~32 bytes
-- Trie storage: Max 1M nodes (configurable) × ~100 bytes = ~100MB max
-- Total provable upper bound: `(concurrent × 80) + 100MB + ~50KB overhead`
+**Memory**: Active tracking ~80 bytes/object. Trie max 1M nodes × 100 bytes = 100MB. Upper bound: `(concurrent × 80) + 100MB`.
 
 ### 2. BoundedImprintTrie
+Tree stores method paths. Nodes: signature, bucketed refCount (0/1-2/3-5/6+), traversal count, outcomes (leaf only), children. String interning. Lock-free (ConcurrentHashMap). No allocations during tracking.
 
-**Purpose**: Bounded data structure for storing method call paths with provable memory limits
-
-**Design**:
-- Hierarchical tree structure where each node (ImprintNode) represents a method call
-- Each node stores:
-  - Method signature (ClassName.methodName)
-  - Bucketed refCount (0=zero, 1-2=low, 3-5=medium, 6+=high)
-  - Traversal count (how many objects passed through this node)
-  - Outcome counts (clean releases vs leaks) for leaf nodes only
-  - Children nodes (subsequent method calls)
-- Trie structure shares common path prefixes to minimize memory
-- String interning further reduces memory usage
-
-**Bounded Memory Features**:
-- **Global node limit**: 1M nodes by default (configurable)
-- **Depth limit**: 100 levels by default (configurable)
-- **Child limit per node**: 1000 children max
-- **Stop-on-limit**: When limits reached, nodes stop accepting new children (no eviction overhead)
-- **RefCount bucketing**: Reduces path explosion from slight refCount variations
-
-**Key Features**:
-- Lock-free concurrent updates using ConcurrentHashMap
-- No allocations during tracking (critical for performance)
-- Supports multiple roots (different starting points)
-- Automatic string interning for memory efficiency
-- Separate tracking of traversals vs outcomes
+**Bounds**: 1M nodes (default), 100 depth, 1000 children/node. Stop-on-limit (no eviction). RefCount bucketing reduces path explosion.
 
 ### 3. ByteBufFlowAgent
-
-**Purpose**: Java agent entry point for ByteBuddy instrumentation
-
-**Responsibilities**:
-- Parses agent arguments (include, exclude, trackConstructors)
-- Installs ByteBuddy transformation
-- Registers JMX MBean
-- Sets up instrumentation rules
-
-**Instrumentation Strategy**:
-```java
-// Intercept methods matching:
-- Public or protected visibility
-- In included packages
-- NOT in excluded packages
-- With ByteBuf parameter OR ByteBuf return type
-- Optionally: constructors for specified classes
-```
-
-**Agent Arguments**:
-- `include=com.example` - Required, packages to instrument
-- `exclude=com.example.test` - Optional, packages to skip
-- `trackConstructors=com.example.Message` - Optional, enable constructor tracking
+Entry point. Parses args (`include=`, `exclude=`, `trackConstructors=`), installs ByteBuddy transforms, registers JMX. Instruments public/protected methods with ByteBuf param/return in included packages.
 
 ### 4. ByteBufTrackingAdvice
+Intercepts methods. `@OnMethodEnter`: check re-entrance guard, track params (no suffix), store in TRACKED_PARAMS ThreadLocal. `@OnMethodExit`: track return (`_return` suffix if not already tracked as param).
 
-**Purpose**: ByteBuddy advice that intercepts method calls
+**Re-entrance Guard**: ThreadLocal<Boolean> prevents infinite recursion - critical because tracking code itself may call instrumented methods. Without guard: StackOverflowError. Side effect: methods called during tracking won't appear in traces (intentional).
 
-**Execution Flow**:
-```
-@OnMethodEnter (runs before method body)
-  ↓
-1. Check re-entrance guard (prevent infinite recursion)
-2. Check parameters - any tracked objects?
-3. For each tracked object:
-   - Extract metric
-   - Record method call in tracker (no suffix)
-   - Store identity hash in TRACKED_PARAMS ThreadLocal
-
-@OnMethodExit (runs after method completes)
-  ↓
-1. Check re-entrance guard
-2. Check return value - track with "_return" suffix
-   - Only if NOT already tracked as parameter (avoid duplicates)
-3. For each tracked object:
-   - Extract current metric
-   - Record in tracker
-4. Clear TRACKED_PARAMS ThreadLocal
-```
-
-**Re-entrance Guard Mechanism**:
-```java
-private static final ThreadLocal<Boolean> IS_TRACKING =
-    ThreadLocal.withInitial(() -> false);
-
-// In advice methods:
-if (IS_TRACKING.get()) return;  // Already tracking, skip
-try {
-    IS_TRACKING.set(true);
-    // ... tracking logic ...
-} finally {
-    IS_TRACKING.set(false);
-}
-```
-
-**Why this is critical**:
-- Prevents infinite recursion when tracking code calls instrumented methods
-- Uses ThreadLocal for thread safety without locks
-- Explains why some methods might not appear in traces (called during tracking)
-
-**Method Entry/Exit Tracking with Suffixes**:
-
-The advice tracks BOTH method entry and exit, using suffixes to differentiate:
-- `methodName` - Tracked at method entry (ByteBuf received as parameter)
-- `methodName_return` - Tracked at method exit (ByteBuf returned from method)
-- `<init>` - Constructor entry (ByteBuf passed to constructor)
-- `<init>_return` - Constructor exit (constructor finished storing ByteBuf)
-
-**Duplicate Prevention**:
-When a method both receives ByteBuf as parameter AND returns it (e.g., fluent API), the TRACKED_PARAMS ThreadLocal prevents double-tracking by recording identity hashes of parameters. The return value is only tracked if it's a different object.
+**Suffixes**: `methodName` (entry), `methodName_return` (exit), `<init>`, `<init>_return`. Special: `release()` only tracked when refCnt→0.
 
 **Example flow tree**:
 ```
 ROOT: UnpooledByteBufAllocator.heapBuffer [count=1]
 └── Client.allocate_return [ref=1, count=1]
     └── Handler.process [ref=1, count=1]
-        └── Handler.cleanup_return [ref=0, count=1]
+        └── Handler.cleanup_return [ref=0, count=1]  ✓ Clean
 ```
-
-This allows tracking complete object flow - both down the stack (parameters) and up the stack (returns). Users will see `_return` suffixes in their flow trees for methods that return ByteBuf.
-
-**Special Cases**:
-- **release()**: Only tracked when refCnt drops to 0 (prevents tree clutter)
-- **retain()**: Always tracked (shows refCount increases)
-- **Static methods**: Tracked like instance methods
-- **Constructors**: Only tracked if explicitly enabled
 
 ### 5. TrieRenderer
+Formats: `renderIndentedTree()` (human), `renderForLLM()` (token-efficient), `renderSummary()` (stats). Detects leaf nodes with metric>0 as leaks.
 
-**Purpose**: Formats Trie data into various output views
+### 6. ObjectTrackerHandler
+Extensibility. Interface: `shouldTrack()`, `getMetric()`, `getObjectType()`. Default: ByteBufObjectHandler. Registry: ObjectTrackerRegistry.
 
-**Output Formats**:
-- `renderIndentedTree()` - Hierarchical tree view with indentation (human-readable)
-- `renderForLLM()` - Structured format optimized for LLM parsing (token-efficient)
-- `renderSummary()` - Statistics (total roots, paths, leaks)
+### 7. Production Metrics
+Push leak metrics to monitoring (Datadog, Prometheus). **bytebuf-flow-api** (zero deps): MetricType enum, MetricSnapshot, MetricHandler interface. **bytebuf-flow-tracker**: MetricHandlerRegistry (CopyOnWriteArrayList), MetricPushScheduler (daemon, 60s), MetricCollector (walks trie).
 
-**Leak Detection**:
-- Identifies leaf nodes with non-zero metric
-- Marks them with `⚠️ LEAK` in tree view
-- Separate LEAKS section in LLM format
+**Architecture**: Scheduler (60s) → Collector walks trie → MetricHandlerRegistry → Your handlers (Datadog, Prometheus, etc). Thread-safe, per-handler exception isolation. Zero-dep API = production apps need no ByteBuddy/Netty deps.
 
-### 6. ObjectTrackerHandler Interface
-
-**Purpose**: Extensibility point for tracking custom objects
-
-**Interface**:
-```java
-public interface ObjectTrackerHandler {
-    boolean shouldTrack(Object obj);      // Filter objects to track
-    int getMetric(Object obj);            // Extract metric value
-    String getObjectType();               // Name for reports
-}
-```
-
-**Default Implementation**:
-- `ByteBufObjectHandler` - Tracks ByteBuf with refCnt() metric
-
-**Registry**:
-- `ObjectTrackerRegistry` - Global registry for handler
-- Can set programmatically or via system property
-
-### 7. Production Metrics System
-
-**Purpose**: Push leak metrics to monitoring systems (Datadog, Prometheus) without coupling tracker to specific vendors
-
-**Components:**
-
-**bytebuf-flow-api module** (zero dependencies):
-- `MetricType` enum - DIRECT_LEAKS, HEAP_LEAKS
-- `MetricSnapshot` - Immutable snapshot with 4 fields (totalDirectLeaks, totalHeapLeaks, directLeakFlows, heapLeakFlows)
-- `MetricHandler` interface - Callback for receiving metrics
-- `ObjectTrackerHandler` interface - For custom object tracking
-
-**bytebuf-flow-tracker module**:
-- `MetricHandlerRegistry` - Thread-safe handler registration (CopyOnWriteArrayList)
-- `MetricPushScheduler` - Background daemon thread, pushes every 60s (configurable)
-- `MetricCollector` - Walks trie, collects leak data, aggregates counts
-
-**Architecture:**
-
-```
-┌──────────────────────────────────────────────────────────┐
-│ MetricPushScheduler (background daemon thread)          │
-│ - Runs every 60s (configurable via -Dbytebuf.metrics.pushInterval=N)
-│ - Calls MetricCollector.captureSnapshot()               │
-│ - Pushes to all registered handlers                     │
-└───────────────────┬──────────────────────────────────────┘
-                    │ onMetrics(snapshot)
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ MetricHandlerRegistry                                    │
-│ - CopyOnWriteArrayList<MetricHandler> (thread-safe)    │
-│ - Aggregates required metrics (Set<MetricType>)        │
-│ - Handles exceptions per-handler (isolation)            │
-└───────────────────┬──────────────────────────────────────┘
-                    │ push to each handler
-                    ▼
-┌──────────────────────────────────────────────────────────┐
-│ Your MetricHandler implementations                       │
-│ - DatadogMetricHandler → statsd.gauge()                 │
-│ - PrometheusMetricHandler → counter.set()               │
-│ - PagerDutyMetricHandler → trigger alerts               │
-└──────────────────────────────────────────────────────────┘
-```
-
-**Selective Capture**: Only collects metrics requested by handlers (performance optimization)
-
-**Flow String Format**: `root=Method|final_ref=N|leak_count=500|leak_rate=100.0%|path=A -> B -> C`
-- One flow string per unique leak path (not per occurrence)
-- leak_count embedded for actionability
-
-**Registration**: Programmatic, system property (`-Dmetric.handlers=`), or ServiceLoader
-
-**Why zero-dependency API**: Production apps depend only on interfaces, no ByteBuddy/Netty in classpath
+Flow format: `root=M|final_ref=N|leak_count=N|leak_rate=N%|path=A->B->C`. Selective capture (only requested metrics). Registration: programmatic, system property, ServiceLoader.
 
 ## How It Works
 
-### Instrumentation Flow
+**Flow**: JVM loads agent → ByteBufFlowAgent.premain() → ByteBuddy transforms classes (adds advice) → Runtime: advice checks params/return, records in tracker → Tracker updates Trie.
 
-```
-1. JVM loads Java agent
-   ↓
-2. ByteBufFlowAgent.premain() executes
-   ↓
-3. ByteBuddy transforms matching classes:
-   - Adds @OnMethodExit advice to methods
-   - Advice code calls ByteBufTrackingAdvice.trackMethod()
-   ↓
-4. At runtime, when instrumented method executes:
-   - Method completes
-   - Advice executes
-   - Checks for ByteBuf in params/return
-   - Records in ByteBufFlowTracker
-   ↓
-5. Tracker updates Trie structure:
-   - Allocator methods create root nodes
-   - Subsequent calls add child nodes
-   - Metric tracked at each step
-```
+**Allocator Root**: Instruments allocator methods (UnpooledByteBufAllocator, Unpooled, etc.) as root nodes. Avoids stack traces. ByteBufConstructionTransformer targets only terminal methods (2-arg) to avoid telescoping duplicates.
 
-### Allocator Root Strategy
+**Release Tracking**: Only track `release()` when refCnt→0 (prevents clutter). Clean trees, clear leak status.
 
-**Why**: Tracks ByteBuf from creation (allocator) through entire lifecycle while avoiding expensive stack trace collection
+**Concurrency**: ConcurrentHashMap (lock-free). ThreadLocal re-entrance guard prevents infinite recursion. ~5-10% overhead, zero allocations, no stack traces.
 
-**How**:
-1. ByteBuf construction methods are instrumented (UnpooledByteBufAllocator.heapBuffer, Unpooled.buffer, etc.)
-2. Allocator methods automatically become root nodes in the Trie
-3. All subsequent application methods that handle the ByteBuf become children/descendants
-4. Result: Complete flow from allocation to release (or leak)
+## Build & Testing
 
-**Allocator Root Transformers**:
-- **ByteBufConstructionTransformer**: Instruments allocator methods
-  - Targets: UnpooledByteBufAllocator, PooledByteBufAllocator, Unpooled
-  - Only terminal methods (2-arg versions) to avoid telescoping constructor duplicates
-- **ByteBufConstructorAdvice**: Tracks ByteBuf through allocator constructors
-  - Entry: ByteBuf passed to constructor (`<init>`)
-  - Exit: Constructor complete (`<init>_return`)
+**Maven**: Parent POM manages deps. Library module uses Shade plugin for fat JAR (`*-agent.jar`) with all deps + MANIFEST (`Premain-Class`, `Can-Retransform-Classes`). Example module shows integration.
 
-**Example**:
-```
-ROOT: UnpooledByteBufAllocator.heapBuffer [count=1]
-  └── Client.allocate_return [ref=1, count=1]
-      └── Handler.prepare [ref=1, count=1]
-          └── Sender.send [ref=1, count=1]
-              └── LEAK [ref=1]  ← Leaf with refCnt=1
-```
-
-### Release Tracking Algorithm
-
-**Problem**: Tracking every `release()` call clutters tree and creates ambiguity
-
-**Solution**: Only track release() when refCnt drops to 0
-
-**Implementation**:
-```java
-if (methodName.equals("release")) {
-    int refCntAfter = byteBuf.refCnt();
-    if (refCntAfter == 0) {
-        // Only track final release
-        tracker.recordMethodCall(byteBuf, className, methodName, 0);
-    }
-    // Ignore intermediate releases
-}
-```
-
-**Benefits**:
-- Clean trees showing only final release
-- Leaf nodes clearly indicate leak status
-- No ambiguity about whether object was released
-
-### Concurrency Model
-
-**Thread-Safety**:
-- `ConcurrentHashMap` for object-to-root mapping
-- `ConcurrentHashMap` for Trie nodes
-- Lock-free updates (critical for performance)
-- ThreadLocal-based re-entrance guard (no locks)
-
-**Re-entrance Prevention**:
-
-Critical design feature to prevent infinite recursion:
-
-```java
-// In ByteBufTrackingAdvice.java
-private static final ThreadLocal<Boolean> IS_TRACKING =
-    ThreadLocal.withInitial(() -> false);
-```
-
-**How it works**:
-1. Before tracking: Check `IS_TRACKING.get()`
-2. If true → Already tracking on this thread → Skip and return
-3. If false → Set to true, execute tracking logic, set back to false
-
-**Why this is necessary**:
-- Tracking code itself may call instrumented methods
-- Without guard: infinite recursion (StackOverflowError)
-- Example: `tracker.recordMethodCall()` might trigger `toString()` on tracked object
-- ThreadLocal ensures per-thread isolation without global locks
-
-**Side effect**: Methods called during tracking will not appear in traces. This is intentional and acceptable.
-
-**Memory Model**:
-- No synchronization on read paths
-- Eventual consistency acceptable for monitoring use case
-- May miss some paths in high-concurrency scenarios (acceptable tradeoff)
-
-**Performance**:
-- ~5-10% overhead in high-throughput scenarios
-- Zero allocations during tracking
-- No stack trace collection (major performance win)
-- ThreadLocal access is fast (thread-local storage)
-
-## Build System
-
-### Maven Configuration
-
-**Parent POM**:
-- Manages dependency versions (ByteBuddy, Netty, JUnit)
-- Defines modules
-- No packaging (just coordination)
-
-**Library Module (bytebuf-flow-tracker)**:
-- Regular Maven build
-- **Maven Shade Plugin** creates fat JAR:
-  - Regular JAR: `bytebuf-flow-tracker-1.0.0-SNAPSHOT.jar`
-  - Fat JAR: `bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar`
-- Fat JAR includes all dependencies (required for Java agent)
-- MANIFEST.MF entries:
-  - `Premain-Class: com.example.bytebuf.tracker.agent.ByteBufFlowAgent`
-  - `Can-Retransform-Classes: true`
-
-**Example Module (bytebuf-flow-example)**:
-- Depends on library module
-- Shows integration patterns
-- Exec plugin configured with agent
-
-### Why Fat JAR?
-
-Java agents require:
-1. Single JAR file (not Maven dependencies)
-2. All dependencies bundled (ByteBuddy, etc.)
-3. Available at JVM startup (before application classpath)
-
-Maven Shade plugin solves this by:
-- Bundling all dependencies into one JAR
-- Relocating packages to avoid conflicts
-- Setting correct MANIFEST.MF entries
-
-## Testing Strategy
-
-### Unit Tests
-
-**ByteBufFlowTrackerTest**:
-- Empty tracker validation
-- Single flow tracking
-- Multiple flows
-- Leak detection
-- RefCount anomalies
-- High-volume scenarios
-- Reset functionality
-
-**Test Approach**:
-- JUnit 5
-- Mockito for ByteBuf mocking
-- Verify tree structure
-- Verify leak detection
-- Verify output formats
-
-### Integration Testing
-
-**Example Module**:
-- Real ByteBuf usage
-- Demonstrates normal flows
-- Demonstrates leaks
-- Demonstrates error handling
-- Custom object tracking examples
+**Tests**: Unit (JUnit 5, Mockito, verify tree/leaks/formats), Integration (real ByteBuf usage, leak demos).
 
 ## Extensibility
 
-### Custom Object Tracking
+**Custom Objects**: Implement `ObjectTrackerHandler` (`shouldTrack()`, `getMetric()`, `getObjectType()`), register with ObjectTrackerRegistry, configure agent.
 
-**Steps**:
-1. Implement `ObjectTrackerHandler`
-2. Register with `ObjectTrackerRegistry`
-3. Configure agent to instrument your packages
-4. Handler's `shouldTrack()` filters objects
-5. Handler's `getMetric()` extracts metric
-
-**Example**:
+Example:
 ```java
 public class ConnectionTracker implements ObjectTrackerHandler {
-    public boolean shouldTrack(Object obj) {
-        return obj instanceof Connection;
-    }
-    public int getMetric(Object obj) {
-        return ((Connection) obj).isClosed() ? 0 : 1;
-    }
-    public String getObjectType() {
-        return "DatabaseConnection";
-    }
+    public boolean shouldTrack(Object obj) { return obj instanceof Connection; }
+    public int getMetric(Object obj) { return ((Connection)obj).isClosed() ? 0 : 1; }
+    public String getObjectType() { return "DatabaseConnection"; }
 }
-
-// Register
 ObjectTrackerRegistry.setHandler(new ConnectionTracker());
 ```
 
-### Wrapper Class Support
+**Wrapper Classes**: Use `trackConstructors=com.example.Message` to instrument constructors, maintains flow when ByteBuf wrapped. Wildcards supported.
 
-**Problem**: ByteBuf wrapped in custom objects (Message, Request) breaks tracking
+## Performance
 
-**Solution**: Constructor tracking
+**Overhead**: ByteBuddy transformation (class load), advice execution, ConcurrentHashMap ops, refCnt() calls.
 
-**Configuration**:
-```bash
--javaagent:tracker.jar=include=com.example;trackConstructors=com.example.Message
-```
+**Optimizations**: Zero allocations, no stack traces, lock-free, lazy rendering, identity hash, lazy GC (every 100 calls saves ~200-490ms/sec @ 10M), mutable ThreadLocal counter (avoids boxing, ~100-300ms/sec), non-volatile fields (~50ms/sec), cached identityHashCode (~50ms/sec). Total: ~405-900ms/sec reduction @ 10M calls/sec.
 
-**Effect**:
-- Agent instruments specified constructors
-- Constructor calls appear in flow tree
-- Maintains continuous flow even when ByteBuf is wrapped
+### trackDirectOnly
+Direct leaks critical (never GC'd, crash JVM). Hybrid filtering: compile-time (don't instrument heapBuffer) + runtime (isDirect() check for ambiguous methods).
 
-**Limitations**:
-- Methods receiving wrapper objects need manual tracking
-- Only public/protected constructors tracked
-- Wildcards supported (`com.example.dto.*`)
+| Method | Default | trackDirectOnly |
+|--------|---------|-----------------|
+| heapBuffer() | Track | **Not instrumented** |
+| directBuffer() | Track | Track |
+| buffer/wrapped/composite | Track | Check isDirect() (~5ns) |
 
-## Performance Considerations
+80% allocations are heap → major savings. wrappedBuffer(directBuf) correctly inherits isDirect()=true.
 
-### Overhead Sources
+### FlowState Pooling
+High churn creates GC pressure. Stormpot pools FlowState objects (size 1024, ~32KB). WeakActiveFlow (unpoolable) delegates to PooledFlowState. Fallback to unpooled on exhaustion. Lock-free, thread-safe. Files: FlowState.java, FlowStatePool.java, WeakActiveFlow.java, WeakActiveTracker.java.
 
-1. **Instrumentation**: ByteBuddy transformation at class load time
-2. **Method interception**: Advice execution on every tracked method
-3. **Trie updates**: ConcurrentHashMap operations
-4. **Metric extraction**: refCnt() calls
+**Best Practices**: Narrow includes, exclude noise, use trackDirectOnly in prod, sample if needed.
 
-### Optimizations
+## JMX & Development
 
-1. **No allocations**: Critical path has zero allocations
-2. **No stack traces**: Massive performance win vs allocation tracking
-3. **Lock-free**: ConcurrentHashMap for all updates
-4. **Lazy rendering**: Trie only formatted when requested
-5. **Identity hash**: `System.identityHashCode()` for object tracking
-6. **Lazy GC processing**: Process every 100 calls (not every call) - saves ~200-490ms/sec @ 10M calls/sec
-7. **Mutable ThreadLocal counter**: Avoid Integer boxing - saves ~100-300ms/sec @ 10M calls/sec
-8. **Non-volatile fields**: `currentDepth` is plain int (not volatile) - saves ~50ms/sec @ 10M calls/sec
-9. **Single identityHashCode call**: Cache value, don't recompute - saves ~50ms/sec @ 10M calls/sec
+**MBean** (`com.example:type=ByteBufFlowTracker`): `getTreeView()`, `getLLMView()`, `getSummary()`, `reset()`. Use with JConsole, monitoring tools.
 
-**Total overhead reduction**: ~405-900ms/sec @ 10M calls/sec from lazy processing optimizations
+**Build**: `mvn clean install` (everything), `mvn test` (tests), `mvn exec:java` (example).
 
-### Direct Memory Tracking (trackDirectOnly)
+**Debug**: Add logging in ByteBufFlowAgent, use `-verbose:class`, JConsole.
 
-**Problem**: Direct memory leaks are critical (never GC'd, crash JVM) while heap leaks eventually GC. In production, tracking only direct buffers reduces overhead while focusing on the leaks that matter.
-
-**Solution**: Hybrid compile-time + runtime filtering approach
-
-**Implementation**: Combines compile-time exclusion with runtime filtering
-
-```java
-// In ByteBufConstructionTransformer - Compile-time exclusion
-if (trackDirectOnly) {
-    // Only instrument directBuffer - heapBuffer not transformed at all
-    methodMatcher = named("directBuffer")
-        .and(takesArguments(int.class, int.class));
-} else {
-    // Track both (default)
-    methodMatcher = (named("directBuffer").or(named("heapBuffer")))
-        .and(takesArguments(int.class, int.class));
-}
-
-// In ByteBufConstructionAdvice - Runtime filtering for ambiguous methods
-if (FILTER_DIRECT_ONLY) {
-    switch (methodName) {
-        case "heapBuffer":
-            return;  // Never reached (not instrumented), but guard for safety
-        case "directBuffer":
-        case "ioBuffer":
-            break;   // Known direct buffers - continue tracking
-        default:
-            // Ambiguous methods (buffer, wrappedBuffer, compositeBuffer)
-            // Check actual buffer type using isDirect() (~5ns)
-            if (!buf.isDirect()) return;
-    }
-}
-```
-
-**Performance characteristics**:
-- heapBuffer(): Not instrumented (zero overhead)
-- directBuffer/ioBuffer(): Instrumented, tracked (known direct types)
-- buffer/wrappedBuffer/compositeBuffer(): Instrumented, filtered via isDirect() (~5ns)
-- Switch statement optimized by JIT to jump table for fast branching
-
-**Why this design**:
-1. **Zero overhead for common case**: 80% of allocations are heapBuffer (not instrumented)
-2. **Fast path for known types**: directBuffer/ioBuffer pass through without isDirect() call
-3. **Accurate for ambiguous types**: wrappedBuffer(directBuf) correctly inherits isDirect()=true
-4. **Production-ready**: Minimal overhead while catching critical leaks only
-
-**Performance comparison**:
-
-| Allocation Method | Default | trackDirectOnly=true |
-|-------------------|---------|----------------------|
-| heapBuffer()      | Track   | **Not instrumented** |
-| directBuffer()    | Track   | Track                |
-| ioBuffer()        | Track   | Track                |
-| buffer()          | Track   | Check isDirect()     |
-| wrappedBuffer()   | Track   | Check isDirect()     |
-| compositeBuffer() | Track   | Check isDirect()     |
-
-**Key insight**: `ByteBuf.isDirect()` correctly handles wrapped buffers - they inherit the direct/heap property from the underlying buffer. This means `Unpooled.wrappedBuffer(directBuf)` returns a slice with `isDirect()=true`, correctly identifying it as direct memory.
-
-### FlowState Object Pooling
-
-**Problem**: Every tracked ByteBuf needs a FlowState object to track its position in the trie. Under high ByteBuf churn (thousands/sec), constant FlowState allocation/deallocation creates significant GC pressure.
-
-**Solution**: Pool FlowState objects using Stormpot (battle-tested object pooling library, Apache 2.0 licensed)
-
-**Architecture**:
-```
-WeakActiveFlow (unpoolable)          FlowStatePool (Stormpot-based)
-├─ WeakReference<Object>             ├─ Pool<StormpotPooledFlowState>
-├─ int objectId                      ├─ Size: 1024 (~32KB overhead)
-└─ PooledFlowState (delegated) ─────>└─ Expiration: never (reuse indefinitely)
-                                          ├─ StormpotPooledFlowState (pooled)
-                                          │   ├─ implements Poolable
-                                          │   ├─ FlowState (reusable)
-                                          │   └─ Slot (Stormpot handle)
-                                          └─ UnpooledFlowState (fallback)
-```
-
-**Key design decision**: FlowState is separate from WeakActiveFlow because WeakReference cannot be pooled (lifecycle tied to GC). WeakActiveFlow delegates to a PooledFlowState interface, which can be either pooled (StormpotPooledFlowState) or unpooled (UnpooledFlowState fallback).
-
-**Why Stormpot instead of custom pooling**:
-1. **Proven reliability**: Mature, well-tested library used in production systems
-2. **Lock-free fast path**: Claim/release operations use lock-free algorithms
-3. **Graceful degradation**: Falls back to unpooled allocation when pool exhausted
-4. **Zero maintenance**: No need to maintain custom pooling logic
-5. **Thread-safe**: All synchronization handled internally
-
-**Implementation**:
-```java
-// FlowStatePool.java - Global Stormpot pool
-private static final Pool<StormpotPooledFlowState> POOL;
-
-static {
-    // Stormpot 3.x uses builder pattern (not Config-based like 2.x)
-    POOL = Pool.from(new FlowStateAllocator())
-        .setSize(1024)
-        .setExpiration(Expiration.never())
-        .build();
-}
-
-// Acquire from pool or allocate unpooled on exhaustion
-public static PooledFlowState acquire(ImprintNode rootNode) {
-    try {
-        StormpotPooledFlowState pooled = POOL.claim(new Timeout(1, TimeUnit.MILLISECONDS));
-        if (pooled != null) {
-            pooled.flowState.reset(rootNode);
-            return pooled;
-        }
-    } catch (InterruptedException | PoolException e) {
-        // Fall through to unpooled
-    }
-    FlowState state = new FlowState();
-    state.reset(rootNode);
-    return new UnpooledFlowState(state, rootNode);
-}
-
-// Return to pool for reuse
-public static void release(PooledFlowState state) {
-    if (state instanceof StormpotPooledFlowState) {
-        ((StormpotPooledFlowState) state).release();
-    }
-    // UnpooledFlowState is just GC'd
-}
-```
-
-**Memory tradeoff**:
-- Pool overhead: 1024 slots × 32 bytes = ~32KB globally
-- Per-active-ByteBuf: ~132 bytes (40 WeakActiveFlow + 32 PooledFlowState + 28 FlowState + 32 CHM entry)
-- Savings: Eliminates allocation/GC churn for FlowState objects
-
-**Performance benefit**: Significant for high ByteBuf churn (thousands/sec). Negligible overhead for low churn applications.
-
-**Files involved**:
-- `FlowState.java`: Poolable state object with bit-packed depth + completed flag
-- `FlowStatePool.java`: Stormpot pool wrapper with acquire/release
-- `WeakActiveFlow.java`: Delegates to PooledFlowState
-- `WeakActiveTracker.java`: Acquires from pool on creation, releases on GC/shutdown
-
-### Best Practices
-
-1. **Narrow include packages**: Only instrument application code
-2. **Exclude noisy packages**: Tests, utilities, third-party
-3. **Use trackDirectOnly in production**: Zero overhead for heap buffers, catches critical leaks only
-4. **Sample if needed**: Implement sampling in custom handler
-
-## JMX Integration
-
-### MBean Interface
-
-**MBean Name**: `com.example:type=ByteBufFlowTracker`
-
-**Operations**:
-- `getTreeView()` - String, hierarchical tree (human-readable)
-- `getLLMView()` - String, LLM-optimized format (token-efficient)
-- `getSummary()` - String, statistics
-- `reset()` - void, clears all data
-
-**Use Cases**:
-- Runtime monitoring via JConsole
-- Automated analysis via JMX clients
-- Integration with monitoring tools
-- Debugging production issues
-
-## Development Workflow
-
-### Building from Source
-
-```bash
-# Build everything
-mvn clean install
-
-# Build library only
-cd bytebuf-flow-tracker
-mvn clean package
-
-# Run tests
-mvn test
-
-# Run example
-cd bytebuf-flow-example
-mvn exec:java
-```
-
-### Debugging
-
-**Enable verbose agent logging**:
-```java
-// In ByteBufFlowAgent.java, add:
-System.out.println("[Agent] Instrumenting: " + className);
-```
-
-**Verify instrumentation**:
-```bash
-java -javaagent:tracker-agent.jar=include=com.example -verbose:class -jar app.jar
-# Look for "Transformed class: com.example.YourClass"
-```
-
-**JMX debugging**:
-```bash
-jconsole localhost:9999
-# Check MBean attributes and operations
-```
-
-### Integration into Other Projects
-
-**Three approaches**:
-
-1. **Local Maven repository** (simplest):
-   - `mvn clean install` in tracker project
-   - Add dependency in your pom.xml
-   - Reference agent JAR in ~/.m2/repository
-
-2. **Git submodule** (multi-module projects):
-   - Add tracker as submodule
-   - Include `bytebuf-flow-tracker` module in parent POM
-   - Build together with your project
-
-3. **Copy source** (full control):
-   - Copy `bytebuf-flow-tracker/` directory
-   - Add as module in your project
-   - Build together
-
-**All approaches require**:
-- Building from source (not on Maven Central)
-- Using fat JAR for -javaagent
-- Configuring include/exclude packages
+**Integration**: (1) Local Maven repo (`mvn install` + add dep), (2) Git submodule, (3) Copy source. All need fat JAR for -javaagent.
 
 ## Design Decisions
 
-### Why Trie Structure?
+**Trie**: Shared prefixes save memory, natural hierarchy, efficient lookup vs flat list/map alternatives.
 
-**Alternatives considered**:
-- Flat list of paths: O(n) space, no sharing
-- Map of sequences: Complex, no hierarchy
-- Tree with separate nodes: Memory overhead
+**Allocator Root**: Complete lifecycle from creation, zero stack trace overhead, automatic, shows allocator context (heap/direct, pooled/unpooled), works across threads, prevents telescoping (terminal methods only). Alt: stack traces (expensive), first-touch (loses context), manual (code changes).
 
-**Trie advantages**:
-- Shared prefixes save memory
-- Natural hierarchy matches call flow
-- Efficient path lookup
-- Easy to render as tree
+**Release-Only-When-Zero**: Clean trees (only final release), clear leak detection (non-zero leaf), no ambiguity vs tracking all releases (clutters) or none (no clean path detection).
 
-### Why Allocator Root?
+## Future
 
-**Alternatives considered**:
-- Allocation site tracking with stack traces: Expensive (high overhead)
-- First-touch application method: Loses allocator context, can't see which allocator created the object
-- Manual root marking: Requires code changes
-- Thread-based roots: Doesn't match object flow
-
-**Allocator root advantages**:
-- Complete lifecycle visibility: Tracks from creation (allocator) to release/leak
-- Zero stack trace overhead: Instruments specific allocator methods instead
-- Automatic: No code changes required
-- Allocator context: Clearly shows which allocator (heap vs direct, pooled vs unpooled) created the ByteBuf
-- Works across threads: Object identity tracking follows ByteBuf regardless of thread
-- Telescoping prevention: Only instruments terminal methods (2-arg versions) to avoid constructor call duplicates
-
-### Why Release-Only-When-Zero?
-
-**Alternatives considered**:
-- Track all release() calls: Clutters tree
-- Don't track release(): Can't detect clean paths
-- Track retain/release pairs: Complex matching
-
-**Current approach advantages**:
-- Clean trees (only final release)
-- Clear leak detection (non-zero leaf)
-- No ambiguity (either released or leaked)
-
-## Future Enhancements
-
-**Potential improvements**:
-
-1. **Sampling**: Track only % of objects for lower overhead
-2. **Time tracking**: Record method execution time
-3. **Memory tracking**: Track actual memory usage
-4. **Flame graphs**: Visualize hot paths
-5. **Export formats**: Graphviz DOT, Mermaid
-6. **Web UI**: Real-time visualization
-7. **Alerts**: Automatic leak detection and notification
-
-## License
+Sampling, time tracking, memory tracking, flame graphs, export formats (DOT, Mermaid), Web UI, alerts.
 
 Apache License 2.0

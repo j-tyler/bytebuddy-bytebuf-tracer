@@ -72,7 +72,8 @@ public class BoundedImprintTrie {
         ImprintNode newRoot = new ImprintNode(
             intern(className),
             intern(methodName),
-            (byte) 1  // Root always starts with ref=1
+            (byte) 1,  // Root always starts with ref=1
+            null       // Root nodes have no parent
         );
 
         ImprintNode result = roots.putIfAbsent(key, newRoot);

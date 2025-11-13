@@ -41,6 +41,10 @@ public class ImprintNode {
     private final String methodName;     // 8 bytes (reference to interned string)
     private final byte refCountBucket;   // 1 byte (0=zero, 1=low, 2=med, 3=high)
 
+    // Parent node for path reconstruction (null for root nodes)
+    // +8 bytes per node, but enables full flow path in metrics
+    private final ImprintNode parent;    // 8 bytes (null for roots)
+
     // Traversal count (for all nodes, including intermediate)
     private final AtomicLong traversalCount = new AtomicLong(0);
 
@@ -73,10 +77,11 @@ public class ImprintNode {
     // but could be made configurable via system property if needed.
     private static final int MAX_CHILDREN_PER_NODE = 1000;
 
-    public ImprintNode(String className, String methodName, byte refCountBucket) {
+    public ImprintNode(String className, String methodName, byte refCountBucket, ImprintNode parent) {
         this.className = className;
         this.methodName = methodName;
         this.refCountBucket = refCountBucket;
+        this.parent = parent;
     }
 
     /**
@@ -144,8 +149,8 @@ public class ImprintNode {
             return this;
         }
 
-        // Create new child
-        ImprintNode newChild = new ImprintNode(className, methodName, refCountBucket);
+        // Create new child with this node as parent
+        ImprintNode newChild = new ImprintNode(className, methodName, refCountBucket, this);
         ImprintNode result = localChildren.putIfAbsent(key, newChild);
         return result != null ? result : newChild;
     }
@@ -189,6 +194,14 @@ public class ImprintNode {
             return Collections.emptyMap();  // Leaf node - no children
         }
         return Collections.unmodifiableMap(localChildren);
+    }
+
+    /**
+     * Get parent node (null for root nodes).
+     * Used for path reconstruction in metrics.
+     */
+    public ImprintNode getParent() {
+        return parent;
     }
 
     /**

@@ -6,7 +6,7 @@
 package com.example.bytebuf.tracker.agent;
 
 import com.example.bytebuf.tracker.ByteBufFlowTracker;
-import com.example.bytebuf.tracker.ObjectTrackerHandler;
+import com.example.bytebuf.api.tracker.ObjectTrackerHandler;
 import com.example.bytebuf.tracker.ObjectTrackerRegistry;
 import io.netty.buffer.ByteBuf;
 import net.bytebuddy.asm.Advice;

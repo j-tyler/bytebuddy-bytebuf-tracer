@@ -18,6 +18,13 @@
     <description>ByteBuddy-based agent for tracking ByteBuf flows and detecting memory leaks</description>
 
     <dependencies>
+        <!-- ByteBuf Flow API - Zero-dependency interfaces -->
+        <dependency>
+            <groupId>com.example.bytebuf</groupId>
+            <artifactId>bytebuf-flow-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- ByteBuddy - Required for agent instrumentation -->
         <dependency>
             <groupId>net.bytebuddy</groupId>
@@ -46,6 +53,18 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,6 +48,24 @@ public class AppLauncher {
      */
     public AppResult launch(String mainClass, String agentConfig, int timeoutSeconds)
             throws IOException, InterruptedException {
+        return launchWithSystemProperties(mainClass, agentConfig, null, timeoutSeconds);
+    }
+
+    /**
+     * Launch an application with system properties.
+     */
+    public AppResult launchWithSystemProperties(String mainClass, Map<String, String> systemProperties)
+            throws IOException, InterruptedException {
+        return launchWithSystemProperties(mainClass, "include=com.example.bytebuf.tracker.integration.testapp.*",
+                systemProperties, 30);
+    }
+
+    /**
+     * Launch an application with the agent, custom config, system properties, and timeout.
+     */
+    private AppResult launchWithSystemProperties(String mainClass, String agentConfig,
+                                                 Map<String, String> systemProperties, int timeoutSeconds)
+            throws IOException, InterruptedException {
 
         // Verify agent JAR exists
         File agentFile = new File(agentJarPath);
@@ -59,6 +78,14 @@ public class AppLauncher {
         List<String> command = new ArrayList<>();
         command.add(javaHome + File.separator + "bin" + File.separator + "java");
         command.add("-javaagent:" + agentJarPath + "=" + agentConfig);
+
+        // Add system properties
+        if (systemProperties != null) {
+            for (Map.Entry<String, String> entry : systemProperties.entrySet()) {
+                command.add("-D" + entry.getKey() + "=" + entry.getValue());
+            }
+        }
+
         command.add("-cp");
         command.add(buildClasspath());
         command.add(mainClass);

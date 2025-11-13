@@ -271,6 +271,60 @@ public interface ObjectTrackerHandler {
 - `ObjectTrackerRegistry` - Global registry for handler
 - Can set programmatically or via system property
 
+### 7. Production Metrics System
+
+**Purpose**: Push leak metrics to monitoring systems (Datadog, Prometheus) without coupling tracker to specific vendors
+
+**Components:**
+
+**bytebuf-flow-api module** (zero dependencies):
+- `MetricType` enum - DIRECT_LEAKS, HEAP_LEAKS
+- `MetricSnapshot` - Immutable snapshot with 4 fields (totalDirectLeaks, totalHeapLeaks, directLeakFlows, heapLeakFlows)
+- `MetricHandler` interface - Callback for receiving metrics
+- `ObjectTrackerHandler` interface - For custom object tracking
+
+**bytebuf-flow-tracker module**:
+- `MetricHandlerRegistry` - Thread-safe handler registration (CopyOnWriteArrayList)
+- `MetricPushScheduler` - Background daemon thread, pushes every 60s (configurable)
+- `MetricCollector` - Walks trie, collects leak data, aggregates counts
+
+**Architecture:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ MetricPushScheduler (background daemon thread)          │
+│ - Runs every 60s (configurable via -Dbytebuf.metrics.pushInterval=N)
+│ - Calls MetricCollector.captureSnapshot()               │
+│ - Pushes to all registered handlers                     │
+└───────────────────┬──────────────────────────────────────┘
+                    │ onMetrics(snapshot)
+                    ▼
+┌──────────────────────────────────────────────────────────┐
+│ MetricHandlerRegistry                                    │
+│ - CopyOnWriteArrayList<MetricHandler> (thread-safe)    │
+│ - Aggregates required metrics (Set<MetricType>)        │
+│ - Handles exceptions per-handler (isolation)            │
+└───────────────────┬──────────────────────────────────────┘
+                    │ push to each handler
+                    ▼
+┌──────────────────────────────────────────────────────────┐
+│ Your MetricHandler implementations                       │
+│ - DatadogMetricHandler → statsd.gauge()                 │
+│ - PrometheusMetricHandler → counter.set()               │
+│ - PagerDutyMetricHandler → trigger alerts               │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Selective Capture**: Only collects metrics requested by handlers (performance optimization)
+
+**Flow String Format**: `root=Method|final_ref=N|leak_count=500|leak_rate=100.0%|path=A -> B -> C`
+- One flow string per unique leak path (not per occurrence)
+- leak_count embedded for actionability
+
+**Registration**: Programmatic, system property (`-Dmetric.handlers=`), or ServiceLoader
+
+**Why zero-dependency API**: Production apps depend only on interfaces, no ByteBuddy/Netty in classpath
+
 ## How It Works
 
 ### Instrumentation Flow

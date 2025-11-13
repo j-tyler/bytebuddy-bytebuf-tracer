@@ -5,6 +5,7 @@
 
 package com.example.bytebuf.tracker.active;
 
+import com.example.bytebuf.tracker.metrics.MetricEventSink;
 import com.example.bytebuf.tracker.trie.BoundedImprintTrie;
 import com.example.bytebuf.tracker.trie.ImprintNode;
 import java.lang.ref.Reference;
@@ -103,8 +104,10 @@ public class WeakActiveTracker {
         if (flow == null) {
             // First time seeing this object - create root in Trie and acquire pooled state
             ImprintNode root = trie.getOrCreateRoot(className, methodName);
+            String rootMethod = className + "." + methodName;
+            boolean isDirect = isDirectBufferMethod(rootMethod);
             FlowStatePool.PooledFlowState pooledState = FlowStatePool.acquire(root);  // Acquire from pool
-            flow = new WeakActiveFlow(byteBuf, objectId, pooledState, gcQueue);
+            flow = new WeakActiveFlow(byteBuf, objectId, pooledState, rootMethod, isDirect, gcQueue);
 
             WeakActiveFlow existing = activeFlows.putIfAbsent(objectId, flow);
             if (existing == null) {
@@ -171,9 +174,20 @@ public class WeakActiveTracker {
             // ByteBuf was GC'd without release() - it's a LEAK!
             // Skip completed flows (already marked as clean)
             if (!flow.isCompleted() && flow.getCurrentNode() != null) {
-                flow.getCurrentNode().recordOutcome(false);  // LEAK
+                flow.getCurrentNode().recordOutcome(false);
                 totalLeaked.incrementAndGet();
                 totalGCDetected.incrementAndGet();
+
+                // Record for delta-based metrics (only if handlers exist)
+                MetricEventSink sink = MetricEventSink.getInstance();
+                if (sink.isRecording()) {
+                    sink.recordLeak(
+                        flow.getCurrentNode(),
+                        flow.getRootMethod(),
+                        flow.isDirect(),
+                        System.currentTimeMillis()
+                    );
+                }
             }
 
             // Return PooledFlowState to pool for reuse
@@ -181,6 +195,16 @@ public class WeakActiveTracker {
 
             processed++;
         }
+    }
+
+    private static boolean isDirectBufferMethod(String rootMethod) {
+        if (rootMethod == null) {
+            return false;
+        }
+        return rootMethod.endsWith(".directBuffer") ||
+               rootMethod.endsWith(".ioBuffer") ||
+               rootMethod.contains(".directBuffer(") ||
+               rootMethod.contains(".ioBuffer(");
     }
 
     /**
@@ -202,9 +226,20 @@ public class WeakActiveTracker {
 
             // Skip completed flows (already marked as clean)
             if (!flow.isCompleted() && flow.getCurrentNode() != null) {
-                flow.getCurrentNode().recordOutcome(false);  // LEAK
+                flow.getCurrentNode().recordOutcome(false);
                 totalLeaked.incrementAndGet();
                 totalGCDetected.incrementAndGet();
+
+                // Record for delta-based metrics (only if handlers exist)
+                MetricEventSink sink = MetricEventSink.getInstance();
+                if (sink.isRecording()) {
+                    sink.recordLeak(
+                        flow.getCurrentNode(),
+                        flow.getRootMethod(),
+                        flow.isDirect(),
+                        System.currentTimeMillis()
+                    );
+                }
             }
 
             // Return PooledFlowState to pool for reuse
@@ -216,11 +251,24 @@ public class WeakActiveTracker {
      * Mark all remaining active flows as leaks (for shutdown).
      */
     public void markRemainingAsLeaks() {
+        MetricEventSink sink = MetricEventSink.getInstance();
+        boolean recording = sink.isRecording();
+
         for (WeakActiveFlow flow : activeFlows.values()) {
             // Skip completed flows (already marked as clean)
             if (!flow.isCompleted() && flow.getCurrentNode() != null) {
-                flow.getCurrentNode().recordOutcome(false);  // LEAK (never released)
+                flow.getCurrentNode().recordOutcome(false);
                 totalLeaked.incrementAndGet();
+
+                // Record for delta-based metrics (only if handlers exist)
+                if (recording) {
+                    sink.recordLeak(
+                        flow.getCurrentNode(),
+                        flow.getRootMethod(),
+                        flow.isDirect(),
+                        System.currentTimeMillis()
+                    );
+                }
             }
             // Return PooledFlowState to pool for reuse
             FlowStatePool.release(flow.getPooledState());

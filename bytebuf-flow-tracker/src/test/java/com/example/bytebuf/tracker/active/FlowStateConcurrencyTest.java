@@ -21,7 +21,7 @@ public class FlowStateConcurrencyTest {
     @Test
     public void testConcurrentIncrementDepth_DetectsLostUpdates() throws InterruptedException {
         // Create a FlowState
-        ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1);
+        ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
         FlowState state = new FlowState();
         state.reset(rootNode);
 
@@ -82,7 +82,7 @@ public class FlowStateConcurrencyTest {
     @Test
     public void testConcurrentIncrementAndMarkCompleted_DetectsLostFlags() throws InterruptedException {
         // Create a FlowState
-        ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1);
+        ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
         FlowState state = new FlowState();
         state.reset(rootNode);
 
@@ -152,7 +152,7 @@ public class FlowStateConcurrencyTest {
         int runs = 10;
 
         for (int run = 0; run < runs; run++) {
-            ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1);
+            ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
             FlowState state = new FlowState();
             state.reset(rootNode);
 
@@ -205,7 +205,7 @@ public class FlowStateConcurrencyTest {
     public void testConcurrentIncrementDepth_SmallNumbers_CatchesLostUpdates() throws InterruptedException {
         // Use small increments so we don't hit the 127 cap
         // This makes lost updates more visible
-        ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1);
+        ImprintNode rootNode = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
         FlowState state = new FlowState();
         state.reset(rootNode);
 

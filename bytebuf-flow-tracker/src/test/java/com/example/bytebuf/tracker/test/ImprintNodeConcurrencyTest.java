@@ -20,7 +20,7 @@ public class ImprintNodeConcurrencyTest {
 
     @Test
     public void testConcurrentTraversalCounting() throws InterruptedException {
-        ImprintNode node = new ImprintNode("TestClass", "testMethod", (byte) 1);
+        ImprintNode node = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
         final int threadCount = 10;
         final int iterationsPerThread = 1000;
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -44,7 +44,7 @@ public class ImprintNodeConcurrencyTest {
 
     @Test
     public void testConcurrentOutcomeRecording() throws InterruptedException {
-        ImprintNode node = new ImprintNode("TestClass", "testMethod", (byte) 1);
+        ImprintNode node = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
         final int threadCount = 10;
         final int iterationsPerThread = 100;
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -72,7 +72,7 @@ public class ImprintNodeConcurrencyTest {
 
     @Test
     public void testConcurrentChildCreation_NoLostUpdates() throws InterruptedException {
-        ImprintNode parent = new ImprintNode("ParentClass", "parentMethod", (byte) 1);
+        ImprintNode parent = new ImprintNode("ParentClass", "parentMethod", (byte) 1, null);
         final int threadCount = 20;
         final int childrenPerThread = 5;
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -111,7 +111,7 @@ public class ImprintNodeConcurrencyTest {
 
     @Test
     public void testConcurrentChildStopOnLimit_MaintainsLimit() throws InterruptedException {
-        ImprintNode parent = new ImprintNode("ParentClass", "parentMethod", (byte) 1);
+        ImprintNode parent = new ImprintNode("ParentClass", "parentMethod", (byte) 1, null);
         final int threadCount = 5;
         final int operationsPerThread = 300; // More operations to exceed the 1000 limit
         CountDownLatch latch = new CountDownLatch(threadCount);

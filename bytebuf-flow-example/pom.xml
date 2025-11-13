@@ -18,6 +18,13 @@
     <description>Example application demonstrating how to use ByteBuf Flow Tracker in your project</description>
 
     <dependencies>
+        <!-- ByteBuf Flow API - For implementing metric handlers -->
+        <dependency>
+            <groupId>com.example.bytebuf</groupId>
+            <artifactId>bytebuf-flow-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- ByteBuf Flow Tracker - This is how external projects would use it -->
         <dependency>
             <groupId>com.example.bytebuf</groupId>

@@ -158,6 +158,22 @@ Tracks `release()` calls only when refCnt drops to zero, providing clear leak de
 - Only the final `release()` (ref → 0) is tracked
 - Intermediate `release()` calls are skipped to keep trees clean
 
+**Example - Multiple Retain/Release:**
+```java
+ByteBuf buffer = Unpooled.buffer(256);   // ref=1
+buffer.retain();                         // ref=1 -> 2 ✓ TRACKED
+processor.process(buffer);               // ref=2
+buffer.release();                        // ref=2 -> 1 ✗ SKIPPED (intermediate)
+processor.finish(buffer);                // ref=1
+buffer.release();                        // ref=1 -> 0 ✓ TRACKED (final)
+```
+
+Flow tree shows: `ROOT → Processor.process → retain [ref=2] → Processor.finish → release [ref=0]` ✓ Clean
+
+### Static Method Tracking
+
+**Enabled by default** - Static methods with ByteBuf parameters/returns are automatically tracked.
+
 ### Wrapper Object Tracking
 
 When ByteBuf is wrapped in custom objects (Message, Request), enable constructor tracking to maintain flow visibility:
@@ -191,9 +207,19 @@ Add to your `pom.xml`:
     <artifactId>bytebuf-flow-tracker</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
-```
 
-Agent path: `${settings.localRepository}/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar`
+<!-- Configure agent -->
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <configuration>
+        <mainClass>com.yourcompany.Main</mainClass>
+        <arguments>
+            <argument>-javaagent:${settings.localRepository}/com/example/bytebuf/bytebuf-flow-tracker/1.0.0-SNAPSHOT/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.yourcompany</argument>
+        </arguments>
+    </configuration>
+</plugin>
+```
 
 ### Method 2: Git Submodule (Multi-module projects)
 
@@ -290,7 +316,14 @@ Production mode: `trackDirectOnly=true` tracks only direct memory (critical leak
 -javaagent:tracker.jar=include=com.yourapp.*;trackDirectOnly=true
 ```
 
-**Behavior:** heapBuffer() not instrumented (0ns), directBuffer/ioBuffer tracked, ambiguous methods filtered via `isDirect()` (~5ns).
+| Allocation Type | trackDirectOnly=true | Default (false) |
+|----------------|----------------------|-----------------|
+| `heapBuffer()` | **Not instrumented** (0ns) | Tracked |
+| `directBuffer()` | Tracked | Tracked |
+| `ioBuffer()` | Tracked | Tracked |
+| `wrappedBuffer()` | Filtered via `isDirect()` (~5ns) | Tracked |
+
+**Why use in production:** Direct memory leaks crash your JVM (never GC'd). Heap leaks eventually get cleaned up. This mode focuses on critical leaks with zero overhead for heap allocations.
 
 ### JMX Monitoring
 
@@ -360,16 +393,49 @@ public static void main(String[] args) {
 
 ## Production Metrics Integration
 
-Push leak metrics to monitoring systems (Datadog, Prometheus) by implementing `MetricHandler` interface.
+Push leak metrics to monitoring systems (Datadog, Prometheus, etc.) with zero code changes to the tracker.
 
-**Registration options:**
-1. Programmatic: `MetricHandlerRegistry.register(new YourHandler())`
-2. System property: `-Dmetric.handlers=com.yourcompany.YourHandler`
-3. ServiceLoader: Create `META-INF/services/com.example.bytebuf.api.metrics.MetricHandler`
+### MetricHandler Interface
+
+```java
+public interface MetricHandler {
+    Set<MetricType> getRequiredMetrics();  // DIRECT_LEAKS, HEAP_LEAKS
+    void onMetrics(MetricSnapshot snapshot);
+    String getName();
+}
+```
+
+**MetricSnapshot fields:**
+- `getTotalDirectLeaks()` - Critical: crashes JVM if leaked
+- `getTotalHeapLeaks()` - Moderate: wastes memory, eventually GC'd
+- `getDirectLeakFlows()` / `getHeapLeakFlows()` - Unique leak paths
+
+### Registration Methods
+
+**Programmatic** (in your app):
+```java
+public class DatadogMetricHandler implements MetricHandler {
+    public void onMetrics(MetricSnapshot snapshot) {
+        statsd.gauge("bytebuf.direct_leaks", snapshot.getTotalDirectLeaks());
+        statsd.gauge("bytebuf.heap_leaks", snapshot.getTotalHeapLeaks());
+    }
+    public Set<MetricType> getRequiredMetrics() {
+        return EnumSet.of(MetricType.DIRECT_LEAKS, MetricType.HEAP_LEAKS);
+    }
+    public String getName() { return "DatadogMetrics"; }
+}
+
+MetricHandlerRegistry.register(new DatadogMetricHandler());
+```
+
+**System Property** (zero code changes):
+```bash
+java -Dmetric.handlers=com.yourcompany.DatadogMetricHandler \
+     -javaagent:tracker.jar=include=com.yourcompany \
+     -jar your-app.jar
+```
 
 **Configure interval:** `-Dbytebuf.metrics.pushInterval=60` (default: 60 seconds)
-
-See `bytebuf-flow-api` module for `MetricHandler` interface and `MetricSnapshot` details.
 
 ## Accessing Tracking Data
 
@@ -384,6 +450,24 @@ System.out.println(renderer.renderIndentedTree());   // Tree view
 System.out.println(renderer.renderForLLM());         // LLM-optimized format
 ```
 
+### Output Formats
+
+**Tree View** (human-readable):
+```
+ROOT: UnpooledByteBufAllocator.heapBuffer [count=5]
+└── MessageProcessor.process [ref=1, count=5]
+    └── MessageProcessor.cleanup [ref=0, count=5]
+```
+
+**LLM Format** (structured):
+```
+METADATA:
+total_roots=2, total_paths=50, leak_paths=12, leak_percentage=24.00%
+
+LEAKS:
+leak|root=UnpooledByteBufAllocator.heapBuffer|final_ref=1|path=...
+```
+
 ### Automatic Shutdown Report
 
 The agent prints a comprehensive report on JVM shutdown (summary, flow tree, leaks). Useful for batch jobs and testing.
@@ -394,7 +478,17 @@ The agent prints a comprehensive report on JVM shutdown (summary, flow tree, lea
 
 **Agent not loading**: Verify `-javaagent` comes before `-jar`, check JAR path, ensure using `-agent.jar` (fat JAR)
 
-**No data appearing**: Check `include` packages match your code. Agent only instruments methods with ByteBuf in signature (parameters/returns). Wrapped ByteBuf (in custom objects) needs `trackConstructors`.
+**No data appearing**: Check `include` packages match your code. Agent only instruments methods with ByteBuf in signature:
+
+```java
+// ✓ INSTRUMENTED
+public void process(ByteBuf buf) { }
+public ByteBuf create() { }
+
+// ✗ NOT INSTRUMENTED
+public void setName(String name) { }
+public void processMessage(Message msg) { }  // ByteBuf wrapped - needs trackConstructors
+```
 
 **Too much data**: Narrow `include` to app code only, add `exclude` for test/utility packages
 

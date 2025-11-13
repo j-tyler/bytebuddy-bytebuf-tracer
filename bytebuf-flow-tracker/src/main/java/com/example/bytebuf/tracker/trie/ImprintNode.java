@@ -134,25 +134,31 @@ public class ImprintNode {
         }
 
         // Now we have a valid children map, proceed with normal logic
-        // Use the pre-interned methodSignature for compressed NodeKey (saves 8 bytes per key)
-        NodeKey key = new NodeKey(methodSignature, refCountBucket);
+        // Use pooled NodeKey for lookup to avoid allocation (Idea 3: NodeKey pooling)
+        NodeKeyPool.PooledNodeKey pooledKey = NodeKeyPool.acquire(methodSignature, refCountBucket);
+        try {
+            ImprintNode existing = localChildren.get(pooledKey.getNodeKey());
+            if (existing != null) {
+                return existing;
+            }
 
-        ImprintNode existing = localChildren.get(key);
-        if (existing != null) {
-            return existing;
+            // Check branching limit - if reached, stop tracking this branch
+            // No eviction to avoid concurrency overhead (cache coherency, atomic reads, map writes)
+            if (localChildren.size() >= MAX_CHILDREN_PER_NODE) {
+                // Return self to act as leaf node (stops further tracking down this path)
+                return this;
+            }
+
+            // Create new child with this node as parent
+            // Allocate fresh NodeKey for storage in map (NOT from pool - this one stays in the map)
+            NodeKey storedKey = NodeKeyPool.allocateForStorage(methodSignature, refCountBucket);
+            ImprintNode newChild = new ImprintNode(className, methodName, refCountBucket, this);
+            ImprintNode result = localChildren.putIfAbsent(storedKey, newChild);
+            return result != null ? result : newChild;
+        } finally {
+            // Always release pooled key back to pool for reuse
+            pooledKey.release();
         }
-
-        // Check branching limit - if reached, stop tracking this branch
-        // No eviction to avoid concurrency overhead (cache coherency, atomic reads, map writes)
-        if (localChildren.size() >= MAX_CHILDREN_PER_NODE) {
-            // Return self to act as leaf node (stops further tracking down this path)
-            return this;
-        }
-
-        // Create new child with this node as parent
-        ImprintNode newChild = new ImprintNode(className, methodName, refCountBucket, this);
-        ImprintNode result = localChildren.putIfAbsent(key, newChild);
-        return result != null ? result : newChild;
     }
 
     /**
@@ -235,6 +241,10 @@ public class ImprintNode {
      *
      * <p>Uses interned strings for memory efficiency and identity-based hashing.
      *
+     * <p><b>Object Pooling:</b> NodeKey instances can be pooled and reused via
+     * {@link NodeKeyPool}. The {@link #reset(String, byte)} method allows reuse
+     * for lookup operations. NodeKeys stored in ConcurrentHashMap should NOT be reset.
+     *
      * <p><b>Memory Layout:</b>
      * <ul>
      *   <li>Before: className (8) + methodName (8) + refCountBucket (1) + hashCode (4) + padding (3) = 24 bytes</li>
@@ -243,9 +253,11 @@ public class ImprintNode {
      * </ul>
      */
     public static class NodeKey {
-        public final String methodSignature;  // className.methodName (interned)
-        public final byte refCountBucket;
-        private final int hashCode;
+        // Non-final to support pooling and reset() for lookup keys
+        // Keys stored in ConcurrentHashMap should not be reset
+        public String methodSignature;  // className.methodName (interned)
+        public byte refCountBucket;
+        private int hashCode;
 
         public NodeKey(String methodSignature, byte refCountBucket) {
             this.methodSignature = methodSignature;
@@ -254,6 +266,25 @@ public class ImprintNode {
             // Since strings are interned and equals() uses ==, identity hashcode is
             // more semantically correct. Performance is equivalent to String.hashCode()
             // (which is cached), so this is chosen for correctness, not performance.
+            this.hashCode = computeHashCode();
+        }
+
+        /**
+         * Reset this NodeKey for reuse (pooling support).
+         *
+         * <p><b>WARNING:</b> Only call this on NodeKeys used for lookup!
+         * Do NOT reset NodeKeys stored in ConcurrentHashMap - doing so will
+         * corrupt the map's internal structure.
+         *
+         * <p><b>Thread Safety:</b> This method is NOT thread-safe. Only call from
+         * the thread that owns this NodeKey (e.g., via ThreadLocal or Stormpot pool).
+         *
+         * @param methodSignature the new method signature (should be interned)
+         * @param refCountBucket the new reference count bucket
+         */
+        void reset(String methodSignature, byte refCountBucket) {
+            this.methodSignature = methodSignature;
+            this.refCountBucket = refCountBucket;
             this.hashCode = computeHashCode();
         }
 

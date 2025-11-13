@@ -42,12 +42,12 @@ public class DirectBufferLeakHighlightingIT {
         // Verify direct buffer leak shows as CRITICAL_LEAK in LLM format
         assertThat(output)
             .withFailMessage("Should show CRITICAL_LEAK for direct buffer leak")
-            .contains("CRITICAL_LEAK|root=io.netty.buffer.UnpooledByteBufAllocator.directBuffer");
+            .contains("CRITICAL_LEAK|root=UnpooledByteBufAllocator.directBuffer");
 
         // Verify directBuffer is identified as root
         assertThat(output)
             .withFailMessage("Should show directBuffer as root")
-            .contains("ROOT: io.netty.buffer.UnpooledByteBufAllocator.directBuffer");
+            .contains("ROOT: UnpooledByteBufAllocator.directBuffer");
     }
 
     @Test
@@ -62,12 +62,12 @@ public class DirectBufferLeakHighlightingIT {
         // Verify heap buffer leak shows as regular "leak" in LLM format (not CRITICAL_LEAK)
         assertThat(output)
             .withFailMessage("Should show regular 'leak' (not CRITICAL_LEAK) for heap buffer")
-            .containsPattern("(?m)^leak\\|root=io\\.netty\\.buffer\\.UnpooledByteBufAllocator\\.heapBuffer");
+            .containsPattern("(?m)^leak\\|root=UnpooledByteBufAllocator\\.heapBuffer");
 
         // Verify heapBuffer is identified as root
         assertThat(output)
             .withFailMessage("Should show heapBuffer as root")
-            .contains("ROOT: io.netty.buffer.UnpooledByteBufAllocator.heapBuffer");
+            .contains("ROOT: UnpooledByteBufAllocator.heapBuffer");
     }
 
     @Test
@@ -82,11 +82,11 @@ public class DirectBufferLeakHighlightingIT {
         // Verify BOTH leak types appear (critical and moderate)
         assertThat(output)
             .withFailMessage("Should show CRITICAL_LEAK for direct buffer")
-            .contains("CRITICAL_LEAK|root=io.netty.buffer.UnpooledByteBufAllocator.directBuffer");
+            .contains("CRITICAL_LEAK|root=UnpooledByteBufAllocator.directBuffer");
 
         assertThat(output)
             .withFailMessage("Should show regular leak for heap buffer")
-            .containsPattern("(?m)^leak\\|root=io\\.netty\\.buffer\\.UnpooledByteBufAllocator\\.heapBuffer");
+            .containsPattern("(?m)^leak\\|root=UnpooledByteBufAllocator\\.heapBuffer");
 
         // Verify summary shows both leak types
         assertThat(output)
@@ -127,12 +127,12 @@ public class DirectBufferLeakHighlightingIT {
         // Verify directBuffer root is identified
         assertThat(output)
             .withFailMessage("Should show directBuffer as root")
-            .contains("ROOT: io.netty.buffer.UnpooledByteBufAllocator.directBuffer");
+            .contains("ROOT: UnpooledByteBufAllocator.directBuffer");
 
         // Verify heapBuffer root is identified
         assertThat(output)
             .withFailMessage("Should show heapBuffer as root")
-            .contains("ROOT: io.netty.buffer.UnpooledByteBufAllocator.heapBuffer");
+            .contains("ROOT: UnpooledByteBufAllocator.heapBuffer");
     }
 
     @Test

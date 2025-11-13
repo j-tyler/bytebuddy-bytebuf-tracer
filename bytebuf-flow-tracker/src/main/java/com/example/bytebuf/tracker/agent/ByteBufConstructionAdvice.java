@@ -53,11 +53,14 @@ public class ByteBufConstructionAdvice {
     /**
      * Method exit advice - tracks newly constructed ByteBuf objects.
      * This runs after the factory method completes and returns a ByteBuf.
+     *
+     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
+     * short method signatures.
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onConstructionExit(
+            @Advice.Origin Class<?> clazz,
             @Advice.Origin("#m") String methodName,
-            @Advice.Origin("#t.#m") String methodSignature,
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
 
@@ -131,10 +134,13 @@ public class ByteBufConstructionAdvice {
             if (handler.shouldTrack(returnValue)) {
                 int metric = handler.getMetric(returnValue);
 
+                // Build short method signature at runtime
+                String methodSignature = clazz.getSimpleName() + "." + methodName;
+
                 // Record this as the first touch (construction becomes root)
                 tracker.recordMethodCall(
                     returnValue,
-                    methodSignature,  // Pre-computed at instrumentation time
+                    methodSignature,  // Short signature (simple class name)
                     metric
                 );
             }

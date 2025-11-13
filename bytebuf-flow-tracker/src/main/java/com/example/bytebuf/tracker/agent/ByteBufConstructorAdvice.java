@@ -32,10 +32,13 @@ public class ByteBufConstructorAdvice {
 
     /**
      * Constructor entry advice - tracks objects in parameters
+     *
+     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
+     * short method signatures for constructor calls.
      */
     @Advice.OnMethodEnter
     public static void onConstructorEnter(
-            @Advice.Origin("#t.<init>") String methodSignature,
+            @Advice.Origin Class<?> clazz,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -52,12 +55,15 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
+            // Build short method signature at runtime
+            String methodSignature = clazz.getSimpleName() + ".<init>";
+
             for (Object arg : arguments) {
                 if (handler.shouldTrack(arg)) {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        methodSignature,  // Pre-computed at instrumentation time
+                        methodSignature,  // Short signature (simple class name)
                         metric
                     );
                 }
@@ -70,10 +76,13 @@ public class ByteBufConstructorAdvice {
     /**
      * Constructor exit advice - tracks parameter state after constructor completes
      * Uses _return suffix consistently (exit = return)
+     *
+     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
+     * short method signatures with "_return" suffix.
      */
     @Advice.OnMethodExit
     public static void onConstructorExit(
-            @Advice.Origin("#t.<init>_return") String methodSignatureReturn,
+            @Advice.Origin Class<?> clazz,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -86,6 +95,9 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
+            // Build short method signature at runtime with _return suffix
+            String methodSignatureReturn = clazz.getSimpleName() + ".<init>_return";
+
             // Track parameter state on exit with _return suffix (exit = return)
             if (arguments != null) {
                 for (Object arg : arguments) {
@@ -93,7 +105,7 @@ public class ByteBufConstructorAdvice {
                         int metric = handler.getMetric(arg);
                         tracker.recordMethodCall(
                             arg,
-                            methodSignatureReturn,  // Pre-computed at instrumentation time
+                            methodSignatureReturn,  // Short signature (simple class name)
                             metric
                         );
                     }

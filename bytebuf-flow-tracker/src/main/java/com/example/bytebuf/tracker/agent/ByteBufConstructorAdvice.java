@@ -10,6 +10,8 @@ import com.example.bytebuf.api.tracker.ObjectTrackerHandler;
 import com.example.bytebuf.tracker.ObjectTrackerRegistry;
 import net.bytebuddy.asm.Advice;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * ByteBuddy advice for tracking object flow through constructors.
  * This is separate from ByteBufTrackingAdvice because constructors have special constraints:
@@ -24,21 +26,25 @@ import net.bytebuddy.asm.Advice;
  */
 public class ByteBufConstructorAdvice {
 
-    // Re-entrance guard to prevent infinite recursion when tracking code
-    // triggers other instrumented methods
+    // Re-entrance guard: prevents infinite recursion when tracking code triggers instrumented methods
     // Must be public for instrumented classes to access
     public static final ThreadLocal<Boolean> IS_TRACKING =
         ThreadLocal.withInitial(() -> false);
 
+    // OPTIMIZATION: Cache for "_return" suffixes to avoid string concatenation on hot path
+    // @Advice.Origin provides constants, so we can safely cache the concatenated results
+    // Initial capacity 128 assumes ~85-100 unique tracked constructors (load factor 0.75)
+    private static final ConcurrentHashMap<String, String> CONSTRUCTOR_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(128);
+
     /**
-     * Constructor entry advice - tracks objects in parameters
+     * Tracks objects flowing into constructors (as constructor arguments).
      */
     @Advice.OnMethodEnter
     public static void onConstructorEnter(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String className,
+            @Advice.Origin("#t.<init>") String constructorSignature,
             @Advice.AllArguments Object[] arguments) {
 
-        // Prevent re-entrant calls
         if (IS_TRACKING.get()) {
             return;
         }
@@ -57,8 +63,9 @@ public class ByteBufConstructorAdvice {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        clazz.getSimpleName(),
+                        className,
                         "<init>",
+                        constructorSignature,
                         metric
                     );
                 }
@@ -69,15 +76,15 @@ public class ByteBufConstructorAdvice {
     }
 
     /**
-     * Constructor exit advice - tracks parameter state after constructor completes
-     * Uses _return suffix consistently (exit = return)
+     * Tracks constructor arguments after construction completes.
+     * The _return suffix maintains consistency with regular method exit tracking.
      */
     @Advice.OnMethodExit
     public static void onConstructorExit(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String className,
+            @Advice.Origin("#t.<init>") String constructorSignature,
             @Advice.AllArguments Object[] arguments) {
 
-        // Prevent re-entrant calls
         if (IS_TRACKING.get()) {
             return;
         }
@@ -87,15 +94,25 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Track parameter state on exit with _return suffix (exit = return)
             if (arguments != null) {
+                // OPTIMIZATION: Use cached "_return" suffix to avoid allocation
+                // Double-checked pattern: get() first (lock-free), then putIfAbsent() if needed
+                // This avoids holding locks during string concatenation
+                String constructorSignatureReturn = CONSTRUCTOR_SIGNATURE_RETURN_CACHE.get(constructorSignature);
+                if (constructorSignatureReturn == null) {
+                    String computed = constructorSignature + "_return";
+                    constructorSignatureReturn = CONSTRUCTOR_SIGNATURE_RETURN_CACHE.putIfAbsent(constructorSignature, computed);
+                    if (constructorSignatureReturn == null) constructorSignatureReturn = computed;
+                }
+
                 for (Object arg : arguments) {
                     if (handler.shouldTrack(arg)) {
                         int metric = handler.getMetric(arg);
                         tracker.recordMethodCall(
                             arg,
-                            clazz.getSimpleName(),
+                            className,
                             "<init>_return",
+                            constructorSignatureReturn,
                             metric
                         );
                     }

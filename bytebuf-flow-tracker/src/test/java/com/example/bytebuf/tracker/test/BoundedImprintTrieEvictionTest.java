@@ -37,14 +37,14 @@ public class BoundedImprintTrieEvictionTest {
     public void testRootLimitEnforcement_WhenMaxNodesReached() {
         // Fill up to capacity
         for (int i = 0; i < 100; i++) {
-            trie.getOrCreateRoot("Class" + i, "method");
+            trie.getOrCreateRoot("Class" + i, "method", "Class" + i + ".method");
         }
 
         int rootsBeforeLimitHit = trie.getRootCount();
         assertTrue("Should have many roots", rootsBeforeLimitHit > 0);
 
         // Try to create one more root - should return existing root (no new root created)
-        ImprintNode limitedRoot = trie.getOrCreateRoot("ClassNew", "method");
+        ImprintNode limitedRoot = trie.getOrCreateRoot("ClassNew", "method", "ClassNew.method");
         assertNotNull("Should return a root even when limit hit", limitedRoot);
 
         // Node count should not wildly exceed max (may be slightly over due to concurrency)
@@ -53,11 +53,12 @@ public class BoundedImprintTrieEvictionTest {
 
     @Test
     public void testChildEviction_WhenMaxDepthReached() {
-        ImprintNode root = trie.getOrCreateRoot("TestClass", "rootMethod");
+        ImprintNode root = trie.getOrCreateRoot("TestClass", "rootMethod", "TestClass.rootMethod");
 
         ImprintNode current = root;
         for (int depth = 0; depth < trie.getMaxDepth() + 5; depth++) {
-            current = trie.traverseOrCreate(current, "Class", "method" + depth, 1, depth);
+            String methodName = "method" + depth;
+            current = trie.traverseOrCreate(current, "Class", methodName, "Class." + methodName, 1, depth);
         }
 
         // Verify depth limiting worked
@@ -67,8 +68,8 @@ public class BoundedImprintTrieEvictionTest {
     @Test
     public void testStopOnLimit_NoEvictionOccurs() {
         // Create roots with different traversal counts
-        ImprintNode root1 = trie.getOrCreateRoot("LowUsage", "method");
-        ImprintNode root2 = trie.getOrCreateRoot("HighUsage", "method");
+        ImprintNode root1 = trie.getOrCreateRoot("LowUsage", "method", "LowUsage.method");
+        ImprintNode root2 = trie.getOrCreateRoot("HighUsage", "method", "HighUsage.method");
 
         // Traverse root2 many times
         for (int i = 0; i < 100; i++) {
@@ -83,7 +84,7 @@ public class BoundedImprintTrieEvictionTest {
 
         // Fill up to capacity with new roots - should stop creating new roots
         for (int i = 0; i < 150; i++) {
-            trie.getOrCreateRoot("Class" + i, "method");
+            trie.getOrCreateRoot("Class" + i, "method", "Class" + i + ".method");
         }
 
         // Verify limit enforcement (node count should not wildly exceed max)
@@ -119,7 +120,9 @@ public class BoundedImprintTrieEvictionTest {
             final int threadId = i;
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < operationsPerThread; j++) {
-                    largeTrie.getOrCreateRoot("Class" + threadId, "method" + j);
+                    String className = "Class" + threadId;
+                    String methodName = "method" + j;
+                    largeTrie.getOrCreateRoot(className, methodName, className + "." + methodName);
                 }
             });
             threads[i].start();

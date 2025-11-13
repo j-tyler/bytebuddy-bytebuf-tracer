@@ -94,6 +94,8 @@
             </plugin>
 
             <!-- Exec Plugin - Run benchmarks with default settings -->
+            <!-- Usage: mvn exec:exec@run-benchmarks -->
+            <!-- GC profiling is ALWAYS enabled - memory allocation is critical for overhead measurement -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -110,23 +112,24 @@
                             <arguments>
                                 <argument>-jar</argument>
                                 <argument>target/benchmarks.jar</argument>
-                                <!-- Mode: Throughput -->
+                                <!-- Mode: Throughput (ops/sec) -->
                                 <argument>-bm</argument>
                                 <argument>thrpt</argument>
-                                <!-- Forks: 1 -->
+                                <!-- Forks: 1 JVM -->
                                 <argument>-f</argument>
                                 <argument>1</argument>
-                                <!-- Warmup: 5 seconds -->
+                                <!-- Warmup: 1 iteration @ 5 seconds -->
                                 <argument>-wi</argument>
                                 <argument>1</argument>
                                 <argument>-w</argument>
                                 <argument>5s</argument>
-                                <!-- Iterations: 3 at 5s each -->
+                                <!-- Measurement: 3 iterations @ 5 seconds each -->
                                 <argument>-i</argument>
                                 <argument>3</argument>
                                 <argument>-r</argument>
                                 <argument>5s</argument>
-                                <!-- GC Profiling -->
+                                <!-- GC Profiling - MANDATORY for overhead measurement -->
+                                <!-- Shows memory allocation rates and GC pressure -->
                                 <argument>-prof</argument>
                                 <argument>gc</argument>
                             </arguments>

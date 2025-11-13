@@ -2,6 +2,25 @@
 
 JMH benchmarks for measuring ByteBuf Flow Tracker performance overhead.
 
+## Quick Start
+
+**Run ALL benchmarks with GC profiling (recommended):**
+
+```bash
+# 1. Build the benchmark JAR
+mvn clean package -pl bytebuf-flow-benchmarks
+
+# 2. Run WITHOUT agent (baseline)
+cd bytebuf-flow-benchmarks
+java -jar target/benchmarks.jar -prof gc
+
+# 3. Run WITH agent (measure overhead)
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+  -jar target/benchmarks.jar -prof gc
+```
+
+**IMPORTANT:** GC profiling (`-prof gc`) is **MANDATORY** for all benchmark runs. Memory allocation overhead is a critical metric that cannot be measured without it.
+
 ## Benchmark Scenarios
 
 ### 1. `simpleAllocateAndRelease`
@@ -102,7 +121,7 @@ java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPS
 - **Forks**: 1
 - **Warmup**: 1 iteration @ 5 seconds
 - **Measurement**: 3 iterations @ 5 seconds each
-- **Profiling**: GC profiling enabled
+- **Profiling**: **GC profiling ALWAYS enabled** (memory allocation is critical for overhead measurement)
 
 ## Building
 
@@ -134,12 +153,14 @@ Run benchmarks without the agent to get baseline throughput:
 ```bash
 cd bytebuf-flow-benchmarks
 
-# Direct JAR execution (recommended)
+# Direct JAR execution (recommended - GC profiling always included)
 java -jar target/benchmarks.jar -prof gc
 
-# Or via Maven
+# Or via Maven (GC profiling pre-configured)
 mvn exec:exec@run-benchmarks
 ```
+
+**Note:** GC profiling (`-prof gc`) is MANDATORY for meaningful results. Memory allocation is a key overhead metric.
 
 **Expected output:**
 ```
@@ -169,7 +190,7 @@ java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPS
 **Note:**
 - The agent argument must be quoted to prevent shell interpretation of semicolons
 - The `include=com.example.bytebuf.benchmarks` tells the agent to instrument benchmark classes
-- GC profiling (`-prof gc`) shows memory allocation overhead
+- **GC profiling (`-prof gc`) is MANDATORY** - it shows memory allocation overhead which is critical for understanding the tracker's impact
 
 **Expected output:**
 ```

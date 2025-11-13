@@ -45,9 +45,10 @@ public class SingleByteBufParamAdvice {
 
     // OPTIMIZATION: Cache for "_return" suffixes to avoid string concatenation on hot path
     // Shared cache with ByteBufTrackingAdvice
-    private static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE =
+    // Must be public for instrumented classes to access
+    public static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE =
         ByteBufTrackingAdvice.METHOD_NAME_RETURN_CACHE;
-    private static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE =
+    public static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE =
         ByteBufTrackingAdvice.METHOD_SIGNATURE_RETURN_CACHE;
 
     /**

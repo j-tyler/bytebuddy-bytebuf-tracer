@@ -44,9 +44,11 @@ public class ZeroParamByteBufReturnAdvice {
 
     // Shared infrastructure with other advice classes
     public static final ThreadLocal<Boolean> IS_TRACKING = ByteBufTrackingAdvice.IS_TRACKING;
-    private static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE =
+
+    // Must be public for instrumented classes to access
+    public static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE =
         ByteBufTrackingAdvice.METHOD_NAME_RETURN_CACHE;
-    private static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE =
+    public static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE =
         ByteBufTrackingAdvice.METHOD_SIGNATURE_RETURN_CACHE;
 
     /**

@@ -1,5 +1,50 @@
 # ByteBuf Flow Tracker - Architecture
 
+## Quick Reference for AI Agents
+
+**New to this codebase?** Start here:
+
+### Key Concepts (5-minute overview)
+- **Goal**: Track ByteBuf (Netty buffer) flow through applications to detect memory leaks
+- **Method**: Java agent uses ByteBuddy to instrument methods at runtime
+- **Data Structure**: Trie (prefix tree) stores method call paths
+- **Leak Detection**: Objects with non-zero refCount at leaf nodes are leaks
+
+### Where to Start
+1. **Entry Point**: `bytebuf-flow-tracker/src/main/java/com/example/bytebuf/tracker/agent/ByteBufFlowAgent.java`
+2. **Core Logic**: `ByteBufFlowTracker.java` - Main tracking singleton
+3. **Instrumentation**: `ByteBufTrackingAdvice.java` - Method interception via ByteBuddy
+4. **Data Structure**: `trie/BoundedImprintTrie.java` - Memory-efficient path storage
+5. **Examples**: `bytebuf-flow-example/src/main/java/com/example/demo/` - Usage patterns
+
+### Key Files by Component
+| Component | Files | Purpose |
+|-----------|-------|---------|
+| **Agent** | `agent/ByteBufFlowAgent.java` | Java agent entry, argument parsing |
+| **Instrumentation** | `agent/ByteBufTrackingAdvice.java` | Method interception logic |
+| **Tracking** | `ByteBufFlowTracker.java` | Main tracking coordinator |
+| **Storage** | `trie/BoundedImprintTrie.java`, `ImprintNode.java` | Path storage |
+| **Active Tracking** | `active/WeakActiveTracker.java`, `WeakActiveFlow.java` | Live object tracking |
+| **Output** | `view/TrieRenderer.java` | Report generation |
+| **Extensibility** | `ObjectTrackerHandler.java`, `ObjectTrackerRegistry.java` | Custom object support |
+| **Metrics** | `../bytebuf-flow-api/` module | Production metrics integration |
+
+### Common Modification Patterns
+- **Add new allocator tracking**: Modify `agent/ByteBufConstructionTransformer.java`
+- **Change tracking behavior**: Edit `ByteBufTrackingAdvice.java` @OnMethodEnter/@OnMethodExit
+- **Adjust memory limits**: Configure `BoundedImprintTrie` constructor parameters
+- **Add output format**: Extend `TrieRenderer.java`
+- **Create custom tracker**: Implement `ObjectTrackerHandler` interface
+
+### Important Design Patterns
+- **Singleton**: `ByteBufFlowTracker.getInstance()`
+- **ThreadLocal**: Re-entrance guard prevents infinite recursion
+- **WeakReference**: Automatic GC detection for leak tracking
+- **Lock-free**: ConcurrentHashMap for all concurrent operations
+- **Object Pooling**: Stormpot pools FlowState objects (high-churn optimization)
+
+---
+
 ## Project Structure
 
 Multi-module Maven project with clean separation of concerns:

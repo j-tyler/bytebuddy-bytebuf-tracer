@@ -47,9 +47,12 @@ public class ByteBufFlowAgent {
             System.out.println("[ByteBufFlowAgent] Custom handler detected - using general advice (safe mode)");
         } else {
             System.out.println("[ByteBufFlowAgent] Optimization enabled:");
-            System.out.println("  - Single-parameter methods: Optimized advice (eliminates Object[] allocation)");
-            System.out.println("  - Multi-parameter methods: General advice (fallback)");
-            System.out.println("  - Expected savings: ~180-220 bytes per single-parameter operation");
+            System.out.println("  - 1-param methods (ByteBuf): Optimized (SingleByteBufParamAdvice)");
+            System.out.println("  - 2-param methods (ByteBuf, X): Optimized (TwoParamByteBufAt0Advice)");
+            System.out.println("  - 2-param methods (X, ByteBuf): Optimized (TwoParamByteBufAt1Advice)");
+            System.out.println("  - 2-param methods (ByteBuf, ByteBuf): Optimized (TwoParamBothByteBufAdvice)");
+            System.out.println("  - 3+ param methods: General advice (fallback)");
+            System.out.println("  - Expected savings: ~100-220 bytes per optimized operation");
         }
 
         // Configure direct-only tracking mode
@@ -140,12 +143,15 @@ public class ByteBufFlowAgent {
      *
      * <p><b>Optimization Strategy:</b>
      * <ul>
-     *   <li>If no custom handler: Use {@link SingleByteBufParamAdvice} for single-parameter methods</li>
-     *   <li>Otherwise: Use general {@link ByteBufTrackingAdvice} for all methods</li>
+     *   <li>1-param (ByteBuf): {@link SingleByteBufParamAdvice}</li>
+     *   <li>2-param (ByteBuf, X): {@link TwoParamByteBufAt0Advice}</li>
+     *   <li>2-param (X, ByteBuf): {@link TwoParamByteBufAt1Advice}</li>
+     *   <li>2-param (ByteBuf, ByteBuf): {@link TwoParamBothByteBufAdvice}</li>
+     *   <li>3+ params or custom handler: {@link ByteBufTrackingAdvice}</li>
      * </ul>
      *
-     * <p>This reduces memory allocation by ~180-220 bytes per operation for the common case
-     * (single ByteBuf parameter methods) while maintaining full functionality for edge cases.
+     * <p>This reduces memory allocation by eliminating Object[] array creation
+     * for 1-param and 2-param methods, saving ~100-220 bytes per operation.
      */
     static class ByteBufTransformer implements AgentBuilder.Transformer {
         private final boolean useOptimizedAdvice;
@@ -171,30 +177,64 @@ public class ByteBufFlowAgent {
                 .and(not(isAbstract()))
                 .and(hasByteBufInSignature());
 
-            // If optimized advice is enabled, apply it to single-parameter methods first
-            if (useOptimizedAdvice) {
-                // Match methods with exactly 1 parameter of type ByteBuf (or subclass)
-                ElementMatcher.Junction<MethodDescription> singleByteBufParam =
-                    baseMatcher
-                    .and(takesArguments(1))  // Exactly 1 parameter
-                    .and(takesArgument(0, isSubTypeOf(io.netty.buffer.ByteBuf.class)));  // Must be ByteBuf
-
-                // Apply optimized advice to single-parameter methods
-                builder = builder
-                    .method(singleByteBufParam)
-                    .intercept(Advice.to(SingleByteBufParamAdvice.class));
-
-                // Apply general advice to remaining methods (multi-param, return-only, etc.)
-                // Use "not" matcher to exclude already-instrumented methods
-                return builder
-                    .method(baseMatcher.and(not(singleByteBufParam)))
-                    .intercept(Advice.to(ByteBufTrackingAdvice.class));
-            } else {
+            if (!useOptimizedAdvice) {
                 // Custom handler detected - use general advice for all methods
                 return builder
                     .method(baseMatcher)
                     .intercept(Advice.to(ByteBufTrackingAdvice.class));
             }
+
+            // Optimization enabled - route to specialized advice classes
+
+            // 1. Single-parameter methods: method(ByteBuf)
+            ElementMatcher.Junction<MethodDescription> singleByteBufParam =
+                baseMatcher
+                .and(takesArguments(1))
+                .and(takesArgument(0, isSubTypeOf(io.netty.buffer.ByteBuf.class)));
+
+            // 2. Two-parameter methods: method(ByteBuf, X) where X is NOT ByteBuf
+            ElementMatcher.Junction<MethodDescription> twoParamByteBufAt0 =
+                baseMatcher
+                .and(takesArguments(2))
+                .and(takesArgument(0, isSubTypeOf(io.netty.buffer.ByteBuf.class)))
+                .and(not(takesArgument(1, isSubTypeOf(io.netty.buffer.ByteBuf.class))));
+
+            // 3. Two-parameter methods: method(X, ByteBuf) where X is NOT ByteBuf
+            ElementMatcher.Junction<MethodDescription> twoParamByteBufAt1 =
+                baseMatcher
+                .and(takesArguments(2))
+                .and(not(takesArgument(0, isSubTypeOf(io.netty.buffer.ByteBuf.class))))
+                .and(takesArgument(1, isSubTypeOf(io.netty.buffer.ByteBuf.class)));
+
+            // 4. Two-parameter methods: method(ByteBuf, ByteBuf)
+            ElementMatcher.Junction<MethodDescription> twoParamBothByteBuf =
+                baseMatcher
+                .and(takesArguments(2))
+                .and(takesArgument(0, isSubTypeOf(io.netty.buffer.ByteBuf.class)))
+                .and(takesArgument(1, isSubTypeOf(io.netty.buffer.ByteBuf.class)));
+
+            // Combine all optimized matchers
+            ElementMatcher.Junction<MethodDescription> optimizedMethods =
+                singleByteBufParam
+                .or(twoParamByteBufAt0)
+                .or(twoParamByteBufAt1)
+                .or(twoParamBothByteBuf);
+
+            // Apply specialized advice in order
+            builder = builder
+                .method(singleByteBufParam)
+                .intercept(Advice.to(SingleByteBufParamAdvice.class))
+                .method(twoParamByteBufAt0)
+                .intercept(Advice.to(TwoParamByteBufAt0Advice.class))
+                .method(twoParamByteBufAt1)
+                .intercept(Advice.to(TwoParamByteBufAt1Advice.class))
+                .method(twoParamBothByteBuf)
+                .intercept(Advice.to(TwoParamBothByteBufAdvice.class));
+
+            // Apply general advice to remaining methods (3+ params, 0 params, etc.)
+            return builder
+                .method(baseMatcher.and(not(optimizedMethods)))
+                .intercept(Advice.to(ByteBufTrackingAdvice.class));
         }
     }
 

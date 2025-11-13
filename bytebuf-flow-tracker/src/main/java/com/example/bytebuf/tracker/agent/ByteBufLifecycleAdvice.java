@@ -117,10 +117,12 @@ public class ByteBufLifecycleAdvice {
                     className = thiz.getClass().getSimpleName();
                 }
 
+                // Concatenate once here to pass pre-computed signature to tracker
+                String methodSignature = className + "." + trackingMethodName;
+
                 tracker.recordMethodCall(
                     thiz,
-                    className,
-                    trackingMethodName,
+                    methodSignature,
                     afterRefCount
                 );
             }

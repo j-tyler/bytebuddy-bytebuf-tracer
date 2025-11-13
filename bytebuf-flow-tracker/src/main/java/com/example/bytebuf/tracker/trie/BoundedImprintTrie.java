@@ -49,9 +49,18 @@ public class BoundedImprintTrie {
 
     /**
      * Get or create a root node for an allocator method.
+     *
+     * <p><b>Optimization (Idea 2):</b> Accepts pre-computed methodSignature to eliminate
+     * runtime string concatenation. The signature is interned once and used as the map key.
+     * Parsing to extract className/methodName only happens when creating a new root (cold path).
+     *
+     * @param methodSignature pre-computed method signature (e.g., "MyClass.myMethod")
+     * @return the root node for this allocator method
      */
-    public ImprintNode getOrCreateRoot(String className, String methodName) {
-        String key = intern(className) + "." + intern(methodName);
+    public ImprintNode getOrCreateRoot(String methodSignature) {
+        // Intern the pre-computed signature for use as map key
+        // This is the ONLY string operation on the hot path (map lookup)
+        String key = intern(methodSignature);
 
         ImprintNode existing = roots.get(key);
         if (existing != null) {
@@ -68,6 +77,12 @@ public class BoundedImprintTrie {
             anyRoot.recordTraversal();
             return anyRoot;
         }
+
+        // Cold path: parse method signature to extract className and methodName for node creation
+        // This only happens once per unique root (rare)
+        int lastDotIndex = methodSignature.lastIndexOf('.');
+        String className = lastDotIndex > 0 ? methodSignature.substring(0, lastDotIndex) : methodSignature;
+        String methodName = lastDotIndex > 0 ? methodSignature.substring(lastDotIndex + 1) : "";
 
         ImprintNode newRoot = new ImprintNode(
             intern(className),

@@ -57,8 +57,8 @@ public class DirectOnlyFilteringTest {
         ByteBuf heapBuf = allocator.heapBuffer(256);
         ByteBuf directBuf = allocator.directBuffer(256);
 
-        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", heapBuf.refCnt());
-        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator.heapBuffer", heapBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator.directBuffer", directBuf.refCnt());
 
         // Then: Both buffers should be tracked
         BoundedImprintTrie trie = tracker.getTrie();
@@ -92,7 +92,7 @@ public class DirectOnlyFilteringTest {
 
         // Only track the direct buffer
         if (shouldTrackDirect) {
-            tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
+            tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator.directBuffer", directBuf.refCnt());
         }
 
         // Then: Only direct buffer should be tracked
@@ -154,7 +154,7 @@ public class DirectOnlyFilteringTest {
 
         // Since it's actually direct, it would be tracked
         if (actuallyDirect) {
-            tracker.recordMethodCall(buf, "UnpooledByteBufAllocator", "buffer", buf.refCnt());
+            tracker.recordMethodCall(buf, "UnpooledByteBufAllocator.buffer", buf.refCnt());
         }
 
         // Then: Buffer SHOULD be tracked (it's direct!)
@@ -221,8 +221,7 @@ public class DirectOnlyFilteringTest {
             if (!wrappedHeapBuf.isDirect()) {
                 // Would skip tracking - correct behavior
             } else {
-                tracker.recordMethodCall(wrappedHeapBuf, "Unpooled", "wrappedBuffer",
-                                        wrappedHeapBuf.refCnt());
+                tracker.recordMethodCall(wrappedHeapBuf, "Unpooled.wrappedBuffer", wrappedHeapBuf.refCnt());
             }
         }
 
@@ -247,8 +246,7 @@ public class DirectOnlyFilteringTest {
 
         // Simulate advice behavior - should be tracked
         if (wrappedDirectBuf.isDirect()) {
-            tracker.recordMethodCall(wrappedDirectBuf, "Unpooled", "wrappedBuffer",
-                                    wrappedDirectBuf.refCnt());
+            tracker.recordMethodCall(wrappedDirectBuf, "Unpooled.wrappedBuffer", wrappedDirectBuf.refCnt());
         }
 
         // Verify it WAS tracked
@@ -275,7 +273,7 @@ public class DirectOnlyFilteringTest {
         assertTrue("Level 2 (second wrap) should be direct", wrapped2.isDirect());
 
         // All would be tracked (inherit direct property through all levels)
-        tracker.recordMethodCall(wrapped2, "Unpooled", "wrappedBuffer", wrapped2.refCnt());
+        tracker.recordMethodCall(wrapped2, "Unpooled.wrappedBuffer", wrapped2.refCnt());
         assertEquals("Multi-level wrapped direct buffer should be tracked", 1, tracker.getTrie().getRootCount());
 
         // Cleanup - all wrappers share same refCnt
@@ -304,12 +302,12 @@ public class DirectOnlyFilteringTest {
         // Document the actual behavior
         if (isDirect) {
             // If marked as direct, should be tracked
-            tracker.recordMethodCall(composite, "Unpooled", "wrappedBuffer", composite.refCnt());
+            tracker.recordMethodCall(composite, "Unpooled.wrappedBuffer", composite.refCnt());
             assertEquals("Direct composite should be tracked", 1, tracker.getTrie().getRootCount());
         } else {
             // If marked as heap, should NOT be tracked
             if (composite.isDirect()) {
-                tracker.recordMethodCall(composite, "Unpooled", "wrappedBuffer", composite.refCnt());
+                tracker.recordMethodCall(composite, "Unpooled.wrappedBuffer", composite.refCnt());
             }
             assertEquals("Heap composite should not be tracked", 0, tracker.getTrie().getRootCount());
         }
@@ -337,7 +335,7 @@ public class DirectOnlyFilteringTest {
 
         // Would NOT be tracked (all heap, correctly filtered out)
         if (composite.isDirect()) {
-            tracker.recordMethodCall(composite, "Unpooled", "compositeBuffer", composite.refCnt());
+            tracker.recordMethodCall(composite, "Unpooled.compositeBuffer", composite.refCnt());
         }
 
         assertEquals("Composite buffer with only heap components should not be tracked",

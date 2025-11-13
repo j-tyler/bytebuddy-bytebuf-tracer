@@ -36,7 +36,7 @@ public class WeakActiveTrackerTest {
     @Test
     public void testGetOrCreate_CreatesNewFlow() {
         Object obj = new Object();
-        WeakActiveFlow flow = tracker.getOrCreate(obj, "TestClass", "testMethod");
+        WeakActiveFlow flow = tracker.getOrCreate(obj, "TestClass.testMethod");
 
         assertNotNull("Flow should be created", flow);
         assertEquals("Active count should be 1", 1, tracker.getActiveCount());
@@ -46,8 +46,8 @@ public class WeakActiveTrackerTest {
     @Test
     public void testGetOrCreate_ReturnsSameFlowForSameObject() {
         Object obj = new Object();
-        WeakActiveFlow flow1 = tracker.getOrCreate(obj, "TestClass", "testMethod");
-        WeakActiveFlow flow2 = tracker.getOrCreate(obj, "TestClass", "testMethod");
+        WeakActiveFlow flow1 = tracker.getOrCreate(obj, "TestClass.testMethod");
+        WeakActiveFlow flow2 = tracker.getOrCreate(obj, "TestClass.testMethod");
 
         assertSame("Should return same flow for same object", flow1, flow2);
         assertEquals("Active count should still be 1", 1, tracker.getActiveCount());
@@ -57,7 +57,7 @@ public class WeakActiveTrackerTest {
     public void testRecordCleanRelease_MarksFlowCompleted() {
         Object obj = new Object();
         int objectId = System.identityHashCode(obj);
-        WeakActiveFlow flow = tracker.getOrCreate(obj, "TestClass", "testMethod");
+        WeakActiveFlow flow = tracker.getOrCreate(obj, "TestClass.testMethod");
 
         assertFalse("Flow should not be completed initially", flow.isCompleted());
 
@@ -72,7 +72,7 @@ public class WeakActiveTrackerTest {
     public void testRecordCleanRelease_IdempotentWhenAlreadyCompleted() {
         Object obj = new Object();
         int objectId = System.identityHashCode(obj);
-        WeakActiveFlow flow = tracker.getOrCreate(obj, "TestClass", "testMethod");
+        WeakActiveFlow flow = tracker.getOrCreate(obj, "TestClass.testMethod");
 
         tracker.recordCleanRelease(objectId);
         tracker.recordCleanRelease(objectId);
@@ -84,8 +84,8 @@ public class WeakActiveTrackerTest {
     public void testMarkRemainingAsLeaks_MarksAllActiveFlows() {
         Object obj1 = new Object();
         Object obj2 = new Object();
-        tracker.getOrCreate(obj1, "TestClass", "method1");
-        tracker.getOrCreate(obj2, "TestClass", "method2");
+        tracker.getOrCreate(obj1, "TestClass.method1");
+        tracker.getOrCreate(obj2, "TestClass.method2");
 
         assertEquals("Should have 2 active flows", 2, tracker.getActiveCount());
 
@@ -101,8 +101,8 @@ public class WeakActiveTrackerTest {
         Object obj2 = new Object();
         int objectId1 = System.identityHashCode(obj1);
 
-        tracker.getOrCreate(obj1, "TestClass", "method1");
-        tracker.getOrCreate(obj2, "TestClass", "method2");
+        tracker.getOrCreate(obj1, "TestClass.method1");
+        tracker.getOrCreate(obj2, "TestClass.method2");
         tracker.recordCleanRelease(objectId1);
 
         tracker.markRemainingAsLeaks();
@@ -114,9 +114,9 @@ public class WeakActiveTrackerTest {
 
     @Test
     public void testStatistics_TotalObjectsSeen() {
-        tracker.getOrCreate(new Object(), "TestClass", "method1");
-        tracker.getOrCreate(new Object(), "TestClass", "method2");
-        tracker.getOrCreate(new Object(), "TestClass", "method3");
+        tracker.getOrCreate(new Object(), "TestClass.method1");
+        tracker.getOrCreate(new Object(), "TestClass.method2");
+        tracker.getOrCreate(new Object(), "TestClass.method3");
 
         assertEquals("Should have seen 3 objects", 3, tracker.getTotalObjectsSeen());
     }
@@ -124,7 +124,7 @@ public class WeakActiveTrackerTest {
     @Test
     public void testGCDetection_LeakDetectedWhenObjectIsGCd() throws InterruptedException {
         Object obj = new Object();
-        tracker.getOrCreate(obj, "TestClass", "testMethod");
+        tracker.getOrCreate(obj, "TestClass.testMethod");
         assertEquals("Should have 1 active flow", 1, tracker.getActiveCount());
 
         // Clear reference and request GC
@@ -148,7 +148,7 @@ public class WeakActiveTrackerTest {
     public void testLazyGCProcessing_ProcessesEvery100Calls() throws InterruptedException {
         // Create an object that will be GC'd
         Object obj = new Object();
-        tracker.getOrCreate(obj, "TestClass", "testMethod");
+        tracker.getOrCreate(obj, "TestClass.testMethod");
 
         // Clear reference and force GC
         obj = null;
@@ -159,7 +159,7 @@ public class WeakActiveTrackerTest {
 
         // Make 99 getOrCreate calls - GC should NOT be processed yet
         for (int i = 0; i < 99; i++) {
-            tracker.getOrCreate(new Object(), "TestClass", "method" + i);
+            tracker.getOrCreate(new Object(), "TestClass.method" + i);
         }
 
         // GC'd object should still be in queue (not processed yet)
@@ -167,7 +167,7 @@ public class WeakActiveTrackerTest {
         // that after 100 calls it IS processed
 
         // Make the 100th call - should trigger GC processing
-        tracker.getOrCreate(new Object(), "TestClass", "method100");
+        tracker.getOrCreate(new Object(), "TestClass.method100");
 
         // After 100 calls, GC should have been processed
         // Give a moment for processing to complete
@@ -183,7 +183,7 @@ public class WeakActiveTrackerTest {
     public void testEnsureGCProcessed_ForcesImmediateProcessing() throws InterruptedException {
         // Create an object that will be GC'd
         Object obj = new Object();
-        tracker.getOrCreate(obj, "TestClass", "testMethod");
+        tracker.getOrCreate(obj, "TestClass.testMethod");
         assertEquals("Should have 1 active flow initially", 1, tracker.getActiveCount());
 
         // Clear reference and force GC
@@ -211,7 +211,7 @@ public class WeakActiveTrackerTest {
     public void testFirstCallOnNewThread_ProcessesImmediately() throws Exception {
         // Create an object that will be GC'd on main thread
         Object obj = new Object();
-        tracker.getOrCreate(obj, "TestClass", "testMethod");
+        tracker.getOrCreate(obj, "TestClass.testMethod");
         obj = null;
 
         // Force GC
@@ -224,7 +224,7 @@ public class WeakActiveTrackerTest {
         // This should process the GC queue immediately (first call on thread)
         Thread newThread = new Thread(() -> {
             // First call on this thread - should process GC queue immediately
-            tracker.getOrCreate(new Object(), "TestClass", "newThreadMethod");
+            tracker.getOrCreate(new Object(), "TestClass.newThreadMethod");
         });
 
         newThread.start();

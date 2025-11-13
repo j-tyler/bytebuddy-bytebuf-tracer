@@ -62,11 +62,21 @@ public class ByteBufFlowTracker {
      * @param methodName the method name being called
      * @param refCount the current reference count (or metric value) of the object
      */
-    public void recordMethodCall(Object obj, String className, String methodName, int refCount) {
+    /**
+     * Record a method call for a tracked object.
+     *
+     * <p><b>Optimization (Idea 2):</b> Accepts pre-computed method signature instead of
+     * separate className/methodName to eliminate runtime string concatenation.
+     *
+     * @param obj the tracked object (e.g., ByteBuf)
+     * @param methodSignature pre-computed method signature (e.g., "MyClass.myMethod")
+     * @param refCount the current metric value (e.g., refCount for ByteBuf)
+     */
+    public void recordMethodCall(Object obj, String methodSignature, int refCount) {
         if (obj == null) return;
 
         // Get or create active flow
-        WeakActiveFlow flow = activeTracker.getOrCreate(obj, className, methodName);
+        WeakActiveFlow flow = activeTracker.getOrCreate(obj, methodSignature);
 
         // Skip if flow is completed (already released)
         // Single volatile read - if marked completed during traversal below, that's fine
@@ -74,6 +84,13 @@ public class ByteBufFlowTracker {
         if (flow.isCompleted()) {
             return;
         }
+
+        // Parse method signature to extract className and methodName for trie node creation
+        // Cost: Only paid when traversing (not when skipping completed flows)
+        // Format: "ClassName.methodName" or "ClassName.methodName_return"
+        int lastDotIndex = methodSignature.lastIndexOf('.');
+        String className = lastDotIndex > 0 ? methodSignature.substring(0, lastDotIndex) : methodSignature;
+        String methodName = lastDotIndex > 0 ? methodSignature.substring(lastDotIndex + 1) : "";
 
         // Traverse Trie (respecting depth limit)
         // Read currentDepth once to avoid inconsistent reads across two calls

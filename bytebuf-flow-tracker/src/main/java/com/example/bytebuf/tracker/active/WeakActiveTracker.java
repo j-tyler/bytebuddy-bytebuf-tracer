@@ -69,6 +69,9 @@ public class WeakActiveTracker {
      *   <li>Few long-running threads: Process every 100 calls for low overhead</li>
      * </ul>
      *
+     * <p><b>Optimization (Idea 2):</b> Accepts pre-computed methodSignature to eliminate
+     * runtime string concatenation overhead.
+     *
      * <p><b>Thread Safety:</b> This method is thread-safe and can be called concurrently.
      * If multiple threads call this for the same object simultaneously, only one will
      * create the flow - the others will receive the already-created instance.
@@ -78,11 +81,10 @@ public class WeakActiveTracker {
      * rendering to get current state.
      *
      * @param byteBuf the tracked object (must not be null)
-     * @param className the class name for the root node (if creating)
-     * @param methodName the method name for the root node (if creating)
+     * @param methodSignature pre-computed method signature (e.g., "MyClass.myMethod")
      * @return the active flow for this object (never null)
      */
-    public WeakActiveFlow getOrCreate(Object byteBuf, String className, String methodName) {
+    public WeakActiveFlow getOrCreate(Object byteBuf, String methodSignature) {
         int objectId = System.identityHashCode(byteBuf);
 
         // GC processing strategy:
@@ -103,11 +105,10 @@ public class WeakActiveTracker {
         WeakActiveFlow flow = activeFlows.get(objectId);
         if (flow == null) {
             // First time seeing this object - create root in Trie and acquire pooled state
-            ImprintNode root = trie.getOrCreateRoot(className, methodName);
-            String rootMethod = className + "." + methodName;
-            boolean isDirect = isDirectBufferMethod(rootMethod);
+            ImprintNode root = trie.getOrCreateRoot(methodSignature);
+            boolean isDirect = isDirectBufferMethod(methodSignature);
             FlowStatePool.PooledFlowState pooledState = FlowStatePool.acquire(root);  // Acquire from pool
-            flow = new WeakActiveFlow(byteBuf, objectId, pooledState, rootMethod, isDirect, gcQueue);
+            flow = new WeakActiveFlow(byteBuf, objectId, pooledState, methodSignature, isDirect, gcQueue);
 
             WeakActiveFlow existing = activeFlows.putIfAbsent(objectId, flow);
             if (existing == null) {

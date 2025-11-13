@@ -35,7 +35,7 @@ public class ByteBufConstructorAdvice {
      */
     @Advice.OnMethodEnter
     public static void onConstructorEnter(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t.<init>") String methodSignature,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -57,8 +57,7 @@ public class ByteBufConstructorAdvice {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        clazz.getSimpleName(),
-                        "<init>",
+                        methodSignature,  // Pre-computed at instrumentation time
                         metric
                     );
                 }
@@ -74,7 +73,7 @@ public class ByteBufConstructorAdvice {
      */
     @Advice.OnMethodExit
     public static void onConstructorExit(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t.<init>_return") String methodSignatureReturn,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -94,8 +93,7 @@ public class ByteBufConstructorAdvice {
                         int metric = handler.getMetric(arg);
                         tracker.recordMethodCall(
                             arg,
-                            clazz.getSimpleName(),
-                            "<init>_return",
+                            methodSignatureReturn,  // Pre-computed at instrumentation time
                             metric
                         );
                     }

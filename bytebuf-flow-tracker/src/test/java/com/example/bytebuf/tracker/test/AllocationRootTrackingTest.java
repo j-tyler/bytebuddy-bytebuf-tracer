@@ -87,14 +87,14 @@ public class AllocationRootTrackingTest {
         System.out.println("Test 1: Heap Buffer (Unpooled.buffer)");
 
         ByteBuf heapBuffer = Unpooled.buffer(256);
-        tracker.recordMethodCall(heapBuffer, "Unpooled", "buffer", heapBuffer.refCnt());
+        tracker.recordMethodCall(heapBuffer, "Unpooled.buffer", heapBuffer.refCnt());
 
         // Simulate application code using the buffer
         processBuffer(heapBuffer, "HeapProcessor");
 
         // Release
         heapBuffer.release();
-        tracker.recordMethodCall(heapBuffer, "HeapProcessor", "cleanup", heapBuffer.refCnt());
+        tracker.recordMethodCall(heapBuffer, "HeapProcessor.cleanup", heapBuffer.refCnt());
 
         System.out.println("  ✓ Heap buffer tracked\n");
     }
@@ -103,14 +103,14 @@ public class AllocationRootTrackingTest {
         System.out.println("Test 2: Direct Buffer (Unpooled.directBuffer)");
 
         ByteBuf directBuffer = Unpooled.directBuffer(256);
-        tracker.recordMethodCall(directBuffer, "Unpooled", "directBuffer", directBuffer.refCnt());
+        tracker.recordMethodCall(directBuffer, "Unpooled.directBuffer", directBuffer.refCnt());
 
         // Simulate application code using the buffer
         processBuffer(directBuffer, "DirectProcessor");
 
         // Release
         directBuffer.release();
-        tracker.recordMethodCall(directBuffer, "DirectProcessor", "cleanup", directBuffer.refCnt());
+        tracker.recordMethodCall(directBuffer, "DirectProcessor.cleanup", directBuffer.refCnt());
 
         System.out.println("  ✓ Direct buffer tracked\n");
     }
@@ -120,14 +120,14 @@ public class AllocationRootTrackingTest {
 
         byte[] data = "test data".getBytes();
         ByteBuf wrappedBuffer = Unpooled.wrappedBuffer(data);
-        tracker.recordMethodCall(wrappedBuffer, "Unpooled", "wrappedBuffer", wrappedBuffer.refCnt());
+        tracker.recordMethodCall(wrappedBuffer, "Unpooled.wrappedBuffer", wrappedBuffer.refCnt());
 
         // Simulate application code using the buffer
         processBuffer(wrappedBuffer, "WrapperProcessor");
 
         // Release
         wrappedBuffer.release();
-        tracker.recordMethodCall(wrappedBuffer, "WrapperProcessor", "cleanup", wrappedBuffer.refCnt());
+        tracker.recordMethodCall(wrappedBuffer, "WrapperProcessor.cleanup", wrappedBuffer.refCnt());
 
         System.out.println("  ✓ Wrapped buffer tracked\n");
     }
@@ -141,14 +141,14 @@ public class AllocationRootTrackingTest {
             .addComponent(true, part1)
             .addComponent(true, part2);
 
-        tracker.recordMethodCall(compositeBuffer, "Unpooled", "compositeBuffer", compositeBuffer.refCnt());
+        tracker.recordMethodCall(compositeBuffer, "Unpooled.compositeBuffer", compositeBuffer.refCnt());
 
         // Simulate application code using the buffer
         processBuffer(compositeBuffer, "CompositeProcessor");
 
         // Release composite (this also releases components)
         compositeBuffer.release();
-        tracker.recordMethodCall(compositeBuffer, "CompositeProcessor", "cleanup", compositeBuffer.refCnt());
+        tracker.recordMethodCall(compositeBuffer, "CompositeProcessor.cleanup", compositeBuffer.refCnt());
 
         System.out.println("  ✓ Composite buffer tracked\n");
     }
@@ -158,14 +158,14 @@ public class AllocationRootTrackingTest {
 
         ByteBufAllocator allocator = PooledByteBufAllocator.DEFAULT;
         ByteBuf pooledBuffer = allocator.buffer(256);
-        tracker.recordMethodCall(pooledBuffer, "PooledByteBufAllocator", "buffer", pooledBuffer.refCnt());
+        tracker.recordMethodCall(pooledBuffer, "PooledByteBufAllocator.buffer", pooledBuffer.refCnt());
 
         // Simulate application code using the buffer
         processBuffer(pooledBuffer, "PooledProcessor");
 
         // Release (returns to pool)
         pooledBuffer.release();
-        tracker.recordMethodCall(pooledBuffer, "PooledProcessor", "cleanup", pooledBuffer.refCnt());
+        tracker.recordMethodCall(pooledBuffer, "PooledProcessor.cleanup", pooledBuffer.refCnt());
 
         System.out.println("  ✓ Pooled buffer tracked\n");
     }
@@ -175,14 +175,14 @@ public class AllocationRootTrackingTest {
 
         ByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
         ByteBuf unpooledBuffer = allocator.buffer(256);
-        tracker.recordMethodCall(unpooledBuffer, "UnpooledByteBufAllocator", "buffer", unpooledBuffer.refCnt());
+        tracker.recordMethodCall(unpooledBuffer, "UnpooledByteBufAllocator.buffer", unpooledBuffer.refCnt());
 
         // Simulate application code using the buffer
         processBuffer(unpooledBuffer, "UnpooledProcessor");
 
         // Release
         unpooledBuffer.release();
-        tracker.recordMethodCall(unpooledBuffer, "UnpooledProcessor", "cleanup", unpooledBuffer.refCnt());
+        tracker.recordMethodCall(unpooledBuffer, "UnpooledProcessor.cleanup", unpooledBuffer.refCnt());
 
         System.out.println("  ✓ Unpooled allocator buffer tracked\n");
     }
@@ -192,8 +192,8 @@ public class AllocationRootTrackingTest {
      */
     private void processBuffer(ByteBuf buffer, String processorName) {
         // Simulate multiple processing steps
-        tracker.recordMethodCall(buffer, processorName, "validate", buffer.refCnt());
-        tracker.recordMethodCall(buffer, processorName, "process", buffer.refCnt());
+        tracker.recordMethodCall(buffer, processorName + ".validate", buffer.refCnt());
+        tracker.recordMethodCall(buffer, processorName + ".process", buffer.refCnt());
     }
 
     @Test
@@ -202,17 +202,17 @@ public class AllocationRootTrackingTest {
 
         // Create a leak with a direct buffer (more serious than heap)
         ByteBuf leakyDirectBuffer = Unpooled.directBuffer(1024);
-        tracker.recordMethodCall(leakyDirectBuffer, "Unpooled", "directBuffer", leakyDirectBuffer.refCnt());
-        tracker.recordMethodCall(leakyDirectBuffer, "NetworkHandler", "handleRequest", leakyDirectBuffer.refCnt());
-        tracker.recordMethodCall(leakyDirectBuffer, "NetworkHandler", "processData", leakyDirectBuffer.refCnt());
+        tracker.recordMethodCall(leakyDirectBuffer, "Unpooled.directBuffer", leakyDirectBuffer.refCnt());
+        tracker.recordMethodCall(leakyDirectBuffer, "NetworkHandler.handleRequest", leakyDirectBuffer.refCnt());
+        tracker.recordMethodCall(leakyDirectBuffer, "NetworkHandler.processData", leakyDirectBuffer.refCnt());
         // Oops! Forgot to release - this is a leak
 
         // Create a properly released heap buffer
         ByteBuf goodHeapBuffer = Unpooled.buffer(512);
-        tracker.recordMethodCall(goodHeapBuffer, "Unpooled", "buffer", goodHeapBuffer.refCnt());
-        tracker.recordMethodCall(goodHeapBuffer, "DataProcessor", "handle", goodHeapBuffer.refCnt());
+        tracker.recordMethodCall(goodHeapBuffer, "Unpooled.buffer", goodHeapBuffer.refCnt());
+        tracker.recordMethodCall(goodHeapBuffer, "DataProcessor.handle", goodHeapBuffer.refCnt());
         goodHeapBuffer.release();
-        tracker.recordMethodCall(goodHeapBuffer, "DataProcessor", "handle", goodHeapBuffer.refCnt());
+        tracker.recordMethodCall(goodHeapBuffer, "DataProcessor.handle", goodHeapBuffer.refCnt());
 
         // Generate report
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
@@ -242,17 +242,17 @@ public class AllocationRootTrackingTest {
         // Create multiple buffers using the same allocation method
         for (int i = 0; i < 5; i++) {
             ByteBuf buffer = Unpooled.buffer(128);
-            tracker.recordMethodCall(buffer, "Unpooled", "buffer", buffer.refCnt());
+            tracker.recordMethodCall(buffer, "Unpooled.buffer", buffer.refCnt());
 
             // Different application paths
             if (i % 2 == 0) {
-                tracker.recordMethodCall(buffer, "PathA", "process", buffer.refCnt());
+                tracker.recordMethodCall(buffer, "PathA.process", buffer.refCnt());
             } else {
-                tracker.recordMethodCall(buffer, "PathB", "process", buffer.refCnt());
+                tracker.recordMethodCall(buffer, "PathB.process", buffer.refCnt());
             }
 
             buffer.release();
-            tracker.recordMethodCall(buffer, i % 2 == 0 ? "PathA" : "PathB", "cleanup", buffer.refCnt());
+            tracker.recordMethodCall(buffer, (i % 2 == 0 ? "PathA" : "PathB") + ".cleanup", buffer.refCnt());
         }
 
         tracker.onShutdown();  // Finalize flows before rendering

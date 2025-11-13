@@ -23,25 +23,24 @@ import net.bytebuddy.asm.Advice;
  */
 public class ByteBufLifecycleAdvice {
 
-    // Re-entrance guard to prevent infinite recursion
+    // Re-entrance guard: prevents infinite recursion when tracking code triggers instrumented methods
     // Must be public for instrumented classes to access
     public static final ThreadLocal<Boolean> IS_TRACKING =
         ThreadLocal.withInitial(() -> false);
 
-    // ThreadLocal to store refCnt before the method call
+    // Stores refCnt before lifecycle method call to detect when release() drops refCnt to 0
     // Must be public for instrumented classes to access
     public static final ThreadLocal<Integer> BEFORE_REF_COUNT =
         ThreadLocal.withInitial(() -> 0);
 
     /**
-     * Method entry advice - captures refCnt before release/retain
+     * Captures refCnt before lifecycle method executes (to detect when release() deallocates).
      */
     @Advice.OnMethodEnter
     public static void onMethodEnter(
             @Advice.This Object thiz,
             @Advice.Origin("#m") String methodName) {
 
-        // Prevent re-entrant calls
         if (IS_TRACKING.get()) {
             return;
         }
@@ -60,17 +59,19 @@ public class ByteBufLifecycleAdvice {
     }
 
     /**
-     * Method exit advice - tracks only if refCnt changed to 0 (for release)
-     * or tracks retain calls
+     * Tracks lifecycle methods only when meaningful:
+     * - release(): only when it drops refCnt to 0 (actual deallocation)
+     * - retain(): always (shows refCnt increases)
+     * Skips intermediate release() calls to keep Trie focused on final deallocation.
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
             @Advice.This Object thiz,
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String originClassName,
             @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String methodSignature,
             @Advice.Thrown Throwable thrown) {
 
-        // Prevent re-entrant calls
         if (IS_TRACKING.get()) {
             return;
         }
@@ -87,40 +88,30 @@ public class ByteBufLifecycleAdvice {
             int beforeRefCount = BEFORE_REF_COUNT.get();
             int afterRefCount = handler.getMetric(thiz);
 
-            // Determine if we should track this call
             boolean shouldTrack = false;
-            String trackingMethodName = methodName;
 
             if (methodName.equals("release")) {
-                // Only track release if it drops refCnt to 0
                 if (afterRefCount == 0) {
                     shouldTrack = true;
                 }
-                // Note: We skip intermediate release calls that don't deallocate
             } else if (methodName.equals("retain")) {
-                // Track retain calls to show refCnt increases
-                // This helps understand the lifecycle
                 shouldTrack = true;
             }
 
             if (shouldTrack) {
-                // Only track lifecycle methods if the ByteBuf is already part of a flow
-                // This prevents release() or retain() from creating unwanted roots
+                // Only track if object is already in a flow (prevents lifecycle methods from creating unwanted roots)
                 if (!tracker.isTracking(thiz)) {
-                    // ByteBuf not in any flow - skip tracking this lifecycle event
                     return;
                 }
 
-                // Get the actual ByteBuf class name if available
-                String className = clazz.getSimpleName();
-                if (thiz instanceof ByteBuf) {
-                    className = thiz.getClass().getSimpleName();
-                }
-
+                // Use the instrumentation-time class name and method signature
+                // OPTIMIZATION: Avoid runtime getClass().getSimpleName() allocation (40-80 bytes)
+                // The originClassName from @Advice.Origin is pre-computed at instrumentation time
                 tracker.recordMethodCall(
                     thiz,
-                    className,
-                    trackingMethodName,
+                    originClassName,
+                    methodName,
+                    methodSignature,
                     afterRefCount
                 );
             }

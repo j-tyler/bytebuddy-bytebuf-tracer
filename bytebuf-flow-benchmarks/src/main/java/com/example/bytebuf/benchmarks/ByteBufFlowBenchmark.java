@@ -41,10 +41,59 @@ public class ByteBufFlowBenchmark {
 
     /**
      * Setup method - called once before all benchmark iterations.
+     * ENFORCES that GC profiler is enabled (mandatory for meaningful results).
      */
     @Setup(Level.Trial)
     public void setup() {
+        // MANDATORY CHECK: GC profiler must be enabled
+        validateGcProfilerEnabled();
         System.out.println("=== ByteBuf Flow Tracker Benchmark Starting ===");
+    }
+
+    /**
+     * Validates that GC profiler is enabled via environment variable acknowledgment.
+     * Fails fast with clear error message if not set.
+     *
+     * This enforces that users explicitly acknowledge they are running with GC profiling
+     * by setting the JMH_GC_PROF environment variable. This prevents accidental runs
+     * without -prof gc which would produce useless results.
+     */
+    private void validateGcProfilerEnabled() {
+        String gcProfEnv = System.getenv("JMH_GC_PROF");
+        if ("true".equalsIgnoreCase(gcProfEnv) || "1".equals(gcProfEnv)) {
+            return; // User explicitly acknowledged GC profiling is enabled
+        }
+
+        // GC profiler NOT acknowledged - FAIL FAST
+        throw new IllegalStateException(
+            "\n\n" +
+            "================================================================================\n" +
+            "FATAL ERROR: GC PROFILER NOT ACKNOWLEDGED\n" +
+            "================================================================================\n" +
+            "GC profiling (-prof gc) is MANDATORY for all benchmarks in this module.\n" +
+            "You MUST set the JMH_GC_PROF environment variable to confirm you are using it.\n" +
+            "\n" +
+            "WHY THIS MATTERS:\n" +
+            "  This project optimizes memory allocations. Without GC profiling, allocation\n" +
+            "  rates (B/op) cannot be measured. Results are COMPLETELY USELESS without it.\n" +
+            "\n" +
+            "CORRECT USAGE:\n" +
+            "  export JMH_GC_PROF=true\n" +
+            "  java -jar target/benchmarks.jar -prof gc\n" +
+            "\n" +
+            "OR (one-liner):\n" +
+            "  JMH_GC_PROF=true java -jar target/benchmarks.jar -prof gc\n" +
+            "\n" +
+            "WITH AGENT:\n" +
+            "  JMH_GC_PROF=true java \"-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks\" \\\n" +
+            "    -jar target/benchmarks.jar -prof gc\n" +
+            "\n" +
+            "This environment variable forces you to explicitly acknowledge that you are\n" +
+            "running with GC profiling. If you see this error, you forgot -prof gc.\n" +
+            "\n" +
+            "See README.md lines 22, 124, 163 for details.\n" +
+            "================================================================================\n"
+        );
     }
 
     /**

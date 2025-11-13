@@ -67,11 +67,48 @@ public class RandomWalkBenchmark {
      */
     private static final int METHOD_COUNT = 50;
 
+    /**
+     * Setup method - called once before all benchmark iterations.
+     * ENFORCES that GC profiler is enabled (mandatory for meaningful results).
+     */
     @Setup(Level.Trial)
     public void setup() {
+        // MANDATORY CHECK: GC profiler must be enabled
+        validateGcProfilerEnabled();
         System.out.println("=== Random Walk Benchmark Starting ===");
         System.out.println("Method count: " + METHOD_COUNT);
         System.out.println("Hops per iteration: " + MIN_HOPS + "-" + MAX_HOPS);
+    }
+
+    /**
+     * Validates that GC profiler is enabled via environment variable acknowledgment.
+     * Fails fast with clear error message if not set.
+     */
+    private void validateGcProfilerEnabled() {
+        String gcProfEnv = System.getenv("JMH_GC_PROF");
+        if ("true".equalsIgnoreCase(gcProfEnv) || "1".equals(gcProfEnv)) {
+            return; // User explicitly acknowledged GC profiling is enabled
+        }
+
+        // GC profiler NOT acknowledged - FAIL FAST
+        throw new IllegalStateException(
+            "\n\n" +
+            "================================================================================\n" +
+            "FATAL ERROR: GC PROFILER NOT ACKNOWLEDGED\n" +
+            "================================================================================\n" +
+            "GC profiling (-prof gc) is MANDATORY for all benchmarks in this module.\n" +
+            "You MUST set the JMH_GC_PROF environment variable to confirm you are using it.\n" +
+            "\n" +
+            "WHY THIS MATTERS:\n" +
+            "  This project optimizes memory allocations. Without GC profiling, allocation\n" +
+            "  rates (B/op) cannot be measured. Results are COMPLETELY USELESS without it.\n" +
+            "\n" +
+            "CORRECT USAGE:\n" +
+            "  JMH_GC_PROF=true java -jar target/benchmarks.jar -prof gc\n" +
+            "\n" +
+            "See README.md lines 22, 124, 163 for details.\n" +
+            "================================================================================\n"
+        );
     }
 
     @TearDown(Level.Trial)

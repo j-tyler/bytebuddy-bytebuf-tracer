@@ -47,6 +47,7 @@ public class ByteBufFlowAgent {
             System.out.println("[ByteBufFlowAgent] Custom handler detected - using general advice (safe mode)");
         } else {
             System.out.println("[ByteBufFlowAgent] Optimization enabled:");
+            System.out.println("  - 0-param methods returning ByteBuf: Optimized (ZeroParamByteBufReturnAdvice)");
             System.out.println("  - 1-param methods (ByteBuf): Optimized (SingleByteBufParamAdvice)");
             System.out.println("  - 2-param methods (ByteBuf, X): Optimized (TwoParamByteBufAt0Advice)");
             System.out.println("  - 2-param methods (X, ByteBuf): Optimized (TwoParamByteBufAt1Advice)");
@@ -143,6 +144,7 @@ public class ByteBufFlowAgent {
      *
      * <p><b>Optimization Strategy:</b>
      * <ul>
+     *   <li>0-param returning ByteBuf: {@link ZeroParamByteBufReturnAdvice}</li>
      *   <li>1-param (ByteBuf): {@link SingleByteBufParamAdvice}</li>
      *   <li>2-param (ByteBuf, X): {@link TwoParamByteBufAt0Advice}</li>
      *   <li>2-param (X, ByteBuf): {@link TwoParamByteBufAt1Advice}</li>
@@ -151,7 +153,7 @@ public class ByteBufFlowAgent {
      * </ul>
      *
      * <p>This reduces memory allocation by eliminating Object[] array creation
-     * for 1-param and 2-param methods, saving ~100-220 bytes per operation.
+     * for 0-param, 1-param and 2-param methods, saving ~100-220 bytes per operation.
      */
     static class ByteBufTransformer implements AgentBuilder.Transformer {
         private final boolean useOptimizedAdvice;
@@ -186,6 +188,12 @@ public class ByteBufFlowAgent {
 
             // Optimization enabled - route to specialized advice classes
 
+            // 0. Zero-parameter methods returning ByteBuf: ByteBuf method()
+            ElementMatcher.Junction<MethodDescription> zeroParamByteBufReturn =
+                baseMatcher
+                .and(takesArguments(0))
+                .and(returns(isSubTypeOf(io.netty.buffer.ByteBuf.class)));
+
             // 1. Single-parameter methods: method(ByteBuf)
             ElementMatcher.Junction<MethodDescription> singleByteBufParam =
                 baseMatcher
@@ -215,13 +223,16 @@ public class ByteBufFlowAgent {
 
             // Combine all optimized matchers
             ElementMatcher.Junction<MethodDescription> optimizedMethods =
-                singleByteBufParam
+                zeroParamByteBufReturn
+                .or(singleByteBufParam)
                 .or(twoParamByteBufAt0)
                 .or(twoParamByteBufAt1)
                 .or(twoParamBothByteBuf);
 
             // Apply specialized advice in order
             builder = builder
+                .method(zeroParamByteBufReturn)
+                .intercept(Advice.to(ZeroParamByteBufReturnAdvice.class))
                 .method(singleByteBufParam)
                 .intercept(Advice.to(SingleByteBufParamAdvice.class))
                 .method(twoParamByteBufAt0)
@@ -231,7 +242,7 @@ public class ByteBufFlowAgent {
                 .method(twoParamBothByteBuf)
                 .intercept(Advice.to(TwoParamBothByteBufAdvice.class));
 
-            // Apply general advice to remaining methods (3+ params, 0 params, etc.)
+            // Apply general advice to remaining methods (3+ params, etc.)
             return builder
                 .method(baseMatcher.and(not(optimizedMethods)))
                 .intercept(Advice.to(ByteBufTrackingAdvice.class));

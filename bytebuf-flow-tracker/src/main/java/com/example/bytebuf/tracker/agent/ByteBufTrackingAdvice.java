@@ -64,15 +64,14 @@ public class ByteBufTrackingAdvice {
     /**
      * Method entry advice - tracks objects in parameters
      *
-     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
-     * short method signatures (e.g., "UnpooledByteBufAllocator.heapBuffer" instead of
-     * "io.netty.buffer.UnpooledByteBufAllocator.heapBuffer"). This trades minimal CPU
-     * overhead for significant memory savings (~20 bytes per signature string).
+     * <p><b>Memory optimization:</b> Extracts simple class name from pre-computed
+     * fully-qualified signature. The full signature is embedded at instrumentation time
+     * by ByteBuddy, then we extract the simple name at advice entry using cheap string
+     * operations. This avoids both runtime concatenation and getSimpleName() overhead.
      */
     @Advice.OnMethodEnter
     public static void onMethodEnter(
-            @Advice.Origin Class<?> clazz,
-            @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String fullSignature,  // Pre-computed: "io.netty.buffer.UnpooledByteBufAllocator.heapBuffer"
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -92,15 +91,18 @@ public class ByteBufTrackingAdvice {
             // Clear the tracked params set for this invocation
             TRACKED_PARAMS.get().clear();
 
-            // Build short method signature at runtime
-            String methodSignature = clazz.getSimpleName() + "." + methodName;
+            // Extract simple class name from pre-computed signature
+            // "io.netty.buffer.UnpooledByteBufAllocator.heapBuffer" -> "UnpooledByteBufAllocator.heapBuffer"
+            int lastMethodDot = fullSignature.lastIndexOf('.');
+            int lastPackageDot = fullSignature.lastIndexOf('.', lastMethodDot - 1);
+            String simpleSignature = fullSignature.substring(lastPackageDot + 1);
 
             for (Object arg : arguments) {
                 if (handler.shouldTrack(arg)) {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        methodSignature,  // Short signature (simple class name)
+                        simpleSignature,  // Short signature extracted from pre-computed string
                         metric
                     );
                     // Record that we tracked this object
@@ -116,13 +118,12 @@ public class ByteBufTrackingAdvice {
      * Method exit advice - tracks return values with _return suffix
      * This shows when objects "go up the stack" (returned from methods)
      *
-     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
-     * short method signatures with "_return" suffix.
+     * <p><b>Memory optimization:</b> Extracts simple class name from pre-computed
+     * signature and appends "_return" suffix.
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
-            @Advice.Origin Class<?> clazz,
-            @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String fullSignature,  // Pre-computed
             @Advice.AllArguments Object[] arguments,
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
@@ -137,8 +138,11 @@ public class ByteBufTrackingAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Build short method signature at runtime with _return suffix
-            String methodSignatureReturn = clazz.getSimpleName() + "." + methodName + "_return";
+            // Extract simple class name from pre-computed signature and add _return suffix
+            // "io.netty.buffer.UnpooledByteBufAllocator.heapBuffer" -> "UnpooledByteBufAllocator.heapBuffer_return"
+            int lastMethodDot = fullSignature.lastIndexOf('.');
+            int lastPackageDot = fullSignature.lastIndexOf('.', lastMethodDot - 1);
+            String simpleSignature = fullSignature.substring(lastPackageDot + 1) + "_return";
 
             // Track return values with _return suffix
             // Only track if it wasn't already tracked as a parameter (to avoid duplicates)
@@ -148,7 +152,7 @@ public class ByteBufTrackingAdvice {
                     int metric = handler.getMetric(returnValue);
                     tracker.recordMethodCall(
                         returnValue,
-                        methodSignatureReturn,  // Short signature (simple class name)
+                        simpleSignature,  // Short signature extracted from pre-computed string
                         metric
                     );
                 }

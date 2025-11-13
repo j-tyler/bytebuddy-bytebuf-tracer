@@ -33,12 +33,12 @@ public class ByteBufConstructorAdvice {
     /**
      * Constructor entry advice - tracks objects in parameters
      *
-     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
-     * short method signatures for constructor calls.
+     * <p><b>Memory optimization:</b> Extracts simple class name from pre-computed
+     * fully-qualified signature.
      */
     @Advice.OnMethodEnter
     public static void onConstructorEnter(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t.<init>") String fullSignature,  // Pre-computed: "io.netty.buffer.UnpooledByteBufAllocator.<init>"
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -55,15 +55,17 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Build short method signature at runtime
-            String methodSignature = clazz.getSimpleName() + ".<init>";
+            // Extract simple class name from pre-computed signature
+            // "io.netty.buffer.UnpooledByteBufAllocator.<init>" -> "UnpooledByteBufAllocator.<init>"
+            int lastPackageDot = fullSignature.lastIndexOf('.', fullSignature.length() - 7);  // length - len("<init>")
+            String simpleSignature = fullSignature.substring(lastPackageDot + 1);
 
             for (Object arg : arguments) {
                 if (handler.shouldTrack(arg)) {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        methodSignature,  // Short signature (simple class name)
+                        simpleSignature,  // Short signature extracted from pre-computed string
                         metric
                     );
                 }
@@ -77,12 +79,12 @@ public class ByteBufConstructorAdvice {
      * Constructor exit advice - tracks parameter state after constructor completes
      * Uses _return suffix consistently (exit = return)
      *
-     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
-     * short method signatures with "_return" suffix.
+     * <p><b>Memory optimization:</b> Extracts simple class name from pre-computed
+     * signature and appends "_return" suffix.
      */
     @Advice.OnMethodExit
     public static void onConstructorExit(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t.<init>") String fullSignature,  // Pre-computed
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -95,8 +97,10 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
-            // Build short method signature at runtime with _return suffix
-            String methodSignatureReturn = clazz.getSimpleName() + ".<init>_return";
+            // Extract simple class name from pre-computed signature and add _return suffix
+            // "io.netty.buffer.UnpooledByteBufAllocator.<init>" -> "UnpooledByteBufAllocator.<init>_return"
+            int lastPackageDot = fullSignature.lastIndexOf('.', fullSignature.length() - 7);  // length - len("<init>")
+            String simpleSignature = fullSignature.substring(lastPackageDot + 1) + "_return";
 
             // Track parameter state on exit with _return suffix (exit = return)
             if (arguments != null) {
@@ -105,7 +109,7 @@ public class ByteBufConstructorAdvice {
                         int metric = handler.getMetric(arg);
                         tracker.recordMethodCall(
                             arg,
-                            methodSignatureReturn,  // Short signature (simple class name)
+                            simpleSignature,  // Short signature extracted from pre-computed string
                             metric
                         );
                     }

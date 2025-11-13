@@ -54,13 +54,13 @@ public class ByteBufConstructionAdvice {
      * Method exit advice - tracks newly constructed ByteBuf objects.
      * This runs after the factory method completes and returns a ByteBuf.
      *
-     * <p><b>Memory optimization:</b> Uses runtime {@code getSimpleName()} to generate
-     * short method signatures.
+     * <p><b>Memory optimization:</b> Extracts simple class name from pre-computed
+     * fully-qualified signature.
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onConstructionExit(
-            @Advice.Origin Class<?> clazz,
-            @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String fullSignature,  // Pre-computed: "io.netty.buffer.UnpooledByteBufAllocator.heapBuffer"
+            @Advice.Origin("#m") String methodName,  // Just method name for switch statement
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
 
@@ -134,13 +134,16 @@ public class ByteBufConstructionAdvice {
             if (handler.shouldTrack(returnValue)) {
                 int metric = handler.getMetric(returnValue);
 
-                // Build short method signature at runtime
-                String methodSignature = clazz.getSimpleName() + "." + methodName;
+                // Extract simple class name from pre-computed signature
+                // "io.netty.buffer.UnpooledByteBufAllocator.heapBuffer" -> "UnpooledByteBufAllocator.heapBuffer"
+                int lastMethodDot = fullSignature.lastIndexOf('.');
+                int lastPackageDot = fullSignature.lastIndexOf('.', lastMethodDot - 1);
+                String simpleSignature = fullSignature.substring(lastPackageDot + 1);
 
                 // Record this as the first touch (construction becomes root)
                 tracker.recordMethodCall(
                     returnValue,
-                    methodSignature,  // Short signature (simple class name)
+                    simpleSignature,  // Short signature extracted from pre-computed string
                     metric
                 );
             }

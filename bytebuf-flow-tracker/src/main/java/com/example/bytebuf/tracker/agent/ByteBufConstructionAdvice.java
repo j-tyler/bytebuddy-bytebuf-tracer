@@ -56,8 +56,9 @@ public class ByteBufConstructionAdvice {
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onConstructionExit(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String className,
             @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String methodSignature,
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
 
@@ -134,8 +135,9 @@ public class ByteBufConstructionAdvice {
                 // Record this as the first touch (construction becomes root)
                 tracker.recordMethodCall(
                     returnValue,
-                    clazz.getSimpleName(),
+                    className,
                     methodName,
+                    methodSignature,
                     metric
                 );
             }

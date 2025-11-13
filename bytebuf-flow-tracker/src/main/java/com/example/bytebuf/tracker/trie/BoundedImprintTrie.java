@@ -50,8 +50,8 @@ public class BoundedImprintTrie {
     /**
      * Get or create a root node for an allocator method.
      */
-    public ImprintNode getOrCreateRoot(String className, String methodName) {
-        String key = intern(className) + "." + intern(methodName);
+    public ImprintNode getOrCreateRoot(String className, String methodName, String methodSignature) {
+        String key = intern(methodSignature);
 
         ImprintNode existing = roots.get(key);
         if (existing != null) {
@@ -91,7 +91,8 @@ public class BoundedImprintTrie {
      * Enforces depth limit and global node limit.
      */
     public ImprintNode traverseOrCreate(ImprintNode parent, String className,
-                                        String methodName, int refCount, int currentDepth) {
+                                        String methodName, String methodSignature,
+                                        int refCount, int currentDepth) {
         // Depth limit check
         if (currentDepth >= maxDepth) {
             return parent;  // Stop at max depth, treat as leaf
@@ -107,10 +108,10 @@ public class BoundedImprintTrie {
         // Check if child already exists
         int childCountBefore = parent.getChildren().size();
 
-        // Intern all strings including the concatenated method signature for NodeKey
+        // Intern all strings - methodSignature already pre-computed at instrumentation time
         String internedClassName = intern(className);
         String internedMethodName = intern(methodName);
-        String internedMethodSignature = intern(internedClassName + "." + internedMethodName);
+        String internedMethodSignature = intern(methodSignature);
 
         ImprintNode child = parent.getOrCreateChild(
             internedClassName,

@@ -66,8 +66,9 @@ public class ByteBufLifecycleAdvice {
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
             @Advice.This Object thiz,
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String originClassName,
             @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String methodSignature,
             @Advice.Thrown Throwable thrown) {
 
         // Prevent re-entrant calls
@@ -89,7 +90,6 @@ public class ByteBufLifecycleAdvice {
 
             // Determine if we should track this call
             boolean shouldTrack = false;
-            String trackingMethodName = methodName;
 
             if (methodName.equals("release")) {
                 // Only track release if it drops refCnt to 0
@@ -112,15 +112,20 @@ public class ByteBufLifecycleAdvice {
                 }
 
                 // Get the actual ByteBuf class name if available
-                String className = clazz.getSimpleName();
+                // For lifecycle methods, we want to use the actual runtime class for better diagnostics
+                String className = originClassName;
+                String actualSignature = methodSignature;
                 if (thiz instanceof ByteBuf) {
-                    className = thiz.getClass().getSimpleName();
+                    String actualClassName = thiz.getClass().getSimpleName();
+                    className = actualClassName;
+                    actualSignature = actualClassName + "." + methodName;
                 }
 
                 tracker.recordMethodCall(
                     thiz,
                     className,
-                    trackingMethodName,
+                    methodName,
+                    actualSignature,
                     afterRefCount
                 );
             }

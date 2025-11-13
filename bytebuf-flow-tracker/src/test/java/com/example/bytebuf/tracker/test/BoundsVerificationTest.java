@@ -42,7 +42,7 @@ public class BoundsVerificationTest {
         for (int i = 0; i < maxNodes * 2; i++) {
             ByteBuf buf = Unpooled.buffer(10);
             tracker.recordMethodCall(buf, "Class" + (i % 100), "method" + (i % 50), buf.refCnt());
-            tracker.recordMethodCall(buf, "ProcessorClass", "process", buf.refCnt());
+            tracker.recordMethodCall(buf, "ProcessorClass", "process", "ProcessorClass.process", buf.refCnt());
             buf.release();
         }
 
@@ -82,8 +82,8 @@ public class BoundsVerificationTest {
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < operationsPerThread; j++) {
                     ByteBuf buf = Unpooled.buffer(10);
-                    tracker.recordMethodCall(buf, "TestClass", "method", buf.refCnt());
-                    tracker.recordMethodCall(buf, "ProcessorClass", "process", buf.refCnt());
+                    tracker.recordMethodCall(buf, "TestClass", "method", "TestClass.method", buf.refCnt());
+                    tracker.recordMethodCall(buf, "ProcessorClass", "process", "ProcessorClass.process", buf.refCnt());
                     buf.release();
                 }
             });
@@ -105,7 +105,7 @@ public class BoundsVerificationTest {
         BoundedImprintTrie trie = tracker.getTrie();
 
         ByteBuf buf = Unpooled.buffer(10);
-        tracker.recordMethodCall(buf, "RootClass", "root", buf.refCnt());
+        tracker.recordMethodCall(buf, "RootClass", "root", "RootClass.root", buf.refCnt());
 
         // Create many different paths from same root
         for (int i = 0; i < 150; i++) {

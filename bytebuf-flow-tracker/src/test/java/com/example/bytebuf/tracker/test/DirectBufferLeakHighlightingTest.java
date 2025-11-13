@@ -37,8 +37,8 @@ public class DirectBufferLeakHighlightingTest {
     public void testHeapBufferLeakShowsWarningEmoji() {
         // Simulate heap buffer allocation and leak
         ByteBuf heapBuf = allocator.heapBuffer(256);
-        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", heapBuf.refCnt());
-        tracker.recordMethodCall(heapBuf, "TestService", "processData", heapBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", "UnpooledByteBufAllocator.heapBuffer", heapBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "TestService", "processData", "TestService.processData", heapBuf.refCnt());
         // Intentionally NOT releasing - heap buffer leak
 
         tracker.onShutdown();  // Finalize flows before rendering
@@ -59,8 +59,8 @@ public class DirectBufferLeakHighlightingTest {
     public void testDirectBufferLeakShowsCriticalEmoji() {
         // Simulate direct buffer allocation and leak
         ByteBuf directBuf = allocator.directBuffer(256);
-        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
-        tracker.recordMethodCall(directBuf, "NetworkService", "sendData", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", "UnpooledByteBufAllocator.directBuffer", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "NetworkService", "sendData", "NetworkService.sendData", directBuf.refCnt());
         // Intentionally NOT releasing - CRITICAL direct buffer leak
 
         tracker.onShutdown();  // Finalize flows before rendering
@@ -82,12 +82,12 @@ public class DirectBufferLeakHighlightingTest {
     public void testMixedLeaksShowDifferentEmojis() {
         // Create both heap and direct buffer leaks
         ByteBuf heapBuf = allocator.heapBuffer(128);
-        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", heapBuf.refCnt());
-        tracker.recordMethodCall(heapBuf, "Parser", "parse", heapBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", "UnpooledByteBufAllocator.heapBuffer", heapBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "Parser", "parse", "Parser.parse", heapBuf.refCnt());
 
         ByteBuf directBuf = allocator.directBuffer(1024);
-        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
-        tracker.recordMethodCall(directBuf, "IOHandler", "write", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", "UnpooledByteBufAllocator.directBuffer", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "IOHandler", "write", "IOHandler.write", directBuf.refCnt());
 
         tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
@@ -127,8 +127,8 @@ public class DirectBufferLeakHighlightingTest {
     public void testLLMFormatShowsCriticalLeakLabel() {
         // Create direct buffer leak
         ByteBuf directBuf = allocator.directBuffer(512);
-        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
-        tracker.recordMethodCall(directBuf, "CriticalService", "handleRequest", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", "UnpooledByteBufAllocator.directBuffer", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "CriticalService", "handleRequest", "CriticalService.handleRequest", directBuf.refCnt());
 
         tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
@@ -150,8 +150,8 @@ public class DirectBufferLeakHighlightingTest {
         ByteBuf ioBuf = allocator.ioBuffer(1024);
 
         // Simulate tracking through ioBuffer method
-        tracker.recordMethodCall(ioBuf, "UnpooledByteBufAllocator", "ioBuffer", ioBuf.refCnt());
-        tracker.recordMethodCall(ioBuf, "SocketHandler", "read", ioBuf.refCnt());
+        tracker.recordMethodCall(ioBuf, "UnpooledByteBufAllocator", "ioBuffer", "UnpooledByteBufAllocator.ioBuffer", ioBuf.refCnt());
+        tracker.recordMethodCall(ioBuf, "SocketHandler", "read", "SocketHandler.read", ioBuf.refCnt());
 
         tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
@@ -170,16 +170,16 @@ public class DirectBufferLeakHighlightingTest {
     public void testProperlyReleasedBuffersShowNoLeakEmoji() {
         // Create and properly release both buffer types
         ByteBuf heapBuf = allocator.heapBuffer(128);
-        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", heapBuf.refCnt());
-        tracker.recordMethodCall(heapBuf, "GoodService", "process", heapBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "UnpooledByteBufAllocator", "heapBuffer", "UnpooledByteBufAllocator.heapBuffer", heapBuf.refCnt());
+        tracker.recordMethodCall(heapBuf, "GoodService", "process", "GoodService.process", heapBuf.refCnt());
         heapBuf.release();
-        tracker.recordMethodCall(heapBuf, "UnpooledHeapByteBuf", "release", 0);
+        tracker.recordMethodCall(heapBuf, "UnpooledHeapByteBuf", "release", "UnpooledHeapByteBuf.release", "UnpooledHeapByteBuf.release", 0);
 
         ByteBuf directBuf = allocator.directBuffer(256);
-        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", directBuf.refCnt());
-        tracker.recordMethodCall(directBuf, "GoodService", "send", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "UnpooledByteBufAllocator", "directBuffer", "UnpooledByteBufAllocator.directBuffer", directBuf.refCnt());
+        tracker.recordMethodCall(directBuf, "GoodService", "send", "GoodService.send", directBuf.refCnt());
         directBuf.release();
-        tracker.recordMethodCall(directBuf, "UnpooledDirectByteBuf", "release", 0);
+        tracker.recordMethodCall(directBuf, "UnpooledDirectByteBuf", "release", "UnpooledDirectByteBuf.release", "UnpooledDirectByteBuf.release", 0);
 
         tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());
@@ -202,23 +202,23 @@ public class DirectBufferLeakHighlightingTest {
 
         // Scenario 1: Critical - Direct buffer for network I/O (LEAKED)
         ByteBuf networkBuf = allocator.directBuffer(8192);
-        tracker.recordMethodCall(networkBuf, "UnpooledByteBufAllocator", "directBuffer", networkBuf.refCnt());
-        tracker.recordMethodCall(networkBuf, "NetworkService", "handleRequest", networkBuf.refCnt());
-        tracker.recordMethodCall(networkBuf, "RequestHandler", "processRequest", networkBuf.refCnt());
+        tracker.recordMethodCall(networkBuf, "UnpooledByteBufAllocator", "directBuffer", "UnpooledByteBufAllocator.directBuffer", networkBuf.refCnt());
+        tracker.recordMethodCall(networkBuf, "NetworkService", "handleRequest", "NetworkService.handleRequest", networkBuf.refCnt());
+        tracker.recordMethodCall(networkBuf, "RequestHandler", "processRequest", "RequestHandler.processRequest", networkBuf.refCnt());
         // LEAKED! Never released
 
         // Scenario 2: Moderate - Heap buffer for parsing (LEAKED)
         ByteBuf parseBuf = allocator.heapBuffer(1024);
-        tracker.recordMethodCall(parseBuf, "UnpooledByteBufAllocator", "heapBuffer", parseBuf.refCnt());
-        tracker.recordMethodCall(parseBuf, "JsonParser", "parse", parseBuf.refCnt());
+        tracker.recordMethodCall(parseBuf, "UnpooledByteBufAllocator", "heapBuffer", "UnpooledByteBufAllocator.heapBuffer", parseBuf.refCnt());
+        tracker.recordMethodCall(parseBuf, "JsonParser", "parse", "JsonParser.parse", parseBuf.refCnt());
         // LEAKED! Never released
 
         // Scenario 3: Good - Direct buffer properly released
         ByteBuf goodDirectBuf = allocator.directBuffer(4096);
-        tracker.recordMethodCall(goodDirectBuf, "UnpooledByteBufAllocator", "directBuffer", goodDirectBuf.refCnt());
-        tracker.recordMethodCall(goodDirectBuf, "FileWriter", "write", goodDirectBuf.refCnt());
+        tracker.recordMethodCall(goodDirectBuf, "UnpooledByteBufAllocator", "directBuffer", "UnpooledByteBufAllocator.directBuffer", goodDirectBuf.refCnt());
+        tracker.recordMethodCall(goodDirectBuf, "FileWriter", "write", "FileWriter.write", goodDirectBuf.refCnt());
         goodDirectBuf.release();
-        tracker.recordMethodCall(goodDirectBuf, "UnpooledDirectByteBuf", "release", 0);
+        tracker.recordMethodCall(goodDirectBuf, "UnpooledDirectByteBuf", "release", "UnpooledDirectByteBuf.release", "UnpooledDirectByteBuf.release", 0);
 
         tracker.onShutdown();  // Finalize flows before rendering
         TrieRenderer renderer = new TrieRenderer(tracker.getTrie());

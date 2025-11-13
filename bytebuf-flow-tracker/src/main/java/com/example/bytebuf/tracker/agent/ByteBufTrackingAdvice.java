@@ -34,8 +34,9 @@ public class ByteBufTrackingAdvice {
      */
     @Advice.OnMethodEnter
     public static void onMethodEnter(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String className,
             @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String methodSignature,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -60,8 +61,9 @@ public class ByteBufTrackingAdvice {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        clazz.getSimpleName(),
+                        className,
                         methodName,
+                        methodSignature,
                         metric
                     );
                     // Record that we tracked this object
@@ -79,8 +81,9 @@ public class ByteBufTrackingAdvice {
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
-            @Advice.Origin Class<?> clazz,
+            @Advice.Origin("#t") String className,
             @Advice.Origin("#m") String methodName,
+            @Advice.Origin("#t.#m") String methodSignature,
             @Advice.AllArguments Object[] arguments,
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
@@ -103,8 +106,9 @@ public class ByteBufTrackingAdvice {
                     int metric = handler.getMetric(returnValue);
                     tracker.recordMethodCall(
                         returnValue,
-                        clazz.getSimpleName(),
+                        className,
                         methodName + "_return",
+                        methodSignature + "_return",
                         metric
                     );
                 }

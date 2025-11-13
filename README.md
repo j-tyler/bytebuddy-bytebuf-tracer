@@ -627,6 +627,77 @@ public static void main(String[] args) {
 | SocketChannel | `isOpen() ? 1 : 0` | 0 = closed, 1 = open |
 | Semaphore | `availablePermits()` | Available permits |
 
+## Production Metrics Integration
+
+Push leak metrics to your monitoring system (Datadog, Prometheus, etc.) with zero code changes to the tracker.
+
+### MetricHandler Interface
+
+```java
+public interface MetricHandler {
+    Set<MetricType> getRequiredMetrics();  // DIRECT_LEAKS, HEAP_LEAKS
+    void onMetrics(MetricSnapshot snapshot);
+    String getName();
+}
+```
+
+**MetricSnapshot fields:**
+- `getTotalDirectLeaks()` - Critical: crashes JVM if leaked
+- `getTotalHeapLeaks()` - Moderate: wastes memory, eventually GC'd
+- `getDirectLeakFlows()` - List of unique leak paths (strings)
+- `getHeapLeakFlows()` - List of unique leak paths (strings)
+
+**Flow format:** `root=Method|final_ref=N|leak_count=500|leak_rate=100.0%|path=A -> B -> C`
+
+### Registration Methods
+
+**Method 1: Programmatic** (in your app)
+```java
+public class DatadogMetricHandler implements MetricHandler {
+    public void onMetrics(MetricSnapshot snapshot) {
+        statsd.gauge("bytebuf.direct_leaks", snapshot.getTotalDirectLeaks());
+        statsd.gauge("bytebuf.heap_leaks", snapshot.getTotalHeapLeaks());
+    }
+    public Set<MetricType> getRequiredMetrics() {
+        return EnumSet.of(MetricType.DIRECT_LEAKS, MetricType.HEAP_LEAKS);
+    }
+    public String getName() { return "DatadogMetrics"; }
+}
+
+// In main()
+MetricHandlerRegistry.register(new DatadogMetricHandler());
+```
+
+**Method 2: System Property** (zero code changes)
+```bash
+java -Dmetric.handlers=com.yourcompany.DatadogMetricHandler,com.yourcompany.PagerDutyHandler \
+     -javaagent:tracker.jar=include=com.yourcompany \
+     -jar your-app.jar
+```
+
+**Method 3: ServiceLoader/SPI** (auto-discovery)
+```
+# Create: src/main/resources/META-INF/services/com.example.bytebuf.api.metrics.MetricHandler
+com.yourcompany.DatadogMetricHandler
+com.yourcompany.PagerDutyHandler
+```
+
+### Configuration
+
+```bash
+# Set push interval (default: 60 seconds)
+-Dbytebuf.metrics.pushInterval=30
+
+# Combine with trackDirectOnly for production
+-Dbytebuf.metrics.pushInterval=60 \
+-javaagent:tracker.jar=include=com.yourcompany;trackDirectOnly=true
+```
+
+**Why separate API module:**
+- Zero dependencies (bytebuf-flow-api)
+- Production apps only depend on interfaces
+- No ByteBuddy/Netty in your classpath
+
 ## Accessing Tracking Data
 
 ### Programmatic Access

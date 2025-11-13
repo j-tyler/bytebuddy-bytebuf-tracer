@@ -6,6 +6,7 @@
 package com.example.bytebuf.tracker.agent;
 
 import com.example.bytebuf.tracker.ByteBufFlowTracker;
+import com.example.bytebuf.tracker.metrics.MetricPushScheduler;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
@@ -27,7 +28,9 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
  * Instruments methods to track ByteBuf movement through the application.
  */
 public class ByteBufFlowAgent {
-    
+
+    private static MetricPushScheduler metricScheduler;
+
     /**
      * Premain method for Java agent
      *
@@ -51,6 +54,11 @@ public class ByteBufFlowAgent {
 
         // Setup JMX MBean for monitoring
         setupJmxMonitoring();
+
+        // Start metric push scheduler (if handlers registered)
+        ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
+        metricScheduler = new MetricPushScheduler(tracker);
+        metricScheduler.start();
 
         // Setup shutdown hook for final report
         setupShutdownHook();
@@ -340,6 +348,11 @@ public class ByteBufFlowAgent {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Mark remaining flows as leaks before generating report
             ByteBufFlowTracker.getInstance().onShutdown();
+
+            // Shutdown metric scheduler
+            if (metricScheduler != null) {
+                metricScheduler.shutdown();
+            }
 
             System.out.println("\n=== ByteBuf Flow Final Report ===");
             ByteBufFlowReporter reporter = new ByteBufFlowReporter();

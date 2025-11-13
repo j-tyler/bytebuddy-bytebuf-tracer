@@ -5,6 +5,8 @@
 
 package com.example.bytebuf.tracker;
 
+import com.example.bytebuf.api.tracker.ObjectTrackerHandler;
+
 /**
  * Registry for the object tracker handler.
  *

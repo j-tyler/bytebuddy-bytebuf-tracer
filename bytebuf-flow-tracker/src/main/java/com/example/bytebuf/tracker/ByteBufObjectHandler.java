@@ -5,6 +5,7 @@
 
 package com.example.bytebuf.tracker;
 
+import com.example.bytebuf.api.tracker.ObjectTrackerHandler;
 import io.netty.buffer.ByteBuf;
 
 /**

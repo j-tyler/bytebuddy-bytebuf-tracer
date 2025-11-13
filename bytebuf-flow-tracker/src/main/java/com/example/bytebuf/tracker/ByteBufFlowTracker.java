@@ -7,8 +7,12 @@ package com.example.bytebuf.tracker;
 
 import com.example.bytebuf.tracker.active.WeakActiveFlow;
 import com.example.bytebuf.tracker.active.WeakActiveTracker;
+import com.example.bytebuf.tracker.metrics.LeakEvent;
+import com.example.bytebuf.tracker.metrics.MetricEventSink;
 import com.example.bytebuf.tracker.trie.BoundedImprintTrie;
 import com.example.bytebuf.tracker.trie.ImprintNode;
+
+import java.util.List;
 
 /**
  * Main tracker with bounded memory guarantees.
@@ -148,6 +152,17 @@ public class ByteBufFlowTracker {
      */
     public void ensureGCProcessed() {
         activeTracker.ensureGCProcessed();
+    }
+
+    /**
+     * Drain pending leak events for delta-based metrics.
+     * Returns all leaks detected since the last drain.
+     * MetricCollector calls this during each push to get only new leaks.
+     *
+     * @return List of leak events (never null, may be empty)
+     */
+    public List<LeakEvent> drainPendingLeaks() {
+        return MetricEventSink.getInstance().drainEvents();
     }
 
     /**

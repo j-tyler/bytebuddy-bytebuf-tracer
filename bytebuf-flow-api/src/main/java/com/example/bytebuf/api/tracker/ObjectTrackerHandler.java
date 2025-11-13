@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.example.bytebuf.tracker;
+package com.example.bytebuf.api.tracker;
 
 /**
  * Handler interface for tracking custom objects through your application.

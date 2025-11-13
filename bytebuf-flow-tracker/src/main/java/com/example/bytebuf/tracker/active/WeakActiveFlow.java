@@ -17,14 +17,6 @@ import java.lang.ref.WeakReference;
  * object to reduce allocation overhead. The WeakReference itself cannot be pooled
  * (referent is final), but the mutable state can be reused across different ByteBufs.
  *
- * <p><b>Memory Layout:</b>
- * <ul>
- *   <li>WeakActiveFlow: 16 (object header) + 8 (WeakReference) + 4 (objectId) + 8 (pooledState) = ~36 bytes</li>
- *   <li>PooledFlowState: 16 (object header) + 8 (FlowState ref) + 8 (Slot ref) = ~32 bytes</li>
- *   <li>FlowState: 16 (object header) + 8 (currentNode) + 1 (flags) + 3 (padding) = ~28 bytes</li>
- *   <li>Total: ~96 bytes when active, ~36 bytes after PooledFlowState returned to pool</li>
- * </ul>
- *
  * <p><b>Thread Safety:</b> This class is thread-safe. All mutable state is stored
  * in the {@link FlowState} object, which uses volatile fields for visibility.
  *
@@ -40,15 +32,31 @@ public class WeakActiveFlow extends WeakReference<Object> {
     // Pooled state object (never null while in activeFlows map)
     private final FlowStatePool.PooledFlowState pooledState;
 
+    // Allocator method for LeakEvent (e.g., "UnpooledByteBufAllocator.directBuffer")
+    private final String rootMethod;
+
+    // Buffer type flag cached to avoid repeated string operations
+    private final boolean isDirect;
+
     public WeakActiveFlow(Object byteBuf, int objectId, FlowStatePool.PooledFlowState pooledState,
-                          ReferenceQueue<Object> gcQueue) {
+                          String rootMethod, boolean isDirect, ReferenceQueue<Object> gcQueue) {
         super(byteBuf, gcQueue);
         this.objectId = objectId;
         this.pooledState = pooledState;
+        this.rootMethod = rootMethod;
+        this.isDirect = isDirect;
     }
 
     public int getObjectId() {
         return objectId;
+    }
+
+    public String getRootMethod() {
+        return rootMethod;
+    }
+
+    public boolean isDirect() {
+        return isDirect;
     }
 
     // Delegate all state operations to the pooled FlowState

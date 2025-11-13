@@ -26,8 +26,40 @@ public class ByteBufTrackingAdvice {
     // ThreadLocal to store identity hash codes of parameters tracked during method entry
     // This prevents duplicate tracking when the same object is both a parameter and return value
     // Must be public for instrumented classes to access
-    public static final ThreadLocal<java.util.Set<Integer>> TRACKED_PARAMS =
-        ThreadLocal.withInitial(java.util.HashSet::new);
+    //
+    // Optimization (Idea 1): Use primitive int array instead of HashSet<Integer>
+    // - Eliminates boxing overhead (Integer object allocation)
+    // - Faster for small parameter counts (most methods have < 10 params)
+    // - Expected savings: 100-200 B/op
+    private static final int MAX_TRACKED_PARAMS = 32; // Sufficient for most methods
+
+    public static class TrackedParamsArray {
+        final int[] hashCodes = new int[MAX_TRACKED_PARAMS];
+        int count = 0;
+
+        public void clear() {
+            count = 0;
+        }
+
+        public void add(int hashCode) {
+            if (count < MAX_TRACKED_PARAMS) {
+                hashCodes[count++] = hashCode;
+            }
+            // If overflow, silently ignore (rare case, acceptable trade-off)
+        }
+
+        public boolean contains(int hashCode) {
+            for (int i = 0; i < count; i++) {
+                if (hashCodes[i] == hashCode) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public static final ThreadLocal<TrackedParamsArray> TRACKED_PARAMS =
+        ThreadLocal.withInitial(TrackedParamsArray::new);
 
     /**
      * Method entry advice - tracks objects in parameters

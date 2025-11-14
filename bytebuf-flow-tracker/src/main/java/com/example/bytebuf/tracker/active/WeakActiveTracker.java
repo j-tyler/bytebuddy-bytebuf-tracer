@@ -139,7 +139,7 @@ public class WeakActiveTracker {
     public void recordCleanRelease(int objectId) {
         WeakActiveFlow flow = activeFlows.get(objectId);
         if (flow != null && !flow.isCompleted() && flow.getCurrentNode() != null) {
-            flow.getCurrentNode().recordOutcome(true);  // CLEAN
+            // Mark as completed - no need to record clean releases, only leaks matter
             flow.markCompleted();
             totalCleaned.incrementAndGet();
 
@@ -175,7 +175,7 @@ public class WeakActiveTracker {
             // ByteBuf was GC'd without release() - it's a LEAK!
             // Skip completed flows (already marked as clean)
             if (!flow.isCompleted() && flow.getCurrentNode() != null) {
-                flow.getCurrentNode().recordOutcome(false);
+                flow.getCurrentNode().recordLeak();
                 totalLeaked.incrementAndGet();
                 totalGCDetected.incrementAndGet();
 
@@ -227,7 +227,7 @@ public class WeakActiveTracker {
 
             // Skip completed flows (already marked as clean)
             if (!flow.isCompleted() && flow.getCurrentNode() != null) {
-                flow.getCurrentNode().recordOutcome(false);
+                flow.getCurrentNode().recordLeak();
                 totalLeaked.incrementAndGet();
                 totalGCDetected.incrementAndGet();
 
@@ -258,7 +258,7 @@ public class WeakActiveTracker {
         for (WeakActiveFlow flow : activeFlows.values()) {
             // Skip completed flows (already marked as clean)
             if (!flow.isCompleted() && flow.getCurrentNode() != null) {
-                flow.getCurrentNode().recordOutcome(false);
+                flow.getCurrentNode().recordLeak();
                 totalLeaked.incrementAndGet();
 
                 // Record for delta-based metrics (only if handlers exist)

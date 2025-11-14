@@ -33,8 +33,9 @@ public class ByteBufTrackingAdvice {
     // OPTIMIZATION: Cache for "_return" suffixes to avoid string concatenation on hot path
     // Caches computed String constants after first access. After warm-up, reads are fast via CHM.get().
     // Initial capacity 256 assumes ~100-200 unique instrumented methods (load factor 0.75).
-    private static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(256);
+    // Must be public for instrumented classes to access
+    public static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE = new ConcurrentHashMap<>(256);
+    public static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(256);
 
     /**
      * Tracks objects as they enter methods (flow down the call stack).

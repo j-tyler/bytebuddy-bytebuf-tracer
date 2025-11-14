@@ -48,8 +48,7 @@ public class ImprintNode {
     // Traversal count (for all nodes, including intermediate)
     private final AtomicLong traversalCount = new AtomicLong(0);
 
-    // Outcome statistics (atomic for thread-safety - for leaf nodes)
-    private final AtomicLong cleanCount = new AtomicLong(0);  // Released properly (refCnt→0)
+    // Leak statistics (atomic for thread-safety - for leaf nodes)
     private final AtomicLong leakCount = new AtomicLong(0);   // GC'd without release
 
     // Children (shared Trie structure) - lazy initialized for memory efficiency
@@ -163,15 +162,10 @@ public class ImprintNode {
     }
 
     /**
-     * Record that a path ending at this node was completed.
-     * @param wasClean true if released (refCnt=0), false if leaked (GC'd)
+     * Record that a path ending at this node leaked (GC'd without proper release).
      */
-    public void recordOutcome(boolean wasClean) {
-        if (wasClean) {
-            cleanCount.incrementAndGet();
-        } else {
-            leakCount.incrementAndGet();
-        }
+    public void recordLeak() {
+        leakCount.incrementAndGet();
     }
 
 
@@ -180,9 +174,7 @@ public class ImprintNode {
     public String getMethodName() { return methodName; }
     public byte getRefCountBucket() { return refCountBucket; }
     public long getTraversalCount() { return traversalCount.get(); }
-    public long getCleanCount() { return cleanCount.get(); }
     public long getLeakCount() { return leakCount.get(); }
-    public long getTotalCount() { return cleanCount.get() + leakCount.get(); }
 
     /**
      * Get the children map. Returns empty map if this is a leaf node.

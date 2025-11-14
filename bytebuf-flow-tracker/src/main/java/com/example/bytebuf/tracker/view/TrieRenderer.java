@@ -79,11 +79,11 @@ public class TrieRenderer {
 
         String childPrefix = isRoot ? "" : prefix + (isLast ? "    " : "│   ");
 
-        // Sort children by total count
+        // Sort children by traversal count
         List<Map.Entry<ImprintNode.NodeKey, ImprintNode>> children =
             new ArrayList<>(node.getChildren().entrySet());
         children.sort((a, b) ->
-            Long.compare(b.getValue().getTotalCount(), a.getValue().getTotalCount()));
+            Long.compare(b.getValue().getTraversalCount(), a.getValue().getTraversalCount()));
 
         for (int i = 0; i < children.size(); i++) {
             Map.Entry<ImprintNode.NodeKey, ImprintNode> child = children.get(i);
@@ -98,35 +98,21 @@ public class TrieRenderer {
         // Method signature
         sb.append(node.getClassName()).append(".").append(node.getMethodName());
 
-        // RefCount and count
+        // RefCount and traversal count
         sb.append(" [ref=").append(node.getRefCountForDisplay());
-        sb.append(", count=").append(node.getTotalCount()).append("]");
+        sb.append(", count=").append(node.getTraversalCount()).append("]");
 
         // Leak indicators (only for leaf nodes)
         if (node.isLeaf()) {
             long leak = node.getLeakCount();
-            long clean = node.getCleanCount();
-            long total = node.getTotalCount();
 
             if (leak > 0) {
-                double leakRate = (leak * 100.0) / total;
-
-                if (clean == 0) {
-                    // Always leaks
-                    if (isDirectBufferRoot(rootSignature)) {
-                        sb.append(" 🚨 LEAK");
-                    } else {
-                        sb.append(" ⚠️ LEAK");
-                    }
-                } else if (leakRate >= 50) {
-                    // Often leaks
-                    sb.append(String.format(" ⚠️ OFTEN LEAKS (%.0f%%)", leakRate));
+                // Show leak indicator with count
+                if (isDirectBufferRoot(rootSignature)) {
+                    sb.append(" 🚨 LEAK (").append(leak).append(")");
                 } else {
-                    // Sometimes leaks
-                    sb.append(String.format(" ⚠️ SOMETIMES LEAKS (%.0f%%)", leakRate));
+                    sb.append(" ⚠️ LEAK (").append(leak).append(")");
                 }
-            } else if (clean > 0) {
-                // Clean - just show checkmark
             }
         }
 
@@ -151,52 +137,43 @@ public class TrieRenderer {
         sb.append("=== ByteBuf Flow Summary ===\n");
         sb.append("Total Root Methods: ").append(trie.getRootCount()).append("\n");
 
-        long totalClean = 0;
-        long totalLeak = 0;
+        long totalLeaks = 0;
+        long totalTraversals = 0;
         int totalPaths = 0;
-        int alwaysLeakPaths = 0;
-        int sometimesLeakPaths = 0;
-        int cleanPaths = 0;
-        int criticalLeaks = 0;  // Direct buffer leaks
-        int moderateLeaks = 0;   // Heap buffer leaks
+        int leakPaths = 0;
+        int criticalLeakPaths = 0;  // Direct buffer leaks
+        int moderateLeakPaths = 0;   // Heap buffer leaks
 
         for (Map.Entry<String, ImprintNode> entry : trie.getRoots().entrySet()) {
             String rootSignature = entry.getKey();
             ImprintNode root = entry.getValue();
             PathStats stats = calculatePathStats(root, 0);
-            totalClean += stats.cleanCount;
-            totalLeak += stats.leakCount;
+            totalLeaks += stats.leakCount;
+            totalTraversals += stats.traversalCount;
             totalPaths += stats.pathCount;
-            alwaysLeakPaths += stats.alwaysLeakCount;
-            sometimesLeakPaths += stats.sometimesLeakCount;
-            cleanPaths += stats.cleanPathCount;
+            leakPaths += stats.leakPathCount;
 
             // Count critical vs moderate leaks
             if (stats.leakCount > 0) {
                 if (isDirectBufferRoot(rootSignature)) {
-                    criticalLeaks += stats.alwaysLeakCount + stats.sometimesLeakCount;
+                    criticalLeakPaths += stats.leakPathCount;
                 } else {
-                    moderateLeaks += stats.alwaysLeakCount + stats.sometimesLeakCount;
+                    moderateLeakPaths += stats.leakPathCount;
                 }
             }
         }
 
-        long totalTraversals = totalClean + totalLeak;
         sb.append("Total Traversals: ").append(totalTraversals).append("\n");
         sb.append("Total Paths: ").append(totalPaths).append("\n");
+        sb.append("Total Leaks: ").append(totalLeaks).append("\n");
 
         if (totalPaths > 0) {
-            sb.append("Leak Paths: ").append(alwaysLeakPaths + sometimesLeakPaths).append("\n");
+            sb.append("Leak Paths: ").append(leakPaths).append("\n");
 
             // Show leak breakdown (always show when there are leaks)
-            if (alwaysLeakPaths > 0 || sometimesLeakPaths > 0) {
-                sb.append("Critical Leaks: ").append(criticalLeaks).append(" (direct buffers)\n");
-                sb.append("Moderate Leaks: ").append(moderateLeaks).append(" (heap buffers)\n");
-            }
-
-            if (totalTraversals > 0) {
-                double leakRate = (totalLeak * 100.0) / totalTraversals;
-                sb.append(String.format("Leak Percentage: %.2f%%\n", leakRate));
+            if (leakPaths > 0) {
+                sb.append("Critical Leak Paths: ").append(criticalLeakPaths).append(" (direct buffers)\n");
+                sb.append("Moderate Leak Paths: ").append(moderateLeakPaths).append(" (heap buffers)\n");
             }
         }
 
@@ -204,12 +181,10 @@ public class TrieRenderer {
     }
 
     private static class PathStats {
-        long cleanCount = 0;
         long leakCount = 0;
+        long traversalCount = 0;
         int pathCount = 0;
-        int alwaysLeakCount = 0;
-        int sometimesLeakCount = 0;
-        int cleanPathCount = 0;
+        int leakPathCount = 0;
     }
 
     private PathStats calculatePathStats(ImprintNode node, int depth) {
@@ -217,32 +192,29 @@ public class TrieRenderer {
 
         if (depth >= MAX_RECURSION_DEPTH) {
             stats.pathCount = 1;
-            stats.cleanCount = node.getCleanCount();
             stats.leakCount = node.getLeakCount();
+            stats.traversalCount = node.getTraversalCount();
+            if (node.getLeakCount() > 0) {
+                stats.leakPathCount = 1;
+            }
             return stats;
         }
 
         if (node.isLeaf()) {
             stats.pathCount = 1;
-            stats.cleanCount = node.getCleanCount();
             stats.leakCount = node.getLeakCount();
+            stats.traversalCount = node.getTraversalCount();
 
-            if (node.getLeakCount() > 0 && node.getCleanCount() == 0) {
-                stats.alwaysLeakCount = 1;
-            } else if (node.getLeakCount() > 0 && node.getCleanCount() > 0) {
-                stats.sometimesLeakCount = 1;
-            } else if (node.getCleanCount() > 0) {
-                stats.cleanPathCount = 1;
+            if (node.getLeakCount() > 0) {
+                stats.leakPathCount = 1;
             }
         } else {
             for (ImprintNode child : node.getChildren().values()) {
                 PathStats childStats = calculatePathStats(child, depth + 1);
-                stats.cleanCount += childStats.cleanCount;
                 stats.leakCount += childStats.leakCount;
+                stats.traversalCount += childStats.traversalCount;
                 stats.pathCount += childStats.pathCount;
-                stats.alwaysLeakCount += childStats.alwaysLeakCount;
-                stats.sometimesLeakCount += childStats.sometimesLeakCount;
-                stats.cleanPathCount += childStats.cleanPathCount;
+                stats.leakPathCount += childStats.leakPathCount;
             }
         }
 
@@ -256,30 +228,23 @@ public class TrieRenderer {
         StringBuilder sb = new StringBuilder();
 
         // Calculate statistics
-        long totalClean = 0;
-        long totalLeak = 0;
+        long totalLeaks = 0;
         int totalPaths = 0;
+        int leakPaths = 0;
 
         for (ImprintNode root : trie.getRoots().values()) {
             PathStats stats = calculatePathStats(root, 0);
-            totalClean += stats.cleanCount;
-            totalLeak += stats.leakCount;
+            totalLeaks += stats.leakCount;
             totalPaths += stats.pathCount;
+            leakPaths += stats.leakPathCount;
         }
-
-        long totalTraversals = totalClean + totalLeak;
 
         // Metadata
         sb.append("METADATA:\n");
         sb.append("total_roots=").append(trie.getRootCount()).append("\n");
-        sb.append("total_traversals=").append(totalTraversals).append("\n");
         sb.append("total_paths=").append(totalPaths).append("\n");
-        sb.append("clean_count=").append(totalClean).append("\n");
-        sb.append("leak_count=").append(totalLeak).append("\n");
-        if (totalTraversals > 0) {
-            double leakRate = (totalLeak * 100.0) / totalTraversals;
-            sb.append(String.format("leak_rate=%.2f%%\n", leakRate));
-        }
+        sb.append("leak_paths=").append(leakPaths).append("\n");
+        sb.append("leak_count=").append(totalLeaks).append("\n");
         sb.append("\n");
 
         // Collect all paths
@@ -294,11 +259,10 @@ public class TrieRenderer {
         for (PathInfo path : allPaths) {
             if (path.leakCount > 0) {
                 String leakType = isDirectBufferRoot(path.root) ? "CRITICAL_LEAK" : "leak";
-                double leakRate = (path.leakCount * 100.0) / (path.cleanCount + path.leakCount);
 
                 sb.append(leakType)
                   .append("|root=").append(path.root)
-                  .append("|leak_rate=").append(String.format("%.1f%%", leakRate))
+                  .append("|leak_count=").append(path.leakCount)
                   .append("|path=").append(path.path)
                   .append("\n");
                 hasLeaks = true;
@@ -312,12 +276,11 @@ public class TrieRenderer {
         // Flows section
         sb.append("FLOWS:\n");
         for (PathInfo path : allPaths) {
-            long total = path.cleanCount + path.leakCount;
             boolean hasLeak = path.leakCount > 0;
 
             sb.append("flow|root=").append(path.root)
-              .append("|total=").append(total)
               .append("|has_leak=").append(hasLeak)
+              .append("|leak_count=").append(path.leakCount)
               .append("|path=").append(path.path)
               .append("\n");
         }
@@ -328,13 +291,11 @@ public class TrieRenderer {
     private static class PathInfo {
         String root;
         String path;
-        long cleanCount;
         long leakCount;
 
-        PathInfo(String root, String path, long cleanCount, long leakCount) {
+        PathInfo(String root, String path, long leakCount) {
             this.root = root;
             this.path = path;
-            this.cleanCount = cleanCount;
             this.leakCount = leakCount;
         }
     }
@@ -343,7 +304,7 @@ public class TrieRenderer {
                                     List<PathInfo> paths, int depth) {
         if (depth >= MAX_RECURSION_DEPTH) {
             String pathStr = String.join(" -> ", currentPath) + " -> [MAX_DEPTH_REACHED]";
-            paths.add(new PathInfo(root, pathStr, node.getCleanCount(), node.getLeakCount()));
+            paths.add(new PathInfo(root, pathStr, node.getLeakCount()));
             return;
         }
 
@@ -353,7 +314,7 @@ public class TrieRenderer {
 
         if (node.isLeaf()) {
             String pathStr = String.join(" -> ", currentPath);
-            paths.add(new PathInfo(root, pathStr, node.getCleanCount(), node.getLeakCount()));
+            paths.add(new PathInfo(root, pathStr, node.getLeakCount()));
         } else {
             for (ImprintNode child : node.getChildren().values()) {
                 collectPathsForLLM(root, child, new ArrayList<>(currentPath), paths, depth + 1);

@@ -34,7 +34,8 @@ public class ByteBufConstructorAdvice {
     // OPTIMIZATION: Cache for "_return" suffixes to avoid string concatenation on hot path
     // @Advice.Origin provides constants, so we can safely cache the concatenated results
     // Initial capacity 128 assumes ~85-100 unique tracked constructors (load factor 0.75)
-    private static final ConcurrentHashMap<String, String> CONSTRUCTOR_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(128);
+    // Must be public for instrumented classes to access
+    public static final ConcurrentHashMap<String, String> CONSTRUCTOR_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(128);
 
     /**
      * Tracks objects flowing into constructors (as constructor arguments).

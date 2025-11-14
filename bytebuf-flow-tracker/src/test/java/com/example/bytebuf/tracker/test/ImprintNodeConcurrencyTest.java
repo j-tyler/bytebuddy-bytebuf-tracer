@@ -43,7 +43,7 @@ public class ImprintNodeConcurrencyTest {
     }
 
     @Test
-    public void testConcurrentOutcomeRecording() throws InterruptedException {
+    public void testConcurrentLeakRecording() throws InterruptedException {
         ImprintNode node = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
         final int threadCount = 10;
         final int iterationsPerThread = 100;
@@ -51,10 +51,9 @@ public class ImprintNodeConcurrencyTest {
 
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            final boolean isClean = (i % 2 == 0);
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < iterationsPerThread; j++) {
-                    node.recordOutcome(isClean);
+                    node.recordLeak();
                 }
                 latch.countDown();
             });
@@ -63,11 +62,8 @@ public class ImprintNodeConcurrencyTest {
 
         latch.await();
 
-        long expectedClean = (threadCount / 2) * iterationsPerThread;
-        long expectedLeak = ((threadCount + 1) / 2) * iterationsPerThread;
-
-        assertEquals("Clean count should be accurate", expectedClean, node.getCleanCount());
-        assertEquals("Leak count should be accurate", expectedLeak, node.getLeakCount());
+        long expectedLeaks = threadCount * iterationsPerThread;
+        assertEquals("Leak count should be accurate", expectedLeaks, node.getLeakCount());
     }
 
     @Test

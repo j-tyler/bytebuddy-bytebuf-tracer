@@ -73,8 +73,11 @@ public class FixedArrayStringInterner {
 
         // Check original hash cell first
         String existing = table[originalIndex];
+        if (existing == s) {
+            return existing;  // Fast path: already interned (identity match)
+        }
         if (existing != null && existing.equals(s)) {
-            return existing;  // Cache hit at hash position
+            return existing;  // Slow path: first lookup (content match)
         }
 
         // Probe right up to MAX_PROBE_COUNT cells
@@ -89,8 +92,11 @@ public class FixedArrayStringInterner {
             }
 
             // Check if this cell contains an equal string
+            if (existing == s) {
+                return existing;  // Fast path: already interned (identity match)
+            }
             if (existing.equals(s)) {
-                return existing;  // Cache hit during probing
+                return existing;  // Slow path: first lookup (content match)
             }
         }
 

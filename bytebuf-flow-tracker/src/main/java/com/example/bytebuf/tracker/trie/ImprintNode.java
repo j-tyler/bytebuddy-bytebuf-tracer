@@ -45,11 +45,17 @@ public class ImprintNode {
     // +8 bytes per node, but enables full flow path in metrics
     private final ImprintNode parent;    // 8 bytes (null for roots)
 
-    // Traversal count (for all nodes, including intermediate)
-    private final AtomicLong traversalCount = new AtomicLong(0);
+    // Bit-packed statistics (40 bits traversals, 24 bits leaks)
+    // Saves 16 bytes per node vs two separate AtomicLongs
+    // Layout: [63-40: leakCount (24 bits)][39-0: traversalCount (40 bits)]
+    private final AtomicLong packedCounts = new AtomicLong(0);
 
-    // Leak statistics (atomic for thread-safety - for leaf nodes)
-    private final AtomicLong leakCount = new AtomicLong(0);   // GC'd without release
+    // Bit packing constants for 40/24 split
+    private static final long TRAVERSAL_MASK = 0xFFFFFFFFFFL;      // 40 bits of 1s
+    private static final long LEAK_MASK = 0xFFFFFFL;                // 24 bits of 1s
+    private static final long TRAVERSAL_MAX = 0xFFFFFFFFFFL;        // 1,099,511,627,775
+    private static final long LEAK_MAX = 0xFFFFFFL;                 // 16,777,215
+    private static final int LEAK_SHIFT = 40;
 
     // Children (shared Trie structure) - lazy initialized for memory efficiency
     // Dual-reference pattern: non-volatile for fast access, volatile for safe initialization
@@ -156,16 +162,46 @@ public class ImprintNode {
 
     /**
      * Record traversal through this node (called every time we pass through).
+     * Uses zero-allocation manual CAS loop with saturation at max value.
      */
     public void recordTraversal() {
-        traversalCount.incrementAndGet();
+        long current, newValue;
+        do {
+            current = packedCounts.get();
+            long traversals = current & TRAVERSAL_MASK;
+
+            // Saturation: if at max, don't increment (prevents overflow)
+            if (traversals >= TRAVERSAL_MAX) {
+                return;
+            }
+
+            // Increment traversal count, preserve leak count
+            long newTraversals = traversals + 1;
+            long leaks = (current >>> LEAK_SHIFT) & LEAK_MASK;
+            newValue = (leaks << LEAK_SHIFT) | newTraversals;
+        } while (!packedCounts.compareAndSet(current, newValue));
     }
 
     /**
      * Record that a path ending at this node leaked (GC'd without proper release).
+     * Uses zero-allocation manual CAS loop with saturation at max value.
      */
     public void recordLeak() {
-        leakCount.incrementAndGet();
+        long current, newValue;
+        do {
+            current = packedCounts.get();
+            long leaks = (current >>> LEAK_SHIFT) & LEAK_MASK;
+
+            // Saturation: if at max, don't increment (prevents overflow)
+            if (leaks >= LEAK_MAX) {
+                return;
+            }
+
+            // Increment leak count, preserve traversal count
+            long newLeaks = leaks + 1;
+            long traversals = current & TRAVERSAL_MASK;
+            newValue = (newLeaks << LEAK_SHIFT) | traversals;
+        } while (!packedCounts.compareAndSet(current, newValue));
     }
 
 
@@ -173,8 +209,20 @@ public class ImprintNode {
     public String getClassName() { return className; }
     public String getMethodName() { return methodName; }
     public byte getRefCountBucket() { return refCountBucket; }
-    public long getTraversalCount() { return traversalCount.get(); }
-    public long getLeakCount() { return leakCount.get(); }
+
+    /**
+     * Get traversal count from bit-packed field (lower 40 bits).
+     */
+    public long getTraversalCount() {
+        return packedCounts.get() & TRAVERSAL_MASK;
+    }
+
+    /**
+     * Get leak count from bit-packed field (upper 24 bits).
+     */
+    public long getLeakCount() {
+        return (packedCounts.get() >>> LEAK_SHIFT) & LEAK_MASK;
+    }
 
     /**
      * Get the children map. Returns empty map if this is a leaf node.

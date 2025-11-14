@@ -6,12 +6,12 @@
 package com.example.bytebuf.tracker.test;
 
 import com.example.bytebuf.tracker.trie.ImprintNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for ImprintNode concurrent access.
@@ -39,7 +39,7 @@ public class ImprintNodeConcurrencyTest {
         latch.await();
 
         long expectedCount = (long) threadCount * iterationsPerThread;
-        assertEquals("Traversal count should be accurate", expectedCount, node.getTraversalCount());
+        assertEquals(expectedCount, node.getTraversalCount(), "Traversal count should be accurate");
     }
 
     @Test
@@ -63,7 +63,47 @@ public class ImprintNodeConcurrencyTest {
         latch.await();
 
         long expectedLeaks = threadCount * iterationsPerThread;
-        assertEquals("Leak count should be accurate", expectedLeaks, node.getLeakCount());
+        assertEquals(expectedLeaks, node.getLeakCount(), "Leak count should be accurate");
+    }
+
+    @Test
+    public void testConcurrentTraversalAndLeakRecording() throws InterruptedException {
+        ImprintNode node = new ImprintNode("TestClass", "testMethod", (byte) 1, null);
+        final int traversalThreads = 5;
+        final int leakThreads = 5;
+        final int iterationsPerThread = 200;
+        CountDownLatch latch = new CountDownLatch(traversalThreads + leakThreads);
+
+        // Threads recording traversals
+        for (int i = 0; i < traversalThreads; i++) {
+            Thread thread = new Thread(() -> {
+                for (int j = 0; j < iterationsPerThread; j++) {
+                    node.recordTraversal();
+                }
+                latch.countDown();
+            });
+            thread.start();
+        }
+
+        // Threads recording leaks
+        for (int i = 0; i < leakThreads; i++) {
+            Thread thread = new Thread(() -> {
+                for (int j = 0; j < iterationsPerThread; j++) {
+                    node.recordLeak();
+                }
+                latch.countDown();
+            });
+            thread.start();
+        }
+
+        latch.await();
+
+        long expectedTraversals = (long) traversalThreads * iterationsPerThread;
+        long expectedLeaks = (long) leakThreads * iterationsPerThread;
+        assertEquals(expectedTraversals, node.getTraversalCount(),
+                     "Traversal count should be accurate despite concurrent leak updates");
+        assertEquals(expectedLeaks, node.getLeakCount(),
+                     "Leak count should be accurate despite concurrent traversal updates");
     }
 
     @Test
@@ -100,9 +140,9 @@ public class ImprintNodeConcurrencyTest {
         latch.await();
 
         // Should have created many children (up to per-node limit of 1000)
-        assertTrue("Should have created children", parent.getChildren().size() > 0);
-        assertTrue("Should not exceed max children", parent.getChildren().size() <= 1000);
-        assertEquals("All operations should succeed", threadCount * childrenPerThread, successCount.get());
+        assertTrue(parent.getChildren().size() > 0, "Should have created children");
+        assertTrue(parent.getChildren().size() <= 1000, "Should not exceed max children");
+        assertEquals(threadCount * childrenPerThread, successCount.get(), "All operations should succeed");
     }
 
     @Test
@@ -138,10 +178,10 @@ public class ImprintNodeConcurrencyTest {
         // Note: With stop-on-limit (no eviction), the first 1000 unique children are kept.
         // Attempting to create 1500 children (5 threads × 300 ops) should stop at 1000.
         int childCount = parent.getChildren().size();
-        assertTrue("Child count (" + childCount + ") should be bounded near 1000 limit",
-                   childCount <= 1100); // Allow some tolerance for concurrent race conditions
-        assertTrue("Should have created many children near the limit",
-                   childCount >= 900); // Verify we actually hit the limit
+        assertTrue(childCount <= 1100,
+                   "Child count (" + childCount + ") should be bounded near 1000 limit"); // Allow some tolerance for concurrent race conditions
+        assertTrue(childCount >= 900,
+                   "Should have created many children near the limit"); // Verify we actually hit the limit
     }
 
     @Test
@@ -154,8 +194,8 @@ public class ImprintNodeConcurrencyTest {
         ImprintNode.NodeKey key1 = new ImprintNode.NodeKey(methodSignature, refCount);
         ImprintNode.NodeKey key2 = new ImprintNode.NodeKey(methodSignature, refCount);
 
-        assertEquals("Hash codes should be equal for equal keys", key1.hashCode(), key2.hashCode());
-        assertEquals("Keys should be equal", key1, key2);
+        assertEquals(key1.hashCode(), key2.hashCode(), "Hash codes should be equal for equal keys");
+        assertEquals(key1, key2, "Keys should be equal");
     }
 
     @Test
@@ -172,9 +212,9 @@ public class ImprintNodeConcurrencyTest {
         ImprintNode.NodeKey key2 = new ImprintNode.NodeKey(methodSignature2, (byte) 1);
 
         // Since strings are interned, identity comparison should work
-        assertSame("Interned class names should be same object", className1, className2);
-        assertSame("Interned method names should be same object", methodName1, methodName2);
-        assertSame("Interned method signatures should be same object", methodSignature1, methodSignature2);
-        assertEquals("Keys should be equal", key1, key2);
+        assertSame(className1, className2, "Interned class names should be same object");
+        assertSame(methodName1, methodName2, "Interned method names should be same object");
+        assertSame(methodSignature1, methodSignature2, "Interned method signatures should be same object");
+        assertEquals(key1, key2, "Keys should be equal");
     }
 }

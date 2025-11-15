@@ -109,6 +109,10 @@
                         </goals>
                         <configuration>
                             <executable>java</executable>
+                            <environmentVariables>
+                                <!-- REQUIRED: Benchmark code validates this is set -->
+                                <JMH_GC_PROF>true</JMH_GC_PROF>
+                            </environmentVariables>
                             <arguments>
                                 <argument>-jar</argument>
                                 <argument>target/benchmarks.jar</argument>

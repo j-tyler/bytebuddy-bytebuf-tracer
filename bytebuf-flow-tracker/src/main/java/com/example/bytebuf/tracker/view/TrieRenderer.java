@@ -48,7 +48,9 @@ public class TrieRenderer {
             String rootSignature = entry.getKey();
             ImprintNode root = entry.getValue();
 
-            sb.append("ROOT: ").append(rootSignature);
+            String simpleRootSignature = getSimpleClassNameFromSignature(rootSignature);
+
+            sb.append("ROOT: ").append(simpleRootSignature);
             // For roots, show traversal count (how many objects went through), not outcome count
             sb.append(" [count=").append(root.getTraversalCount()).append("]\n");
 
@@ -95,8 +97,8 @@ public class TrieRenderer {
     private String formatNode(ImprintNode node, String rootSignature) {
         StringBuilder sb = new StringBuilder();
 
-        // Method signature
-        sb.append(node.getClassName()).append(".").append(node.getMethodName());
+        // Method signature with simple class name
+        sb.append(getSimpleClassName(node.getClassName())).append(".").append(node.getMethodName());
 
         // RefCount and count
         sb.append(" [ref=").append(node.getRefCountForDisplay());
@@ -141,6 +143,46 @@ public class TrieRenderer {
                rootSignature.endsWith(IO_BUFFER_METHOD) ||
                rootSignature.contains(DIRECT_BUFFER_METHOD + "(") ||
                rootSignature.contains(IO_BUFFER_METHOD + "(");
+    }
+
+    /**
+     * Extract simple class name from fully qualified class name.
+     * Handles inner classes (Outer$Inner) by preserving the $ separator.
+     *
+     * @param fullClassName Fully qualified class name (e.g., "com.example.Foo" or "com.example.Outer$Inner")
+     * @return Simple class name (e.g., "Foo" or "Outer$Inner"), or original if no package, or null if input is null
+     */
+    private String getSimpleClassName(String fullClassName) {
+        if (fullClassName == null) {
+            return null;
+        }
+        int lastDot = fullClassName.lastIndexOf('.');
+        return lastDot >= 0 ? fullClassName.substring(lastDot + 1) : fullClassName;
+    }
+
+    /**
+     * Extract simple class name from method signature.
+     * Method signatures are in format "package.ClassName.methodName" or "ClassName.methodName"
+     *
+     * @param signature Method signature (e.g., "com.example.Foo.bar" or "Foo.bar")
+     * @return Simple signature (e.g., "Foo.bar"), or original if already simple, or null if input is null
+     */
+    private String getSimpleClassNameFromSignature(String signature) {
+        if (signature == null) {
+            return signature;
+        }
+
+        int lastDot = signature.lastIndexOf('.');
+        if (lastDot < 0) {
+            return signature;
+        }
+
+        int secondLastDot = signature.lastIndexOf('.', lastDot - 1);
+        if (secondLastDot < 0) {
+            return signature;
+        }
+
+        return signature.substring(secondLastDot + 1);
     }
 
     /**
@@ -297,7 +339,7 @@ public class TrieRenderer {
                 double leakRate = (path.leakCount * 100.0) / (path.cleanCount + path.leakCount);
 
                 sb.append(leakType)
-                  .append("|root=").append(path.root)
+                  .append("|root=").append(getSimpleClassNameFromSignature(path.root))
                   .append("|leak_rate=").append(String.format("%.1f%%", leakRate))
                   .append("|path=").append(path.path)
                   .append("\n");
@@ -315,7 +357,7 @@ public class TrieRenderer {
             long total = path.cleanCount + path.leakCount;
             boolean hasLeak = path.leakCount > 0;
 
-            sb.append("flow|root=").append(path.root)
+            sb.append("flow|root=").append(getSimpleClassNameFromSignature(path.root))
               .append("|total=").append(total)
               .append("|has_leak=").append(hasLeak)
               .append("|path=").append(path.path)
@@ -347,7 +389,7 @@ public class TrieRenderer {
             return;
         }
 
-        String nodeStr = node.getClassName() + "." + node.getMethodName() +
+        String nodeStr = getSimpleClassName(node.getClassName()) + "." + node.getMethodName() +
                         "[ref=" + node.getRefCountForDisplay() + "]";
         currentPath.add(nodeStr);
 

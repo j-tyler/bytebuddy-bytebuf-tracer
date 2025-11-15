@@ -12,14 +12,16 @@ mvn clean package -pl bytebuf-flow-benchmarks
 
 # 2. Run WITHOUT agent (baseline)
 cd bytebuf-flow-benchmarks
-java -jar target/benchmarks.jar -prof gc
+JMH_GC_PROF=true java -jar target/benchmarks.jar -prof gc
 
 # 3. Run WITH agent (measure overhead)
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
   -jar target/benchmarks.jar -prof gc
 ```
 
-**IMPORTANT:** GC profiling (`-prof gc`) is **MANDATORY** for all benchmark runs. Memory allocation overhead is a critical metric that cannot be measured without it.
+**IMPORTANT:**
+- GC profiling (`-prof gc`) is **MANDATORY** for all benchmark runs. Memory allocation overhead is a critical metric that cannot be measured without it.
+- The `JMH_GC_PROF=true` environment variable is **REQUIRED** to acknowledge you are using GC profiling. The benchmark code validates this is set.
 
 ## Benchmark Scenarios
 
@@ -58,10 +60,10 @@ This pushes the tracker's internal optimizations to their limits by testing:
 
 ```bash
 # WITHOUT agent (baseline)
-java -jar target/benchmarks.jar ".*RandomWalkBenchmark.randomWalk" -prof gc
+JMH_GC_PROF=true java -jar target/benchmarks.jar ".*RandomWalkBenchmark.randomWalk" -prof gc
 
 # WITH agent (measure overhead under complex flows)
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
   -jar target/benchmarks.jar ".*RandomWalkBenchmark.randomWalk" -prof gc
 ```
 
@@ -88,18 +90,18 @@ java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPS
 
 ```bash
 # BASELINE (no agent)
-java -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
+JMH_GC_PROF=true java -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
 
 # TRACK ALL (default - tracks both heap and direct)
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
   -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
 
 # TRACK DIRECT ONLY (zero overhead for 80% heap allocations)
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;trackDirectOnly=true" \
   -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
 
 # FILTER DIRECT ONLY (runtime filtering with fast path)
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;filterDirectOnly=true" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks;filterDirectOnly=true" \
   -jar target/benchmarks.jar DirectMemoryFilteringBenchmark -prof gc
 ```
 
@@ -153,14 +155,17 @@ Run benchmarks without the agent to get baseline throughput:
 ```bash
 cd bytebuf-flow-benchmarks
 
-# Direct JAR execution (recommended - GC profiling always included)
-java -jar target/benchmarks.jar -prof gc
+# Direct JAR execution (recommended)
+JMH_GC_PROF=true java -jar target/benchmarks.jar -prof gc
 
-# Or via Maven (GC profiling pre-configured)
+# Or via Maven (environment variable and GC profiling pre-configured)
 mvn exec:exec@run-benchmarks
 ```
 
-**Note:** GC profiling (`-prof gc`) is MANDATORY for meaningful results. Memory allocation is a key overhead metric.
+**Note:**
+- GC profiling (`-prof gc`) is MANDATORY for meaningful results. Memory allocation is a key overhead metric.
+- When using direct JAR execution, the `JMH_GC_PROF=true` environment variable is REQUIRED.
+- When using Maven, the environment variable is automatically set in pom.xml.
 
 **Expected output:**
 ```
@@ -182,12 +187,13 @@ cd bytebuf-flow-benchmarks
 ls -lh ../bytebuf-flow-tracker/target/bytebuf-flow-tracker-*-agent.jar
 
 # Run with agent
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
   -jar target/benchmarks.jar \
   -prof gc
 ```
 
 **Note:**
+- The `JMH_GC_PROF=true` environment variable is **REQUIRED**
 - The agent argument must be quoted to prevent shell interpretation of semicolons
 - The `include=com.example.bytebuf.benchmarks` tells the agent to instrument benchmark classes
 - **GC profiling (`-prof gc`) is MANDATORY** - it shows memory allocation overhead which is critical for understanding the tracker's impact
@@ -218,23 +224,23 @@ Run specific benchmarks with custom settings:
 
 ```bash
 # Run ONLY the simple allocate/release benchmark
-java -jar target/benchmarks.jar ".*simpleAllocateAndRelease" -prof gc
+JMH_GC_PROF=true java -jar target/benchmarks.jar ".*simpleAllocateAndRelease" -prof gc
 
 # Run with agent for comparison
-java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+JMH_GC_PROF=true java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
   -jar target/benchmarks.jar ".*simpleAllocateAndRelease" -prof gc
 
 # Custom settings: 2 forks, longer warmup/iterations
-java -jar target/benchmarks.jar \
+JMH_GC_PROF=true java -jar target/benchmarks.jar \
   -f 2 \
   -wi 3 -w 10s \
   -i 5 -r 10s \
   -prof gc
 
-# List all available benchmarks
+# List all available benchmarks (no GC profiling needed for listing)
 java -jar target/benchmarks.jar -l
 
-# Show help
+# Show help (no GC profiling needed for help)
 java -jar target/benchmarks.jar -h
 ```
 

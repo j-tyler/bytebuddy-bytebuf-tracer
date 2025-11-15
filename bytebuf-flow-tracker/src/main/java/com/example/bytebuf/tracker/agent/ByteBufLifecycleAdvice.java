@@ -34,6 +34,23 @@ public class ByteBufLifecycleAdvice {
         ThreadLocal.withInitial(() -> 0);
 
     /**
+     * Extract simple class name from fully qualified method signature.
+     * Converts "io.netty.buffer.UnpooledByteBufAllocator.directBuffer" to "UnpooledByteBufAllocator.directBuffer"
+     * Must be public for ByteBuddy inlining (instrumented classes need access)
+     */
+    public static String toSimpleName(String fqnMethodSignature) {
+        int lastDot = fqnMethodSignature.lastIndexOf('.');
+        if (lastDot == -1) {
+            return fqnMethodSignature;  // No package, return as-is
+        }
+        int secondLastDot = fqnMethodSignature.lastIndexOf('.', lastDot - 1);
+        if (secondLastDot == -1) {
+            return fqnMethodSignature;  // Already simple name format
+        }
+        return fqnMethodSignature.substring(secondLastDot + 1);
+    }
+
+    /**
      * Method entry advice - captures refCnt before release/retain
      */
     @Advice.OnMethodEnter
@@ -66,9 +83,8 @@ public class ByteBufLifecycleAdvice {
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
             @Advice.This Object thiz,
-            @Advice.Origin("#t") String originClassName,
             @Advice.Origin("#m") String methodName,
-            @Advice.Origin("#t.#m") String methodSignature,
+            @Advice.Origin("#t.#m") String fqnMethodSignature,
             @Advice.Thrown Throwable thrown) {
 
         // Prevent re-entrant calls
@@ -111,20 +127,21 @@ public class ByteBufLifecycleAdvice {
                     return;
                 }
 
-                // Get the actual ByteBuf class name if available
-                // For lifecycle methods, we want to use the actual runtime class for better diagnostics
-                String className = originClassName;
-                String actualSignature = methodSignature;
+                // Get the actual ByteBuf class name if available for better diagnostics
+                // For lifecycle methods, use the actual runtime class (e.g., PooledUnsafeDirectByteBuf)
+                // instead of the instrumented class (e.g., ByteBuf)
+                String actualSignature;
                 if (thiz instanceof ByteBuf) {
-                    String actualClassName = thiz.getClass().getSimpleName();
-                    className = actualClassName;
-                    actualSignature = actualClassName + "." + methodName;
+                    // Build signature from runtime class: "PooledUnsafeDirectByteBuf.release"
+                    // This gives us the actual implementation class for better diagnostics
+                    actualSignature = thiz.getClass().getSimpleName() + "." + methodName;
+                } else {
+                    // Fallback: Convert FQN to simple name
+                    actualSignature = toSimpleName(fqnMethodSignature);
                 }
 
                 tracker.recordMethodCall(
                     thiz,
-                    className,
-                    methodName,
                     actualSignature,
                     afterRefCount
                 );

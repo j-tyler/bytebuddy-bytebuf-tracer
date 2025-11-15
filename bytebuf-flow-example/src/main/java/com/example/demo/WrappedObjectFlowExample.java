@@ -111,7 +111,7 @@ public class WrappedObjectFlowExample {
         // Step 6: Extract and release
         ByteBuf extracted = message.getBuffer();
         extracted.release();
-        tracker.recordMethodCall(extracted, "WrappedObjectFlowExample", "release", "WrappedObjectFlowExample.release", extracted.refCnt());
+        tracker.recordMethodCall(extracted, "WrappedObjectFlowExample.release", extracted.refCnt());
 
         System.out.println("Manual tracking: Complete visibility maintained");
     }
@@ -138,13 +138,13 @@ public class WrappedObjectFlowExample {
     public void processMessageWithTracking(MessageWithTracking message) {
         // Manually track the underlying ByteBuf
         ByteBuf buffer = message.getBuffer();
-        ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "WrappedObjectFlowExample", "processMessageWithTracking", "WrappedObjectFlowExample.processMessageWithTracking", buffer.refCnt());
+        ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "WrappedObjectFlowExample.processMessageWithTracking", buffer.refCnt());
         System.out.println("Processing message WITH tracking");
     }
 
     public void validateMessageWithTracking(MessageWithTracking message) {
         ByteBuf buffer = message.getBuffer();
-        ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "WrappedObjectFlowExample", "validateMessageWithTracking", "WrappedObjectFlowExample.validateMessageWithTracking", buffer.refCnt());
+        ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "WrappedObjectFlowExample.validateMessageWithTracking", buffer.refCnt());
         System.out.println("Validating message WITH tracking");
     }
 
@@ -184,7 +184,7 @@ public class WrappedObjectFlowExample {
             this.id = "MSG-" + System.currentTimeMillis();
 
             // Manual tracking (alternative: configure trackConstructors=...MessageWithTracking)
-            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "MessageWithTracking", "<init>", "MessageWithTracking.<init>", buffer.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "MessageWithTracking.<init>", buffer.refCnt());
         }
 
         public ByteBuf getBuffer() {
@@ -218,7 +218,7 @@ public class WrappedObjectFlowExample {
         public void process() {
             // If this method doesn't accept ByteBuf as parameter, it won't be tracked
             // Need to manually track the body ByteBuf
-            ByteBufFlowTracker.getInstance().recordMethodCall(body, "HttpRequest", "process", "HttpRequest.process", body.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(body, "HttpRequest.process", body.refCnt());
         }
     }
 

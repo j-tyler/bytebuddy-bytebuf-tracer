@@ -30,13 +30,28 @@ public class ByteBufTrackingAdvice {
         ThreadLocal.withInitial(java.util.HashSet::new);
 
     /**
+     * Extract simple class name from fully qualified method signature.
+     * Converts "io.netty.buffer.UnpooledByteBufAllocator.directBuffer" to "UnpooledByteBufAllocator.directBuffer"
+     * Must be public for ByteBuddy inlining (instrumented classes need access)
+     */
+    public static String toSimpleName(String fqnMethodSignature) {
+        int lastDot = fqnMethodSignature.lastIndexOf('.');
+        if (lastDot == -1) {
+            return fqnMethodSignature;  // No package, return as-is
+        }
+        int secondLastDot = fqnMethodSignature.lastIndexOf('.', lastDot - 1);
+        if (secondLastDot == -1) {
+            return fqnMethodSignature;  // Already simple name format
+        }
+        return fqnMethodSignature.substring(secondLastDot + 1);
+    }
+
+    /**
      * Method entry advice - tracks objects in parameters
      */
     @Advice.OnMethodEnter
     public static void onMethodEnter(
-            @Advice.Origin("#t") String className,
-            @Advice.Origin("#m") String methodName,
-            @Advice.Origin("#t.#m") String methodSignature,
+            @Advice.Origin("#t.#m") String fqnMethodSignature,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -56,13 +71,14 @@ public class ByteBufTrackingAdvice {
             // Clear the tracked params set for this invocation
             TRACKED_PARAMS.get().clear();
 
+            // Convert to simple class name for memory efficiency
+            String methodSignature = toSimpleName(fqnMethodSignature);
+
             for (Object arg : arguments) {
                 if (handler.shouldTrack(arg)) {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        className,
-                        methodName,
                         methodSignature,
                         metric
                     );
@@ -81,9 +97,7 @@ public class ByteBufTrackingAdvice {
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onMethodExit(
-            @Advice.Origin("#t") String className,
-            @Advice.Origin("#m") String methodName,
-            @Advice.Origin("#t.#m") String methodSignature,
+            @Advice.Origin("#t.#m") String fqnMethodSignature,
             @Advice.AllArguments Object[] arguments,
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
@@ -98,6 +112,9 @@ public class ByteBufTrackingAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
+            // Convert to simple class name for memory efficiency
+            String methodSignature = toSimpleName(fqnMethodSignature);
+
             // Track return values with _return suffix
             // Only track if it wasn't already tracked as a parameter (to avoid duplicates)
             if (handler.shouldTrack(returnValue)) {
@@ -106,8 +123,6 @@ public class ByteBufTrackingAdvice {
                     int metric = handler.getMetric(returnValue);
                     tracker.recordMethodCall(
                         returnValue,
-                        className,
-                        methodName + "_return",
                         methodSignature + "_return",
                         metric
                     );

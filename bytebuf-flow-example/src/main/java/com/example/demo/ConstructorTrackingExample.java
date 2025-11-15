@@ -110,7 +110,7 @@ public class ConstructorTrackingExample {
         ByteBuf buffer = message.getData();
         // Manual tracking for methods that receive wrapper objects
         if (buffer != null) {
-            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "ConstructorTrackingExample", "processMessage", "ConstructorTrackingExample.processMessage", buffer.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "ConstructorTrackingExample.processMessage", buffer.refCnt());
         }
     }
 
@@ -121,7 +121,7 @@ public class ConstructorTrackingExample {
         System.out.println("5. Validating TrackedMessage");
         ByteBuf buffer = message.getData();
         if (buffer != null) {
-            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "ConstructorTrackingExample", "validateMessage", "ConstructorTrackingExample.validateMessage", buffer.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "ConstructorTrackingExample.validateMessage", buffer.refCnt());
         }
     }
 

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * </ul>
  *
  * <p><b>Thread Safety:</b> This class is thread-safe. The node identity
- * (className, methodName, refCountBucket) is immutable. Statistics and children
+ * (methodSignature, refCountBucket) is immutable. Statistics and children
  * are protected using atomic operations and {@link java.util.concurrent.ConcurrentHashMap}.
  *
  * <p><b>Memory Bounds:</b> Each node limits children to {@value #MAX_CHILDREN_PER_NODE}
@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ImprintNode {
 
     // Immutable identity (interned for memory efficiency)
-    private final String className;      // 8 bytes (reference to interned string)
-    private final String methodName;     // 8 bytes (reference to interned string)
-    private final byte refCountBucket;   // 1 byte (0=zero, 1=low, 2=med, 3=high)
+    // Store only methodSignature (className.methodName) to save 8 bytes per node
+    private final String methodSignature;  // 8 bytes (reference to interned string)
+    private final byte refCountBucket;     // 1 byte (0=zero, 1=low, 2=med, 3=high)
 
     // Parent node for path reconstruction (null for root nodes)
     // +8 bytes per node, but enables full flow path in metrics
@@ -77,9 +77,8 @@ public class ImprintNode {
     // but could be made configurable via system property if needed.
     private static final int MAX_CHILDREN_PER_NODE = 1000;
 
-    public ImprintNode(String className, String methodName, byte refCountBucket, ImprintNode parent) {
-        this.className = className;
-        this.methodName = methodName;
+    public ImprintNode(String methodSignature, byte refCountBucket, ImprintNode parent) {
+        this.methodSignature = methodSignature;
         this.refCountBucket = refCountBucket;
         this.parent = parent;
     }
@@ -97,14 +96,11 @@ public class ImprintNode {
      * This eliminates memory barrier overhead on subsequent accesses by the same thread
      * after it has observed initialization, while maintaining thread-safe lazy initialization.
      *
-     * @param className Interned class name (for node identity and rendering)
-     * @param methodName Interned method name (for node identity and rendering)
-     * @param methodSignature Interned method signature (className.methodName, for compressed NodeKey)
+     * @param methodSignature Interned method signature (className.methodName)
      * @param refCountBucket Reference count bucket (0-3)
      * @return The child node (existing or newly created)
      */
-    public ImprintNode getOrCreateChild(String className, String methodName,
-                                       String methodSignature, byte refCountBucket) {
+    public ImprintNode getOrCreateChild(String methodSignature, byte refCountBucket) {
         // Fast path: Check non-volatile children first (no memory barrier)
         Map<NodeKey, ImprintNode> localChildren = children;
         if (localChildren == null) {
@@ -150,7 +146,7 @@ public class ImprintNode {
         }
 
         // Create new child with this node as parent
-        ImprintNode newChild = new ImprintNode(className, methodName, refCountBucket, this);
+        ImprintNode newChild = new ImprintNode(methodSignature, refCountBucket, this);
         ImprintNode result = localChildren.putIfAbsent(key, newChild);
         return result != null ? result : newChild;
     }
@@ -176,8 +172,23 @@ public class ImprintNode {
 
 
     // Getters
-    public String getClassName() { return className; }
-    public String getMethodName() { return methodName; }
+    public String getClassName() {
+        int lastDot = methodSignature.lastIndexOf('.');
+        if (lastDot == -1) {
+            // Malformed signature, return as-is
+            return methodSignature;
+        }
+        return methodSignature.substring(0, lastDot);
+    }
+
+    public String getMethodName() {
+        int lastDot = methodSignature.lastIndexOf('.');
+        if (lastDot == -1) {
+            // Malformed signature, return as-is
+            return methodSignature;
+        }
+        return methodSignature.substring(lastDot + 1);
+    }
     public byte getRefCountBucket() { return refCountBucket; }
     public long getTraversalCount() { return traversalCount.get(); }
     public long getCleanCount() { return cleanCount.get(); }

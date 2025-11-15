@@ -37,13 +37,13 @@ public class ByteBufFlowTrackerTest {
         ByteBuf buffer = Unpooled.buffer(256);
         
         // Simulate method calls
-        tracker.recordMethodCall(buffer, "FrameDecoder", "decode", "FrameDecoder.decode", buffer.refCnt());
-        tracker.recordMethodCall(buffer, "MessageHandler", "handle", "MessageHandler.handle", buffer.refCnt());
-        tracker.recordMethodCall(buffer, "BusinessService", "process", "BusinessService.process", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "FrameDecoder.decode", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "MessageHandler.handle", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "BusinessService.process", buffer.refCnt());
         
         // Release the buffer
         buffer.release();
-        tracker.recordMethodCall(buffer, "BusinessService", "process", "BusinessService.process", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "BusinessService.process", buffer.refCnt());
         
         // Verify the tree structure
         tracker.onShutdown();  // Finalize flows before rendering
@@ -64,18 +64,18 @@ public class ByteBufFlowTrackerTest {
         ByteBuf leakyBuffer = Unpooled.buffer(256);
         
         // Simulate method calls
-        tracker.recordMethodCall(leakyBuffer, "HttpHandler", "handleRequest", "HttpHandler.handleRequest", leakyBuffer.refCnt());
-        tracker.recordMethodCall(leakyBuffer, "RequestProcessor", "process", "RequestProcessor.process", leakyBuffer.refCnt());
-        tracker.recordMethodCall(leakyBuffer, "ErrorLogger", "log", "ErrorLogger.log", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "HttpHandler.handleRequest", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "RequestProcessor.process", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "ErrorLogger.log", leakyBuffer.refCnt());
         // Note: We don't release the buffer - this is a leak!
         
         // Create another ByteBuf that is properly released
         ByteBuf goodBuffer = Unpooled.buffer(256);
-        tracker.recordMethodCall(goodBuffer, "HttpHandler", "handleRequest", "HttpHandler.handleRequest", goodBuffer.refCnt());
-        tracker.recordMethodCall(goodBuffer, "RequestProcessor", "process", "RequestProcessor.process", goodBuffer.refCnt());
-        tracker.recordMethodCall(goodBuffer, "ResponseWriter", "write", "ResponseWriter.write", goodBuffer.refCnt());
+        tracker.recordMethodCall(goodBuffer, "HttpHandler.handleRequest", goodBuffer.refCnt());
+        tracker.recordMethodCall(goodBuffer, "RequestProcessor.process", goodBuffer.refCnt());
+        tracker.recordMethodCall(goodBuffer, "ResponseWriter.write", goodBuffer.refCnt());
         goodBuffer.release();
-        tracker.recordMethodCall(goodBuffer, "ResponseWriter", "write", "ResponseWriter.write", goodBuffer.refCnt());
+        tracker.recordMethodCall(goodBuffer, "ResponseWriter.write", goodBuffer.refCnt());
         
         // Get the LLM view to see leaks
         tracker.onShutdown();  // Finalize flows before rendering
@@ -100,27 +100,27 @@ public class ByteBufFlowTrackerTest {
         buffer1.retain(); // refCount = 3 (MEDIUM bucket)
 
         System.out.println("buffer1 refCnt after retains: " + buffer1.refCnt());
-        tracker.recordMethodCall(buffer1, "MessageDecoder", "decode", "MessageDecoder.decode", buffer1.refCnt());
-        tracker.recordMethodCall(buffer1, "MessageValidator", "validate", "MessageValidator.validate", buffer1.refCnt());
+        tracker.recordMethodCall(buffer1, "MessageDecoder.decode", buffer1.refCnt());
+        tracker.recordMethodCall(buffer1, "MessageValidator.validate", buffer1.refCnt());
         buffer1.release();
         System.out.println("buffer1 refCnt after 1st release: " + buffer1.refCnt());
-        tracker.recordMethodCall(buffer1, "MessageProcessor", "process", "MessageProcessor.process", buffer1.refCnt());
+        tracker.recordMethodCall(buffer1, "MessageProcessor.process", buffer1.refCnt());
         buffer1.release();
         buffer1.release();
         System.out.println("buffer1 refCnt after 3 releases: " + buffer1.refCnt());
-        tracker.recordMethodCall(buffer1, "MessageProcessor", "process", "MessageProcessor.process", buffer1.refCnt());
+        tracker.recordMethodCall(buffer1, "MessageProcessor.process", buffer1.refCnt());
 
         // Same path but different refCount pattern (LOW bucket)
         ByteBuf buffer2 = Unpooled.buffer(256);
         // refCount = 1 (no extra retain)
 
         System.out.println("buffer2 refCnt at start: " + buffer2.refCnt());
-        tracker.recordMethodCall(buffer2, "MessageDecoder", "decode", "MessageDecoder.decode", buffer2.refCnt());
-        tracker.recordMethodCall(buffer2, "MessageValidator", "validate", "MessageValidator.validate", buffer2.refCnt());
-        tracker.recordMethodCall(buffer2, "MessageProcessor", "process", "MessageProcessor.process", buffer2.refCnt());
+        tracker.recordMethodCall(buffer2, "MessageDecoder.decode", buffer2.refCnt());
+        tracker.recordMethodCall(buffer2, "MessageValidator.validate", buffer2.refCnt());
+        tracker.recordMethodCall(buffer2, "MessageProcessor.process", buffer2.refCnt());
         buffer2.release();
         System.out.println("buffer2 refCnt after release: " + buffer2.refCnt());
-        tracker.recordMethodCall(buffer2, "MessageProcessor", "process", "MessageProcessor.process", buffer2.refCnt());
+        tracker.recordMethodCall(buffer2, "MessageProcessor.process", buffer2.refCnt());
 
         tracker.onShutdown();  // Finalize flows before rendering
 
@@ -142,16 +142,16 @@ public class ByteBufFlowTrackerTest {
         for (int i = 0; i < 1000; i++) {
             ByteBuf buffer = Unpooled.buffer(256);
             
-            tracker.recordMethodCall(buffer, "HighVolumeHandler", "handle", "HighVolumeHandler.handle", buffer.refCnt());
-            tracker.recordMethodCall(buffer, "FastProcessor", "process", "FastProcessor.process", buffer.refCnt());
+            tracker.recordMethodCall(buffer, "HighVolumeHandler.handle", buffer.refCnt());
+            tracker.recordMethodCall(buffer, "FastProcessor.process", buffer.refCnt());
             
             if (i % 10 == 0) {
                 // 10% take a different path
-                tracker.recordMethodCall(buffer, "SlowProcessor", "process", "SlowProcessor.process", buffer.refCnt());
+                tracker.recordMethodCall(buffer, "SlowProcessor.process", buffer.refCnt());
             }
             
             buffer.release();
-            tracker.recordMethodCall(buffer, "FastProcessor", "process", "FastProcessor.process", buffer.refCnt());
+            tracker.recordMethodCall(buffer, "FastProcessor.process", buffer.refCnt());
         }
         
         tracker.onShutdown();  // Finalize flows before rendering
@@ -180,7 +180,7 @@ public class ByteBufFlowTrackerTest {
 
         // Release the buffer
         buffer.release();
-        tracker.recordMethodCall(buffer, "StaticMethodExample", "cleanup", "StaticMethodExample.cleanup", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "StaticMethodExample.cleanup", buffer.refCnt());
 
         // Verify the tree structure includes static method
         tracker.onShutdown();  // Finalize flows before rendering
@@ -199,7 +199,7 @@ public class ByteBufFlowTrackerTest {
     public void testConstructorTracking() {
         // Create a ByteBuf
         ByteBuf buffer = Unpooled.buffer(256);
-        tracker.recordMethodCall(buffer, "TestClass", "allocate", "TestClass.allocate", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestClass.allocate", buffer.refCnt());
 
         // Pass ByteBuf to a constructor - currently NOT tracked
         WrappedMessage message = new WrappedMessage(buffer);
@@ -210,7 +210,7 @@ public class ByteBufFlowTrackerTest {
 
         // Release the buffer
         buffer.release();
-        tracker.recordMethodCall(buffer, "TestClass", "cleanup", "TestClass.cleanup", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestClass.cleanup", buffer.refCnt());
 
         // Verify the tree structure
         tracker.onShutdown();  // Finalize flows before rendering
@@ -244,7 +244,7 @@ public class ByteBufFlowTrackerTest {
         // Step 1: Allocate ByteBuf
         ByteBuf buffer = Unpooled.buffer(256);
         buffer.writeBytes("Test Data".getBytes());
-        tracker.recordMethodCall(buffer, "Client", "allocate", "Client.allocate", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "Client.allocate", buffer.refCnt());
 
         // Step 2: Pass to method that wraps it
         WrappedMessage message = wrapInMessage(buffer);
@@ -258,7 +258,7 @@ public class ByteBufFlowTrackerTest {
         // Step 5: Finally extract and release
         ByteBuf extracted = extractFromMessage(message);
         extracted.release();
-        tracker.recordMethodCall(extracted, "Client", "release", "Client.release", extracted.refCnt());
+        tracker.recordMethodCall(extracted, "Client.release", extracted.refCnt());
 
         // Analyze the flow
         tracker.onShutdown();  // Finalize flows before rendering
@@ -304,7 +304,7 @@ public class ByteBufFlowTrackerTest {
 
         // Allocate ByteBuf
         ByteBuf buffer = Unpooled.buffer(256);
-        tracker.recordMethodCall(buffer, "TestClient", "create", "TestClient.create", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestClient.create", buffer.refCnt());
 
         // Pass to constructor - constructors are currently excluded from tracking
         MessageWithConstructorTracking message = new MessageWithConstructorTracking(buffer);
@@ -314,7 +314,7 @@ public class ByteBufFlowTrackerTest {
 
         // Release
         buffer.release();
-        tracker.recordMethodCall(buffer, "TestClient", "cleanup", "TestClient.cleanup", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestClient.cleanup", buffer.refCnt());
 
         // Check the flow
         tracker.onShutdown();  // Finalize flows before rendering
@@ -364,11 +364,11 @@ public class ByteBufFlowTrackerTest {
         public MessageWithConstructorTracking(ByteBuf data) {
             this.data = data;
             // Manual tracking in constructor
-            ByteBufFlowTracker.getInstance().recordMethodCall(data, "MessageWithConstructorTracking", "<init>", "MessageWithConstructorTracking.<init>", data.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(data, "MessageWithConstructorTracking.<init>", data.refCnt());
         }
 
         public void process() {
-            ByteBufFlowTracker.getInstance().recordMethodCall(data, "MessageWithConstructorTracking", "process", "MessageWithConstructorTracking.process", data.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(data, "MessageWithConstructorTracking.process", data.refCnt());
         }
 
         public ByteBuf getData() {
@@ -380,7 +380,7 @@ public class ByteBufFlowTrackerTest {
      * Method that wraps ByteBuf in a message object
      */
     public WrappedMessage wrapInMessage(ByteBuf buffer) {
-        tracker.recordMethodCall(buffer, "TestHelper", "wrapInMessage", "TestHelper.wrapInMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.wrapInMessage", buffer.refCnt());
         return new WrappedMessage(buffer);
     }
 
@@ -391,7 +391,7 @@ public class ByteBufFlowTrackerTest {
     public void processWrappedMessage(WrappedMessage message) {
         // Manual tracking since WrappedMessage isn't a ByteBuf
         ByteBuf buffer = message.getData();
-        tracker.recordMethodCall(buffer, "TestHelper", "processWrappedMessage", "TestHelper.processWrappedMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.processWrappedMessage", buffer.refCnt());
     }
 
     /**
@@ -399,7 +399,7 @@ public class ByteBufFlowTrackerTest {
      */
     public void validateWrappedMessage(WrappedMessage message) {
         ByteBuf buffer = message.getData();
-        tracker.recordMethodCall(buffer, "TestHelper", "validateWrappedMessage", "TestHelper.validateWrappedMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.validateWrappedMessage", buffer.refCnt());
     }
 
     /**
@@ -407,7 +407,7 @@ public class ByteBufFlowTrackerTest {
      */
     public ByteBuf extractFromMessage(WrappedMessage message) {
         ByteBuf buffer = message.getData();
-        tracker.recordMethodCall(buffer, "TestHelper", "extractFromMessage", "TestHelper.extractFromMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.extractFromMessage", buffer.refCnt());
         return buffer;
     }
 
@@ -418,11 +418,11 @@ public class ByteBufFlowTrackerTest {
 
         public void processWithInstance(ByteBuf buffer) {
             ByteBufFlowTracker.getInstance().recordMethodCall(
-                buffer, getClass().getSimpleName(), "processWithInstance", buffer.refCnt());
+                buffer, getClass().getSimpleName() + ".processWithInstance", buffer.refCnt());
         }
 
         public static void processWithStatic(ByteBuf buffer) {
-            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "StaticMethodExample", "processWithStatic", "StaticMethodExample.processWithStatic", buffer.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "StaticMethodExample.processWithStatic", buffer.refCnt());
         }
     }
 
@@ -437,7 +437,7 @@ public class ByteBufFlowTrackerTest {
         // Step 1: Allocate ByteBuf
         ByteBuf buffer = Unpooled.buffer(256);
         buffer.writeBytes("Continuous flow test".getBytes());
-        tracker.recordMethodCall(buffer, "TestClient", "allocate", "TestClient.allocate", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestClient.allocate", buffer.refCnt());
 
         // Step 2: Pass to method that will wrap it
         prepareMessage(buffer);
@@ -454,7 +454,7 @@ public class ByteBufFlowTrackerTest {
         // Step 6: Extract and release
         ByteBuf extracted = message.getBuffer();
         extracted.release();
-        tracker.recordMethodCall(extracted, "TestClient", "cleanup", "TestClient.cleanup", extracted.refCnt());
+        tracker.recordMethodCall(extracted, "TestClient.cleanup", extracted.refCnt());
 
         // Verify continuous flow
         tracker.onShutdown();  // Finalize flows before rendering
@@ -499,7 +499,7 @@ public class ByteBufFlowTrackerTest {
             this.messageId = "MSG-" + System.currentTimeMillis();
 
             // Simulates what the agent would do when trackConstructors is enabled
-            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "TrackedMessage", "<init>", "TrackedMessage.<init>", buffer.refCnt());
+            ByteBufFlowTracker.getInstance().recordMethodCall(buffer, "TrackedMessage.<init>", buffer.refCnt());
         }
 
         public ByteBuf getBuffer() {
@@ -515,7 +515,7 @@ public class ByteBufFlowTrackerTest {
      * Helper method to prepare a message
      */
     public void prepareMessage(ByteBuf buffer) {
-        tracker.recordMethodCall(buffer, "TestHelper", "prepareMessage", "TestHelper.prepareMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.prepareMessage", buffer.refCnt());
     }
 
     /**
@@ -524,7 +524,7 @@ public class ByteBufFlowTrackerTest {
     public void processTrackedMessage(TrackedMessage message) {
         // Extract ByteBuf and track
         ByteBuf buffer = message.getBuffer();
-        tracker.recordMethodCall(buffer, "TestHelper", "processTrackedMessage", "TestHelper.processTrackedMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.processTrackedMessage", buffer.refCnt());
     }
 
     /**
@@ -532,7 +532,7 @@ public class ByteBufFlowTrackerTest {
      */
     public void validateTrackedMessage(TrackedMessage message) {
         ByteBuf buffer = message.getBuffer();
-        tracker.recordMethodCall(buffer, "TestHelper", "validateTrackedMessage", "TestHelper.validateTrackedMessage", buffer.refCnt());
+        tracker.recordMethodCall(buffer, "TestHelper.validateTrackedMessage", buffer.refCnt());
     }
 
     /**
@@ -544,7 +544,7 @@ public class ByteBufFlowTrackerTest {
 
         public void handleMessage(ByteBuf message) {
             // Track entry into this method
-            tracker.recordMethodCall(message, getClass().getSimpleName(), "handleMessage", message.refCnt());
+            tracker.recordMethodCall(message, getClass().getSimpleName() + ".handleMessage", message.refCnt());
 
             try {
                 // Process the message
@@ -552,12 +552,12 @@ public class ByteBufFlowTrackerTest {
             } finally {
                 // Always release and track
                 message.release();
-                tracker.recordMethodCall(message, getClass().getSimpleName(), "handleMessage_exit", message.refCnt());
+                tracker.recordMethodCall(message, getClass().getSimpleName() + ".handleMessage_exit", message.refCnt());
             }
         }
 
         private void processInternal(ByteBuf message) {
-            tracker.recordMethodCall(message, getClass().getSimpleName(), "processInternal", message.refCnt());
+            tracker.recordMethodCall(message, getClass().getSimpleName() + ".processInternal", message.refCnt());
             // ... actual processing ...
         }
     }
@@ -572,33 +572,33 @@ public class ByteBufFlowTrackerTest {
         ByteBuf buffer = Unpooled.buffer(256);
 
         // Initial allocation
-        tracker.recordMethodCall(buffer, "Client", "allocate", "Client.allocate", buffer.refCnt()); // ref=1
+        tracker.recordMethodCall(buffer, "Client.allocate", buffer.refCnt()); // ref=1
 
         // Method that retains the buffer
         buffer.retain();
-        tracker.recordMethodCall(buffer, "Handler", "retain", "Handler.retain", buffer.refCnt()); // ref=2
+        tracker.recordMethodCall(buffer, "Handler.retain", buffer.refCnt()); // ref=2
 
         // Another retain
         buffer.retain();
-        tracker.recordMethodCall(buffer, "Processor", "retain", "Processor.retain", buffer.refCnt()); // ref=3
+        tracker.recordMethodCall(buffer, "Processor.retain", buffer.refCnt()); // ref=3
 
         // First release (ref=3 -> 2) - should NOT be tracked in final tree
         buffer.release();
         // NOTE: With lifecycle advice enabled, this intermediate release would be SKIPPED
 
         // Processing with ref=2
-        tracker.recordMethodCall(buffer, "Processor", "process", "Processor.process", buffer.refCnt()); // ref=2
+        tracker.recordMethodCall(buffer, "Processor.process", buffer.refCnt()); // ref=2
 
         // Second release (ref=2 -> 1) - should NOT be tracked in final tree
         buffer.release();
         // NOTE: With lifecycle advice enabled, this intermediate release would be SKIPPED
 
         // Processing with ref=1
-        tracker.recordMethodCall(buffer, "Handler", "cleanup", "Handler.cleanup", buffer.refCnt()); // ref=1
+        tracker.recordMethodCall(buffer, "Handler.cleanup", buffer.refCnt()); // ref=1
 
         // Final release (ref=1 -> 0) - THIS should be tracked
         buffer.release();
-        tracker.recordMethodCall(buffer, "Handler", "release", "Handler.release", buffer.refCnt()); // ref=0
+        tracker.recordMethodCall(buffer, "Handler.release", buffer.refCnt()); // ref=0
 
         // Verify the flow
         tracker.onShutdown();  // Finalize flows before rendering
@@ -637,18 +637,18 @@ public class ByteBufFlowTrackerTest {
         // Scenario: ByteBuf that is never released
         ByteBuf leakyBuffer = Unpooled.buffer(256);
 
-        tracker.recordMethodCall(leakyBuffer, "Service", "allocate", "Service.allocate", leakyBuffer.refCnt()); // ref=1
-        tracker.recordMethodCall(leakyBuffer, "Service", "process", "Service.process", leakyBuffer.refCnt());  // ref=1
-        tracker.recordMethodCall(leakyBuffer, "Service", "store", "Service.store", leakyBuffer.refCnt());    // ref=1
+        tracker.recordMethodCall(leakyBuffer, "Service.allocate", leakyBuffer.refCnt()); // ref=1
+        tracker.recordMethodCall(leakyBuffer, "Service.process", leakyBuffer.refCnt());  // ref=1
+        tracker.recordMethodCall(leakyBuffer, "Service.store", leakyBuffer.refCnt());    // ref=1
         // NOTE: No release() call!
 
         // Scenario: ByteBuf that is properly released
         ByteBuf goodBuffer = Unpooled.buffer(256);
 
-        tracker.recordMethodCall(goodBuffer, "Service", "allocate", "Service.allocate", goodBuffer.refCnt());  // ref=1
-        tracker.recordMethodCall(goodBuffer, "Service", "process", "Service.process", goodBuffer.refCnt());   // ref=1
+        tracker.recordMethodCall(goodBuffer, "Service.allocate", goodBuffer.refCnt());  // ref=1
+        tracker.recordMethodCall(goodBuffer, "Service.process", goodBuffer.refCnt());   // ref=1
         goodBuffer.release();
-        tracker.recordMethodCall(goodBuffer, "Service", "release", "Service.release", goodBuffer.refCnt());   // ref=0
+        tracker.recordMethodCall(goodBuffer, "Service.release", goodBuffer.refCnt());   // ref=0
 
         // Verify the flow
         tracker.onShutdown();  // Finalize flows before rendering
@@ -684,17 +684,17 @@ public class ByteBufFlowTrackerTest {
         // Create test data with both leaks and clean paths
         // Leaky buffer
         ByteBuf leakyBuffer = Unpooled.buffer(256);
-        tracker.recordMethodCall(leakyBuffer, "Service", "allocate", "Service.allocate", leakyBuffer.refCnt());
-        tracker.recordMethodCall(leakyBuffer, "Service", "process", "Service.process", leakyBuffer.refCnt());
-        tracker.recordMethodCall(leakyBuffer, "Service", "forget", "Service.forget", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "Service.allocate", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "Service.process", leakyBuffer.refCnt());
+        tracker.recordMethodCall(leakyBuffer, "Service.forget", leakyBuffer.refCnt());
         // Not released - leak!
 
         // Clean buffer
         ByteBuf cleanBuffer = Unpooled.buffer(256);
-        tracker.recordMethodCall(cleanBuffer, "Service", "allocate", "Service.allocate", cleanBuffer.refCnt());
-        tracker.recordMethodCall(cleanBuffer, "Service", "process", "Service.process", cleanBuffer.refCnt());
+        tracker.recordMethodCall(cleanBuffer, "Service.allocate", cleanBuffer.refCnt());
+        tracker.recordMethodCall(cleanBuffer, "Service.process", cleanBuffer.refCnt());
         cleanBuffer.release();
-        tracker.recordMethodCall(cleanBuffer, "Service", "cleanup", "Service.cleanup", cleanBuffer.refCnt());
+        tracker.recordMethodCall(cleanBuffer, "Service.cleanup", cleanBuffer.refCnt());
 
         // Render in LLM format
         tracker.onShutdown();  // Finalize flows before rendering
@@ -759,16 +759,16 @@ public class ByteBufFlowTrackerTest {
         ByteBuf buffer = Unpooled.buffer(256);
 
         // Allocate with ref=1
-        tracker.recordMethodCall(buffer, "Manager", "create", "Manager.create", buffer.refCnt()); // ref=1
+        tracker.recordMethodCall(buffer, "Manager.create", buffer.refCnt()); // ref=1
 
         // Retain twice (ref=1 -> 2 -> 3)
         buffer.retain();
-        tracker.recordMethodCall(buffer, "Manager", "retain", "Manager.retain", buffer.refCnt()); // ref=2
+        tracker.recordMethodCall(buffer, "Manager.retain", buffer.refCnt()); // ref=2
         buffer.retain();
-        tracker.recordMethodCall(buffer, "Manager", "retain", "Manager.retain", buffer.refCnt()); // ref=3
+        tracker.recordMethodCall(buffer, "Manager.retain", buffer.refCnt()); // ref=3
 
         // Process with ref=3
-        tracker.recordMethodCall(buffer, "Worker", "process", "Worker.process", buffer.refCnt()); // ref=3
+        tracker.recordMethodCall(buffer, "Worker.process", buffer.refCnt()); // ref=3
 
         // Release once (ref=3 -> 2) - intermediate, should be SKIPPED
         int refCountBefore1 = buffer.refCnt();
@@ -778,7 +778,7 @@ public class ByteBufFlowTrackerTest {
         // Don't track this intermediate release
 
         // Process with ref=2
-        tracker.recordMethodCall(buffer, "Worker", "process", "Worker.process", buffer.refCnt()); // ref=2
+        tracker.recordMethodCall(buffer, "Worker.process", buffer.refCnt()); // ref=2
 
         // Release again (ref=2 -> 1) - intermediate, should be SKIPPED
         int refCountBefore2 = buffer.refCnt();
@@ -788,14 +788,14 @@ public class ByteBufFlowTrackerTest {
         // Don't track this intermediate release
 
         // Final processing
-        tracker.recordMethodCall(buffer, "Manager", "cleanup", "Manager.cleanup", buffer.refCnt()); // ref=1
+        tracker.recordMethodCall(buffer, "Manager.cleanup", buffer.refCnt()); // ref=1
 
         // Final release (ref=1 -> 0) - THIS is tracked
         int refCountBefore3 = buffer.refCnt();
         buffer.release();
         int refCountAfter3 = buffer.refCnt();
         System.out.println("Third release: ref=" + refCountBefore3 + " -> " + refCountAfter3 + " (FINAL, tracked)");
-        tracker.recordMethodCall(buffer, "Manager", "release", "Manager.release", buffer.refCnt()); // ref=0
+        tracker.recordMethodCall(buffer, "Manager.release", buffer.refCnt()); // ref=0
 
         // Verify the flow
         tracker.onShutdown();  // Finalize flows before rendering

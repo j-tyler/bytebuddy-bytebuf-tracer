@@ -34,6 +34,23 @@ public class ByteBufConstructionAdvice {
         ThreadLocal.withInitial(() -> false);
 
     /**
+     * Extract simple class name from fully qualified method signature.
+     * Converts "io.netty.buffer.UnpooledByteBufAllocator.directBuffer" to "UnpooledByteBufAllocator.directBuffer"
+     * Must be public for ByteBuddy inlining (instrumented classes need access)
+     */
+    public static String toSimpleName(String fqnMethodSignature) {
+        int lastDot = fqnMethodSignature.lastIndexOf('.');
+        if (lastDot == -1) {
+            return fqnMethodSignature;  // No package, return as-is
+        }
+        int secondLastDot = fqnMethodSignature.lastIndexOf('.', lastDot - 1);
+        if (secondLastDot == -1) {
+            return fqnMethodSignature;  // Already simple name format
+        }
+        return fqnMethodSignature.substring(secondLastDot + 1);
+    }
+
+    /**
      * Runtime filtering flag for direct-only tracking.
      *
      * WHY: trackDirectOnly skips heapBuffer instrumentation at compile-time, but ambiguous
@@ -56,9 +73,8 @@ public class ByteBufConstructionAdvice {
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onConstructionExit(
-            @Advice.Origin("#t") String className,
             @Advice.Origin("#m") String methodName,
-            @Advice.Origin("#t.#m") String methodSignature,
+            @Advice.Origin("#t.#m") String fqnMethodSignature,
             @Advice.Return(typing = Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
 
@@ -69,6 +85,9 @@ public class ByteBufConstructionAdvice {
 
         try {
             IS_TRACKING.set(true);
+
+            // Convert to simple class name for memory efficiency
+            String methodSignature = toSimpleName(fqnMethodSignature);
 
             // OPTIMIZATION: Fast-path filtering for direct-only mode
             //
@@ -135,8 +154,6 @@ public class ByteBufConstructionAdvice {
                 // Record this as the first touch (construction becomes root)
                 tracker.recordMethodCall(
                     returnValue,
-                    className,
-                    methodName,
                     methodSignature,
                     metric
                 );

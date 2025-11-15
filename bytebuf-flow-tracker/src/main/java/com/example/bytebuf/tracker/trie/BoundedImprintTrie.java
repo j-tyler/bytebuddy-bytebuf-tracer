@@ -43,14 +43,14 @@ public class BoundedImprintTrie {
         this.maxTotalNodes = maxTotalNodes;
         this.maxDepth = maxDepth;
         // Size the interner to the number of allowed nodes
-        // Each node has className + methodName, so we need roughly 2x capacity
-        this.stringInterner = new FixedArrayStringInterner(maxTotalNodes * 2);
+        // Each node has one methodSignature string
+        this.stringInterner = new FixedArrayStringInterner(maxTotalNodes);
     }
 
     /**
      * Get or create a root node for an allocator method.
      */
-    public ImprintNode getOrCreateRoot(String className, String methodName, String methodSignature) {
+    public ImprintNode getOrCreateRoot(String methodSignature) {
         String key = intern(methodSignature);
 
         ImprintNode existing = roots.get(key);
@@ -70,8 +70,7 @@ public class BoundedImprintTrie {
         }
 
         ImprintNode newRoot = new ImprintNode(
-            intern(className),
-            intern(methodName),
+            key,       // methodSignature is already interned above
             (byte) 1,  // Root always starts with ref=1
             null       // Root nodes have no parent
         );
@@ -90,8 +89,7 @@ public class BoundedImprintTrie {
      * Traverse or create a child node.
      * Enforces depth limit and global node limit.
      */
-    public ImprintNode traverseOrCreate(ImprintNode parent, String className,
-                                        String methodName, String methodSignature,
+    public ImprintNode traverseOrCreate(ImprintNode parent, String methodSignature,
                                         int refCount, int currentDepth) {
         // Depth limit check
         if (currentDepth >= maxDepth) {
@@ -108,14 +106,10 @@ public class BoundedImprintTrie {
         // Check if child already exists
         int childCountBefore = parent.getChildren().size();
 
-        // Intern all strings - methodSignature already pre-computed at instrumentation time
-        String internedClassName = intern(className);
-        String internedMethodName = intern(methodName);
+        // Intern the methodSignature (pre-computed at instrumentation time)
         String internedMethodSignature = intern(methodSignature);
 
         ImprintNode child = parent.getOrCreateChild(
-            internedClassName,
-            internedMethodName,
             internedMethodSignature,
             bucket
         );

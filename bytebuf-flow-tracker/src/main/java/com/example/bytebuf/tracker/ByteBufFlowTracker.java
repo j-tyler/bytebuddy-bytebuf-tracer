@@ -58,17 +58,14 @@ public class ByteBufFlowTracker {
      * marks the flow as completed during traversal.
      *
      * @param obj the tracked object (e.g., ByteBuf)
-     * @param className the class name containing the method
-     * @param methodName the method name being called
      * @param methodSignature the pre-computed method signature (className.methodName)
      * @param refCount the current reference count (or metric value) of the object
      */
-    public void recordMethodCall(Object obj, String className, String methodName,
-                                  String methodSignature, int refCount) {
+    public void recordMethodCall(Object obj, String methodSignature, int refCount) {
         if (obj == null) return;
 
         // Get or create active flow
-        WeakActiveFlow flow = activeTracker.getOrCreate(obj, className, methodName, methodSignature);
+        WeakActiveFlow flow = activeTracker.getOrCreate(obj, methodSignature);
 
         // Skip if flow is completed (already released)
         // Single volatile read - if marked completed during traversal below, that's fine
@@ -83,8 +80,6 @@ public class ByteBufFlowTracker {
         if (currentDepth < trie.getMaxDepth()) {
             ImprintNode nextNode = trie.traverseOrCreate(
                 flow.getCurrentNode(),
-                className,
-                methodName,
                 methodSignature,
                 refCount,
                 currentDepth

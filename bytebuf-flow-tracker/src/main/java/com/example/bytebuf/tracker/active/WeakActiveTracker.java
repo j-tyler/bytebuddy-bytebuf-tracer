@@ -78,13 +78,10 @@ public class WeakActiveTracker {
      * rendering to get current state.
      *
      * @param byteBuf the tracked object (must not be null)
-     * @param className the class name for the root node (if creating)
-     * @param methodName the method name for the root node (if creating)
      * @param methodSignature the pre-computed method signature (className.methodName)
      * @return the active flow for this object (never null)
      */
-    public WeakActiveFlow getOrCreate(Object byteBuf, String className, String methodName,
-                                      String methodSignature) {
+    public WeakActiveFlow getOrCreate(Object byteBuf, String methodSignature) {
         int objectId = System.identityHashCode(byteBuf);
 
         // GC processing strategy:
@@ -105,7 +102,7 @@ public class WeakActiveTracker {
         WeakActiveFlow flow = activeFlows.get(objectId);
         if (flow == null) {
             // First time seeing this object - create root in Trie and acquire pooled state
-            ImprintNode root = trie.getOrCreateRoot(className, methodName, methodSignature);
+            ImprintNode root = trie.getOrCreateRoot(methodSignature);
             boolean isDirect = isDirectBufferMethod(methodSignature);
             FlowStatePool.PooledFlowState pooledState = FlowStatePool.acquire(root);  // Acquire from pool
             flow = new WeakActiveFlow(byteBuf, objectId, pooledState, methodSignature, isDirect, gcQueue);

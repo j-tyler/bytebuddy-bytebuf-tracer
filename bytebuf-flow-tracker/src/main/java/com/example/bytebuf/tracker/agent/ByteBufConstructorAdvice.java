@@ -31,12 +31,28 @@ public class ByteBufConstructorAdvice {
         ThreadLocal.withInitial(() -> false);
 
     /**
+     * Extract simple class name from fully qualified constructor signature.
+     * Converts "io.netty.buffer.wrapper.Envelope.<init>" to "Envelope.<init>"
+     * Must be public for ByteBuddy inlining (instrumented classes need access)
+     */
+    public static String toSimpleName(String fqnConstructorSignature) {
+        int lastDot = fqnConstructorSignature.lastIndexOf('.');
+        if (lastDot == -1) {
+            return fqnConstructorSignature;  // No package, return as-is
+        }
+        int secondLastDot = fqnConstructorSignature.lastIndexOf('.', lastDot - 1);
+        if (secondLastDot == -1) {
+            return fqnConstructorSignature;  // Already simple name format
+        }
+        return fqnConstructorSignature.substring(secondLastDot + 1);
+    }
+
+    /**
      * Constructor entry advice - tracks objects in parameters
      */
     @Advice.OnMethodEnter
     public static void onConstructorEnter(
-            @Advice.Origin("#t") String className,
-            @Advice.Origin("#t.<init>") String constructorSignature,
+            @Advice.Origin("#t.<init>") String fqnConstructorSignature,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -53,13 +69,14 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
+            // Convert to simple class name for memory efficiency
+            String constructorSignature = toSimpleName(fqnConstructorSignature);
+
             for (Object arg : arguments) {
                 if (handler.shouldTrack(arg)) {
                     int metric = handler.getMetric(arg);
                     tracker.recordMethodCall(
                         arg,
-                        className,
-                        "<init>",
                         constructorSignature,
                         metric
                     );
@@ -76,8 +93,7 @@ public class ByteBufConstructorAdvice {
      */
     @Advice.OnMethodExit
     public static void onConstructorExit(
-            @Advice.Origin("#t") String className,
-            @Advice.Origin("#t.<init>") String constructorSignature,
+            @Advice.Origin("#t.<init>") String fqnConstructorSignature,
             @Advice.AllArguments Object[] arguments) {
 
         // Prevent re-entrant calls
@@ -90,6 +106,9 @@ public class ByteBufConstructorAdvice {
             ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
+            // Convert to simple class name for memory efficiency
+            String constructorSignature = toSimpleName(fqnConstructorSignature);
+
             // Track parameter state on exit with _return suffix (exit = return)
             if (arguments != null) {
                 for (Object arg : arguments) {
@@ -97,8 +116,6 @@ public class ByteBufConstructorAdvice {
                         int metric = handler.getMetric(arg);
                         tracker.recordMethodCall(
                             arg,
-                            className,
-                            "<init>_return",
                             constructorSignature + "_return",
                             metric
                         );

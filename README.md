@@ -4,7 +4,7 @@ A lightweight ByteBuddy-based Java agent for tracking object flows through your 
 
 ## Features
 
-- **Zero allocation overhead**: No stack trace collection or allocation site tracking
+- **Minimal tracking overhead**: No stack trace collection or allocation site tracking (avoids major performance cost)
 - **Allocator root tracking**: ByteBuf allocator methods (Unpooled.buffer, ByteBufAllocator.heapBuffer, etc.) serve as Trie roots
 - **Intelligent release tracking**: Tracks `release()` only when refCnt drops to 0, eliminating leak ambiguity
 - **Entry/Exit tracking**: Methods returning tracked objects show with `_return` suffix for complete flow visibility
@@ -272,13 +272,13 @@ Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstruc
   - Inner class exclusion: `com.example.Outer$Inner` (use $ separator)
 - `trackConstructors` - Classes to enable constructor tracking (optional)
 - `trackDirectOnly` - Track only direct memory allocations (optional, default: false)
-  - When `true`: **Maximum performance for production**
-    - heapBuffer methods: NOT instrumented (**zero overhead**)
+  - When `true`: **Reduced overhead for production**
+    - heapBuffer methods: NOT instrumented (avoids instrumentation)
     - directBuffer/ioBuffer: Instrumented and tracked
-    - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via `isDirect()` (~5ns)
+    - Ambiguous methods (wrappedBuffer, compositeBuffer): Filtered at runtime via `isDirect()` check
   - When `false`: track both heap and direct buffers (default behavior)
   - **Use case**: Production environments - track only critical direct memory leaks (never GC'd)
-  - **Performance**: Optimal for production where direct memory crashes are the concern
+  - **Performance**: Reduces overhead by avoiding instrumentation of heap allocation methods
 
 **Examples:**
 
@@ -310,7 +310,7 @@ Format: `include=package1,package2;exclude=package.*,SpecificClass;trackConstruc
 
 ### Direct Memory Tracking Performance
 
-Production mode: `trackDirectOnly=true` tracks only direct memory (critical leaks that crash JVM) with minimal overhead.
+Production mode: `trackDirectOnly=true` tracks only direct memory (critical leaks that crash JVM) by avoiding instrumentation of heap allocation methods.
 
 ```bash
 -javaagent:tracker.jar=include=com.yourapp.*;trackDirectOnly=true
@@ -318,12 +318,12 @@ Production mode: `trackDirectOnly=true` tracks only direct memory (critical leak
 
 | Allocation Type | trackDirectOnly=true | Default (false) |
 |----------------|----------------------|-----------------|
-| `heapBuffer()` | **Not instrumented** (0ns) | Tracked |
+| `heapBuffer()` | **Not instrumented** | Tracked |
 | `directBuffer()` | Tracked | Tracked |
 | `ioBuffer()` | Tracked | Tracked |
-| `wrappedBuffer()` | Filtered via `isDirect()` (~5ns) | Tracked |
+| `wrappedBuffer()` | Filtered via `isDirect()` check | Tracked |
 
-**Why use in production:** Direct memory leaks crash your JVM (never GC'd). Heap leaks eventually get cleaned up. This mode focuses on critical leaks with zero overhead for heap allocations.
+**Why use in production:** Direct memory leaks crash your JVM (never GC'd). Heap leaks eventually get cleaned up. This mode focuses on critical leaks while avoiding instrumentation overhead for heap allocations.
 
 ### JMX Monitoring
 

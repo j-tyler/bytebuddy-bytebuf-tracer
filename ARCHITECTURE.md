@@ -46,9 +46,25 @@ Main singleton. Methods: `recordMethodCall()`, `getTrie()`, `getActiveFlowCount(
 **Memory**: Active tracking ~80 bytes/object. Trie max 1M nodes × 100 bytes = 100MB. Upper bound: `(concurrent × 80) + 100MB`.
 
 ### 2. BoundedImprintTrie
-Tree stores method paths. Nodes: signature, bucketed refCount (0/1-2/3-5/6+), traversal count, outcomes (leaf only), children. String interning. Lock-free (ConcurrentHashMap). No allocations during tracking.
+Tree stores method paths. Nodes: signature, bucketed refCount (0/1-2/3-5/6+), traversal count, leak count, children. String interning. Lock-free (ConcurrentHashMap). No allocations during tracking.
 
 **Bounds**: 1M nodes (default), 100 depth, 1000 children/node. Stop-on-limit (no eviction). RefCount bucketing reduces path explosion.
+
+**Memory Optimization - Bit-Packed Statistics**: ImprintNode packs traversal + leak counts into single AtomicLong to reduce per-node memory:
+- **Layout**: `[bits 63-40: leakCount (24 bits)][bits 39-0: traversalCount (40 bits)]`
+- **Limits**: 1.1 trillion traversals, 16.7M leaks per node (saturation on overflow)
+- **Savings**: 16 bytes per node (32→16 bytes for statistics) = 16 MB per million nodes
+- **WHY**: Enables tracking larger apps without heap exhaustion. HashMap lookups dominate overhead, not statistics updates.
+- **Implementation**: Manual CAS loop (not updateAndGet) to avoid lambda allocation on hot path:
+  ```java
+  long current, newValue;
+  do {
+      current = packedCounts.get();
+      long traversals = current & TRAVERSAL_MASK;
+      if (traversals >= TRAVERSAL_MAX) return; // Saturation
+      newValue = ((current >>> LEAK_SHIFT) << LEAK_SHIFT) | (traversals + 1);
+  } while (!packedCounts.compareAndSet(current, newValue));
+  ```
 
 ### 3. ByteBufFlowAgent
 Entry point. Parses args (`include=`, `exclude=`, `trackConstructors=`), installs ByteBuddy transforms, registers JMX. Instruments public/protected methods with ByteBuf param/return in included packages.

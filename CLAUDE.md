@@ -74,3 +74,44 @@ Check proxy (`ps aux | grep working_proxy`), run script if missing, build (`mvn 
 **Commands**: `pkill -f "LISTEN_PORT = 8899"` (kill proxy), `find . -name "*-agent.jar"` (find JAR), `mvn clean test -DskipITs` (unit tests), `mvn clean install -DskipTests && mvn verify` (integration tests)
 
 **Note**: Escape `$` as `\$` in inner class names for `trackConstructors` arg. Agent uses string-based type matching (avoids early class loading).
+
+---
+
+## Testing & Benchmarking
+
+### Running Tests
+```bash
+# Unit tests only (fast, ~5 seconds)
+mvn clean test -DskipITs
+
+# Integration tests only (slower, ~2-3 minutes)
+mvn clean install -DskipTests && mvn verify
+
+# All tests
+mvn clean verify
+```
+
+**Common Issues**:
+- **IllegalAccessError**: Cache fields in ByteBufTrackingAdvice/ByteBufConstructorAdvice must be `public static final` (instrumented classes need access)
+- **Integration test failures**: Check output format expectations (DirectBufferLeakHighlightingIT expects full package names like `io.netty.buffer.UnpooledByteBufAllocator`)
+
+### Running Benchmarks
+```bash
+cd bytebuf-flow-benchmarks
+
+# Ensure benchmarks are built
+mvn clean install -DskipTests
+
+# WITHOUT agent (baseline)
+export JMH_GC_PROF=true
+java -jar target/benchmarks.jar -prof gc -rf json -rff baseline_results.json
+
+# WITH agent (measure overhead)
+export JMH_GC_PROF=true
+java "-javaagent:../bytebuf-flow-tracker/target/bytebuf-flow-tracker-1.0.0-SNAPSHOT-agent.jar=include=com.example.bytebuf.benchmarks" \
+  -jar target/benchmarks.jar -prof gc -rf json -rff agent_results.json
+```
+
+**Critical**: `JMH_GC_PROF=true` is required - benchmarks validate this env var exists to ensure GC profiling is enabled (allocation metrics meaningless without it).
+
+**Expect**: Baseline ~23M ops/s, with agent ~900 ops/s (25,000x overhead for leak tracking). See BENCHMARK.md for details.

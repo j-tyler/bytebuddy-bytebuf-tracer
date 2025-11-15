@@ -47,7 +47,7 @@ public class ByteBufLifecycleAdvice {
 
         try {
             IS_TRACKING.set(true);
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
 
             if (handler.shouldTrack(thiz)) {
                 int refCount = handler.getMetric(thiz);
@@ -62,6 +62,8 @@ public class ByteBufLifecycleAdvice {
      * Tracks lifecycle methods only when meaningful:
      * - release(): only when it drops refCnt to 0 (actual deallocation)
      * - retain(): always (shows refCnt increases)
+     * - retainedDuplicate(): always (creates new ByteBuf with increased refCnt)
+     * - retainedSlice(): always (creates new ByteBuf with increased refCnt)
      * Skips intermediate release() calls to keep Trie focused on final deallocation.
      */
     @Advice.OnMethodExit(onThrowable = Throwable.class)
@@ -70,6 +72,7 @@ public class ByteBufLifecycleAdvice {
             @Advice.Origin("#t") String originClassName,
             @Advice.Origin("#m") String methodName,
             @Advice.Origin("#t.#m") String methodSignature,
+            @Advice.Return(typing = net.bytebuddy.implementation.bytecode.assign.Assigner.Typing.DYNAMIC) Object returnValue,
             @Advice.Thrown Throwable thrown) {
 
         if (IS_TRACKING.get()) {
@@ -78,7 +81,7 @@ public class ByteBufLifecycleAdvice {
 
         try {
             IS_TRACKING.set(true);
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             if (!handler.shouldTrack(thiz)) {
@@ -89,6 +92,7 @@ public class ByteBufLifecycleAdvice {
             int afterRefCount = handler.getMetric(thiz);
 
             boolean shouldTrack = false;
+            Object objectToTrack = thiz;  // Default to tracking 'this'
 
             if (methodName.equals("release")) {
                 if (afterRefCount == 0) {
@@ -96,6 +100,13 @@ public class ByteBufLifecycleAdvice {
                 }
             } else if (methodName.equals("retain")) {
                 shouldTrack = true;
+            } else if (methodName.equals("retainedDuplicate") || methodName.equals("retainedSlice")) {
+                // These methods return a NEW ByteBuf - track the return value, not 'this'
+                if (handler.shouldTrack(returnValue)) {
+                    shouldTrack = true;
+                    objectToTrack = returnValue;
+                    afterRefCount = handler.getMetric(returnValue);
+                }
             }
 
             if (shouldTrack) {
@@ -107,11 +118,22 @@ public class ByteBufLifecycleAdvice {
                 // Use the instrumentation-time class name and method signature
                 // OPTIMIZATION: Avoid runtime getClass().getSimpleName() allocation (40-80 bytes)
                 // The originClassName from @Advice.Origin is pre-computed at instrumentation time
+
+                // For retainedDuplicate/retainedSlice, add "_return" suffix to distinguish
+                // the returned ByteBuf from the source ByteBuf
+                String effectiveMethodName = methodName;
+                String effectiveMethodSignature = methodSignature;
+
+                if (methodName.equals("retainedDuplicate") || methodName.equals("retainedSlice")) {
+                    effectiveMethodName = AdviceCacheAccess.getOrComputeMethodNameReturn(methodName);
+                    effectiveMethodSignature = AdviceCacheAccess.getOrComputeMethodSignatureReturn(methodSignature);
+                }
+
                 tracker.recordMethodCall(
-                    thiz,
+                    objectToTrack,
                     originClassName,
-                    methodName,
-                    methodSignature,
+                    effectiveMethodName,
+                    effectiveMethodSignature,
                     afterRefCount
                 );
             }

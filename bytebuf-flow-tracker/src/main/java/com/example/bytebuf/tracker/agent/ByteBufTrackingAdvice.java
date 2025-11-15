@@ -54,7 +54,7 @@ public class ByteBufTrackingAdvice {
 
         try {
             IS_TRACKING.set(true);
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             TRACKED_PARAMS.get().clear();
@@ -97,7 +97,7 @@ public class ByteBufTrackingAdvice {
 
         try {
             IS_TRACKING.set(true);
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             if (handler.shouldTrack(returnValue)) {

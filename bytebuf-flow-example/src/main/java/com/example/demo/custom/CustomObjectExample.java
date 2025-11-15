@@ -15,21 +15,57 @@ import java.io.RandomAccessFile;
 /**
  * Example showing how to track custom objects (not ByteBuf).
  *
- * This demonstrates tracking RandomAccessFile objects to detect
- * file handle leaks.
+ * <p><b>IMPORTANT:</b> Custom handlers must be registered at launch time via the
+ * {@code -Dobject.tracker.handlers} system property. Runtime registration is NO LONGER
+ * SUPPORTED because the agent analyzes methods at instrumentation time to determine
+ * which advice to apply.
  *
- * To run with file handle tracking:
- *   mvn exec:java -Dexec.mainClass="com.example.demo.custom.CustomObjectExample"
+ * <p>This example demonstrates tracking RandomAccessFile objects to detect
+ * file handle leaks using the recommended system property approach.
+ *
+ * <p>To run with file handle tracking:
+ * <pre>
+ *   mvn exec:java \
+ *     -Dexec.mainClass="com.example.demo.custom.CustomObjectExample" \
+ *     -Dobject.tracker.handlers="com.example.demo.custom.FileHandleTracker"
+ * </pre>
+ *
+ * <p>Or use the Gradle task which configures this automatically:
+ * <pre>
+ *   ./gradlew runCustomObjectExample
+ * </pre>
+ *
+ * <p><b>Why no runtime registration?</b> The agent must know about custom handlers
+ * BEFORE instrumenting classes. At instrumentation time, it analyzes each method to
+ * determine which advice to apply (optimized ByteBuf advice vs. generic advice). If
+ * handlers could be registered at runtime, already-instrumented classes would have the
+ * wrong advice applied.
  */
 public class CustomObjectExample {
 
     public static void main(String[] args) throws Exception {
         System.out.println("=== Custom Object Tracking Example ===\n");
 
-        // STEP 1: Set the custom handler BEFORE any tracked objects are created
-        ObjectTrackerRegistry.setHandler(new FileHandleTracker());
+        // Verify handler was registered via system property
+        String handlersConfig = System.getProperty("object.tracker.handlers");
+        if (handlersConfig == null || handlersConfig.isEmpty()) {
+            System.err.println("ERROR: No handlers configured!");
+            System.err.println("Please run with: -Dobject.tracker.handlers=com.example.demo.custom.FileHandleTracker");
+            System.err.println("Or use: ./gradlew runCustomObjectExample");
+            System.exit(1);
+        }
 
-        // STEP 2: Use your custom objects normally
+        System.out.println("Handlers configured: " + handlersConfig);
+        System.out.println("Custom handlers registered: " +
+            ObjectTrackerRegistry.getCustomHandlers().size());
+        if (!ObjectTrackerRegistry.getCustomHandlers().isEmpty()) {
+            ObjectTrackerRegistry.getCustomHandlers().forEach(h ->
+                System.out.println("  - " + h.getClass().getName() + " tracking " + h.getObjectType())
+            );
+        }
+        System.out.println();
+
+        // Use your custom objects normally - tracking happens automatically
         CustomObjectExample example = new CustomObjectExample();
 
         // Normal usage - file is properly closed
@@ -45,7 +81,7 @@ public class CustomObjectExample {
         // Give tracker a moment
         Thread.sleep(100);
 
-        // STEP 3: Analyze the tracking results
+        // Analyze the tracking results
         System.out.println("\n=== File Handle Flow Analysis ===\n");
         printFlowAnalysis();
     }
@@ -116,5 +152,9 @@ public class CustomObjectExample {
 
         System.out.println("Look for leaf nodes with metric=1 - those are file handles that weren't closed!");
         System.out.println("The 'leakedFileUsage' path should show as a leak.");
+        System.out.println();
+        System.out.println("ARCHITECTURE NOTE: Handler was registered at launch time via");
+        System.out.println("-Dobject.tracker.handlers system property. Runtime registration is not");
+        System.out.println("supported because the agent analyzes methods during instrumentation.");
     }
 }

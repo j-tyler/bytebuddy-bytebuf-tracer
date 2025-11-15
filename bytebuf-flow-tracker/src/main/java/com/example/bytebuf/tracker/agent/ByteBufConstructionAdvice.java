@@ -125,7 +125,7 @@ public class ByteBufConstructionAdvice {
             }
 
             // Standard tracking continues for direct buffers (or all buffers if not filtering)
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             // Check if this is a trackable object (ByteBuf)

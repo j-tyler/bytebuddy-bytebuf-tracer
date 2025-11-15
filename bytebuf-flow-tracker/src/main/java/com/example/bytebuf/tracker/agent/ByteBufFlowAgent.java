@@ -32,12 +32,44 @@ public class ByteBufFlowAgent {
     private static MetricPushScheduler metricScheduler;
 
     /**
+     * Load custom handlers from system property BEFORE instrumentation.
+     * Handlers must be registered before we analyze methods to decide which advice to apply.
+     *
+     * System property format: -Dobject.tracker.handlers=com.example.Handler1,com.example.Handler2
+     */
+    private static void loadCustomHandlers() {
+        String handlers = System.getProperty("object.tracker.handlers");
+        if (handlers != null && !handlers.isEmpty()) {
+            String[] handlerClasses = handlers.split(",");
+            for (String className : handlerClasses) {
+                className = className.trim();
+                if (className.isEmpty()) {
+                    continue;
+                }
+                try {
+                    Class<?> clazz = Class.forName(className);
+                    com.example.bytebuf.api.tracker.ObjectTrackerHandler handler =
+                        (com.example.bytebuf.api.tracker.ObjectTrackerHandler) clazz.getDeclaredConstructor().newInstance();
+                    com.example.bytebuf.tracker.ObjectTrackerRegistry.registerCustomHandler(handler);
+                } catch (Exception e) {
+                    System.err.println("[ByteBufFlowAgent] Failed to load custom handler: " + className);
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
      * Premain method for Java agent
      *
      * @param arguments Agent arguments in format: include=pkg1,pkg2;exclude=pkg3,pkg4;trackConstructors=class1,class2
      * @param inst Instrumentation instance
      */
     public static void premain(String arguments, Instrumentation inst) {
+        // CRITICAL: Load custom handlers BEFORE parsing config and instrumenting classes
+        // The agent needs to know about custom types at instrumentation time
+        loadCustomHandlers();
+
         AgentConfig config = AgentConfig.parse(arguments);
 
         System.out.println("[ByteBufFlowAgent] Starting with config: " + config);
@@ -126,7 +158,13 @@ public class ByteBufFlowAgent {
     }
     
     /**
-     * Transformer that applies advice to methods
+     * Enhanced transformer that applies DIFFERENT advice based on method analysis.
+     * Analyzes each method to determine:
+     * - How many ByteBuf parameters it has (0, 1, 2, 3+)
+     * - Whether it has custom tracked object parameters
+     * Then applies the optimal advice:
+     * - ByteBuf-only methods: Use optimized zero-allocation advice
+     * - Custom object methods: Use generic advice (acceptable slower path)
      */
     static class ByteBufTransformer implements AgentBuilder.Transformer {
         @Override
@@ -137,20 +175,166 @@ public class ByteBufFlowAgent {
                 JavaModule module,
                 java.security.ProtectionDomain protectionDomain) {
 
-            return builder
-                .method(
-                    // Match methods that might handle ByteBufs (including static methods)
-                    // Skip abstract methods (they have no bytecode to instrument)
-                    // IMPORTANT: Only instrument methods with ByteBuf in their signature
-                    // to prevent unnecessary class transformation and Mockito conflicts
-                    isPublic()
-                    .or(isProtected())
-                    .and(not(isConstructor()))
-                    .and(not(isAbstract()))
-                    .and(hasByteBufInSignature())
-                )
-                .intercept(Advice.to(ByteBufTrackingAdvice.class));
+            // Iterate through each method and apply appropriate advice
+            for (MethodDescription method : typeDescription.getDeclaredMethods()) {
+                // Skip constructors, abstract methods, private methods
+                if (method.isConstructor() || method.isAbstract() ||
+                    (!method.isPublic() && !method.isProtected())) {
+                    continue;
+                }
+
+                // Analyze method to determine which advice to apply
+                MethodTypeInfo typeInfo = analyzeMethod(method);
+
+                if (!typeInfo.needsTracking()) {
+                    continue;  // No tracked objects in signature
+                }
+
+                // Apply appropriate advice based on analysis
+                Class<?> adviceClass = selectAdvice(typeInfo);
+
+                builder = builder
+                    .method(is(method))
+                    .intercept(Advice.to(adviceClass));
+            }
+
+            return builder;
         }
+    }
+
+    /**
+     * Method type information for deciding which advice to apply.
+     */
+    static class MethodTypeInfo {
+        final int byteBufParamCount;
+        final boolean hasCustomObjects;
+        final boolean hasByteBufReturn;
+
+        MethodTypeInfo(int byteBufParamCount, boolean hasCustomObjects, boolean hasByteBufReturn) {
+            this.byteBufParamCount = byteBufParamCount;
+            this.hasCustomObjects = hasCustomObjects;
+            this.hasByteBufReturn = hasByteBufReturn;
+        }
+
+        boolean needsTracking() {
+            return byteBufParamCount > 0 || hasCustomObjects || hasByteBufReturn;
+        }
+
+        @Override
+        public String toString() {
+            return "MethodTypeInfo{byteBuf=" + byteBufParamCount +
+                   ", custom=" + hasCustomObjects +
+                   ", return=" + hasByteBufReturn + "}";
+        }
+    }
+
+    /**
+     * Analyze a method to determine what types of tracked objects it uses.
+     */
+    private static MethodTypeInfo analyzeMethod(MethodDescription method) {
+        int byteBufCount = 0;
+        boolean hasCustom = false;
+
+        // Get custom handlers
+        java.util.List<com.example.bytebuf.api.tracker.ObjectTrackerHandler> customHandlers =
+            com.example.bytebuf.tracker.ObjectTrackerRegistry.getCustomHandlers();
+
+        // Analyze parameters
+        for (ParameterDescription param : method.getParameters()) {
+            TypeDescription paramType = param.getType().asErasure();
+
+            // Check if ByteBuf
+            if (isByteBufType(paramType)) {
+                byteBufCount++;
+            } else {
+                // Check if custom tracked type
+                for (com.example.bytebuf.api.tracker.ObjectTrackerHandler handler : customHandlers) {
+                    if (isTrackedType(paramType, handler.getObjectType())) {
+                        hasCustom = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Check return type
+        TypeDescription returnType = method.getReturnType().asErasure();
+        boolean hasByteBufReturn = isByteBufType(returnType);
+
+        if (!hasByteBufReturn && !returnType.represents(void.class)) {
+            // Check if return is custom tracked type
+            for (com.example.bytebuf.api.tracker.ObjectTrackerHandler handler : customHandlers) {
+                if (isTrackedType(returnType, handler.getObjectType())) {
+                    hasCustom = true;
+                    break;
+                }
+            }
+        }
+
+        return new MethodTypeInfo(byteBufCount, hasCustom, hasByteBufReturn);
+    }
+
+    /**
+     * Check if a type is ByteBuf or subclass.
+     */
+    private static boolean isByteBufType(TypeDescription type) {
+        try {
+            return type.represents(io.netty.buffer.ByteBuf.class) ||
+                   type.isAssignableTo(io.netty.buffer.ByteBuf.class);
+        } catch (Exception e) {
+            // Class loading issues - assume not ByteBuf
+            return false;
+        }
+    }
+
+    /**
+     * Check if a type matches a tracked type name (string-based to avoid class loading).
+     * Supports interfaces and superclasses.
+     */
+    private static boolean isTrackedType(TypeDescription type, String typeName) {
+        // Direct match
+        if (type.getTypeName().equals(typeName)) {
+            return true;
+        }
+
+        // Check interfaces
+        for (TypeDescription.Generic iface : type.getInterfaces()) {
+            if (iface.asErasure().getTypeName().equals(typeName)) {
+                return true;
+            }
+        }
+
+        // Check superclass recursively
+        TypeDescription.Generic superClass = type.getSuperClass();
+        if (superClass != null && !superClass.represents(Object.class)) {
+            return isTrackedType(superClass.asErasure(), typeName);
+        }
+
+        return false;
+    }
+
+    /**
+     * Select the appropriate advice class based on method analysis.
+     */
+    private static Class<?> selectAdvice(MethodTypeInfo typeInfo) {
+        // If has custom objects, always use generic advice (slow path is OK for rare calls)
+        if (typeInfo.hasCustomObjects) {
+            return GenericTrackingAdvice.class;
+        }
+
+        // ByteBuf-only methods - use optimized advice
+        if (typeInfo.byteBufParamCount == 0 && typeInfo.hasByteBufReturn) {
+            return ByteBufZeroParamAdvice.class;
+        } else if (typeInfo.byteBufParamCount == 1) {
+            return ByteBufOneParamAdvice.class;
+        } else if (typeInfo.byteBufParamCount == 2) {
+            return ByteBufTwoParamAdvice.class;
+        } else if (typeInfo.byteBufParamCount >= 3) {
+            return ByteBufGeneralAdvice.class;
+        }
+
+        // Fallback to general advice (shouldn't happen if needsTracking() was checked)
+        return ByteBufGeneralAdvice.class;
     }
 
     /**

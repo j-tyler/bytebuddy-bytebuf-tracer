@@ -1,7 +1,7 @@
 package com.example.bytebuf.tracker.integration;
 
 import com.example.bytebuf.tracker.ByteBufFlowTracker;
-import com.example.bytebuf.view.TrieRenderer;
+import com.example.bytebuf.tracker.view.TrieRenderer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.AfterEach;

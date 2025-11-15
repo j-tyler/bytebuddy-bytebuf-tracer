@@ -83,9 +83,11 @@ public class ByteBufFlowAgent {
             )
             // Transform regular methods (non-constructors)
             // Filter out interfaces and abstract classes (can't instrument abstract methods)
+            // IMPORTANT: Exclude ByteBuf implementation classes - they're handled by ByteBufLifecycleTransformer
             .type(config.getTypeMatcher()
                 .and(not(isInterface()))
-                .and(not(isAbstract())))
+                .and(not(isAbstract()))
+                .and(not(hasSuperType(named("io.netty.buffer.ByteBuf")))))  // Prevent double instrumentation
             .transform(new ByteBufTransformer());
 
         // Add constructor tracking for specified classes

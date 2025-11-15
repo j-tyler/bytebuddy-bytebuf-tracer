@@ -10,8 +10,6 @@ import com.example.bytebuf.api.tracker.ObjectTrackerHandler;
 import com.example.bytebuf.tracker.ObjectTrackerRegistry;
 import net.bytebuddy.asm.Advice;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * ByteBuddy advice for tracking object flow through constructors.
  * This is separate from ByteBufTrackingAdvice because constructors have special constraints:
@@ -31,10 +29,11 @@ public class ByteBufConstructorAdvice {
     public static final ThreadLocal<Boolean> IS_TRACKING =
         ThreadLocal.withInitial(() -> false);
 
-    // OPTIMIZATION: Cache for "_return" suffixes to avoid string concatenation on hot path
-    // @Advice.Origin provides constants, so we can safely cache the concatenated results
-    // Initial capacity 128 assumes ~85-100 unique tracked constructors (load factor 0.75)
-    private static final ConcurrentHashMap<String, String> CONSTRUCTOR_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(128);
+    // WHY AdviceCacheAccess: ByteBuddy inlines this advice code directly into instrumented
+    // classes. Inlined code executes in the target class's security context, requiring
+    // public access to any fields. AdviceCacheAccess provides controlled public methods
+    // instead of exposing raw ConcurrentHashMap collections (which could be corrupted via
+    // external .clear() or .put() calls). See AdviceCacheAccess javadoc for details.
 
     /**
      * Tracks objects flowing into constructors (as constructor arguments).
@@ -95,15 +94,8 @@ public class ByteBufConstructorAdvice {
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             if (arguments != null) {
-                // OPTIMIZATION: Use cached "_return" suffix to avoid allocation
-                // Double-checked pattern: get() first (lock-free), then putIfAbsent() if needed
-                // This avoids holding locks during string concatenation
-                String constructorSignatureReturn = CONSTRUCTOR_SIGNATURE_RETURN_CACHE.get(constructorSignature);
-                if (constructorSignatureReturn == null) {
-                    String computed = constructorSignature + "_return";
-                    constructorSignatureReturn = CONSTRUCTOR_SIGNATURE_RETURN_CACHE.putIfAbsent(constructorSignature, computed);
-                    if (constructorSignatureReturn == null) constructorSignatureReturn = computed;
-                }
+                // Cache "_return" suffix to avoid string concatenation on hot path
+                String constructorSignatureReturn = AdviceCacheAccess.getOrComputeConstructorSignatureReturn(constructorSignature);
 
                 for (Object arg : arguments) {
                     if (handler.shouldTrack(arg)) {

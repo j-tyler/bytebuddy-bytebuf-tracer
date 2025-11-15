@@ -11,8 +11,6 @@ import com.example.bytebuf.tracker.ObjectTrackerRegistry;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * ByteBuddy advice for tracking object flow through methods.
  * Originally designed for ByteBuf, but now supports any object via ObjectTrackerHandler.
@@ -30,11 +28,11 @@ public class ByteBufTrackingAdvice {
     public static final ThreadLocal<java.util.Set<Integer>> TRACKED_PARAMS =
         ThreadLocal.withInitial(java.util.HashSet::new);
 
-    // OPTIMIZATION: Cache for "_return" suffixes to avoid string concatenation on hot path
-    // Caches computed String constants after first access. After warm-up, reads are fast via CHM.get().
-    // Initial capacity 256 assumes ~100-200 unique instrumented methods (load factor 0.75).
-    private static final ConcurrentHashMap<String, String> METHOD_NAME_RETURN_CACHE = new ConcurrentHashMap<>(256);
-    private static final ConcurrentHashMap<String, String> METHOD_SIGNATURE_RETURN_CACHE = new ConcurrentHashMap<>(256);
+    // WHY AdviceCacheAccess: ByteBuddy inlines this advice code directly into instrumented
+    // classes. Inlined code executes in the target class's security context, requiring
+    // public access to any fields. AdviceCacheAccess provides controlled public methods
+    // instead of exposing raw ConcurrentHashMap collections (which could be corrupted via
+    // external .clear() or .put() calls). See AdviceCacheAccess javadoc for details.
 
     /**
      * Tracks objects as they enter methods (flow down the call stack).
@@ -107,22 +105,9 @@ public class ByteBufTrackingAdvice {
                 if (!TRACKED_PARAMS.get().contains(hashCode)) {
                     int metric = handler.getMetric(returnValue);
 
-                    // OPTIMIZATION: Use cached "_return" suffixes to avoid allocation
-                    // Double-checked pattern: get() first (lock-free), then putIfAbsent() if needed
-                    // This avoids holding locks during string concatenation
-                    String methodNameReturn = METHOD_NAME_RETURN_CACHE.get(methodName);
-                    if (methodNameReturn == null) {
-                        String computed = methodName + "_return";
-                        methodNameReturn = METHOD_NAME_RETURN_CACHE.putIfAbsent(methodName, computed);
-                        if (methodNameReturn == null) methodNameReturn = computed;
-                    }
-
-                    String methodSignatureReturn = METHOD_SIGNATURE_RETURN_CACHE.get(methodSignature);
-                    if (methodSignatureReturn == null) {
-                        String computed = methodSignature + "_return";
-                        methodSignatureReturn = METHOD_SIGNATURE_RETURN_CACHE.putIfAbsent(methodSignature, computed);
-                        if (methodSignatureReturn == null) methodSignatureReturn = computed;
-                    }
+                    // Cache "_return" suffix to avoid string concatenation on hot path
+                    String methodNameReturn = AdviceCacheAccess.getOrComputeMethodNameReturn(methodName);
+                    String methodSignatureReturn = AdviceCacheAccess.getOrComputeMethodSignatureReturn(methodSignature);
 
                     tracker.recordMethodCall(
                         returnValue,

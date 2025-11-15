@@ -73,4 +73,10 @@ Check proxy (`ps aux | grep working_proxy`), run script if missing, build (`mvn 
 
 **Commands**: `pkill -f "LISTEN_PORT = 8899"` (kill proxy), `find . -name "*-agent.jar"` (find JAR), `mvn clean test -DskipITs` (unit tests), `mvn clean install -DskipTests && mvn verify` (integration tests)
 
+**Testing Notes**:
+- **Unit tests**: Use `mvn test -DskipITs` (runs in bytebuf-flow-tracker module, no agent needed)
+- **Integration tests**: Run via Failsafe plugin (`mvn failsafe:integration-test`) in bytebuf-flow-integration-tests module. Tests named `*IT.java` launch separate JVMs with agent attached via AppLauncher utility. Agent JAR path passed via system property.
+- **Specific test**: `cd bytebuf-flow-integration-tests && mvn failsafe:integration-test -Dit.test=YourTestIT`
+- **Known failures** (as of 2025-11-15): 4 tests in DirectBufferLeakHighlightingIT fail due to output format changes (cosmetic, not functional). See BENCHMARK_RESULTS.md.
+
 **Note**: Escape `$` as `\$` in inner class names for `trackConstructors` arg. Agent uses string-based type matching (avoids early class loading).

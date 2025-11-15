@@ -54,7 +54,7 @@ public class ByteBufConstructorAdvice {
 
         try {
             IS_TRACKING.set(true);
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             for (Object arg : arguments) {
@@ -90,7 +90,7 @@ public class ByteBufConstructorAdvice {
 
         try {
             IS_TRACKING.set(true);
-            ObjectTrackerHandler handler = ObjectTrackerRegistry.getHandler();
+            ObjectTrackerHandler handler = ObjectTrackerRegistry.getByteBufHandler();
             ByteBufFlowTracker tracker = ByteBufFlowTracker.getInstance();
 
             if (arguments != null) {

@@ -5,15 +5,15 @@
 **Concepts**: Java agent tracks ByteBuf (Netty buffer) flow using ByteBuddy instrumentation. Stores paths in Trie. Leaks = non-zero refCount at leaf nodes.
 
 **Key Files**:
-1. `agent/ByteBufFlowAgent.java` - Entry point, argument parsing
+1. `agent/ByteBufFlowAgent.java` - Entry point, argument parsing, transformer selection
 2. `ByteBufFlowTracker.java` - Core tracking singleton
-3. `agent/ByteBufTrackingAdvice.java` - Method interception
+3. `agent/ByteBuf*Advice.java` - Specialized method interception (zero-allocation optimizations)
 4. `trie/BoundedImprintTrie.java` - Path storage (bounded, lock-free)
 5. `bytebuf-flow-example/` - Usage examples
 
 **Modification Patterns**:
 - New allocator: `ByteBufConstructionTransformer.java`
-- Tracking behavior: `ByteBufTrackingAdvice.java`
+- Tracking behavior: Specialized advice classes (ByteBufZeroParamAdvice, etc.)
 - Memory limits: `BoundedImprintTrie` constructor
 - Custom tracker: Implement `ObjectTrackerHandler`
 
@@ -53,10 +53,28 @@ Tree stores method paths. Nodes: signature, bucketed refCount (0/1-2/3-5/6+), tr
 ### 3. ByteBufFlowAgent
 Entry point. Parses args (`include=`, `exclude=`, `trackConstructors=`), installs ByteBuddy transforms, registers JMX. Instruments public/protected methods with ByteBuf param/return in included packages.
 
-### 4. ByteBufTrackingAdvice
-Intercepts methods. `@OnMethodEnter`: check re-entrance guard, track params (no suffix), store in TRACKED_PARAMS ThreadLocal. `@OnMethodExit`: track return (`_return` suffix if not already tracked as param).
+### 4. Specialized Advice Classes (Performance Optimization)
 
-**Re-entrance Guard**: ThreadLocal<Boolean> prevents infinite recursion - critical because tracking code itself may call instrumented methods. Without guard: StackOverflowError. Side effect: methods called during tracking won't appear in traces (intentional).
+**WHY SPECIALIZED ADVICE:** ByteBuddy's `@Advice.AllArguments` allocates an Object[] array (~88 bytes) per method call. For high-throughput applications (millions of ByteBuf operations/second), this causes significant GC pressure. The solution: analyze methods at instrumentation time and apply the most efficient advice class based on method signature.
+
+**Architecture**:
+- `ByteBufFlowAgent.ByteBufTransformer` analyzes each method: counts ByteBuf parameters, checks positions, detects custom tracked objects
+- Selects optimal advice class based on analysis
+- **CRITICAL**: ByteBuf implementation classes are excluded from general transformer via `.and(not(hasSuperType(named("io.netty.buffer.ByteBuf"))))` to prevent double instrumentation with `ByteBufLifecycleTransformer`
+
+**Advice Classes** (ordered by frequency/performance):
+1. **ByteBufZeroParamAdvice**: Methods with 0 ByteBuf params, returns ByteBuf. Zero allocations - only tracks return value. No `@OnMethodEnter` needed. Use: factory methods, allocators.
+2. **ByteBufOneParamAdvice**: 1 ByteBuf param (positions 0-3). Uses ThreadLocal<Integer> for single identity hash instead of HashSet. Zero Object[] allocation. Tracks param on entry, compares return hash with param hash.
+3. **ByteBufTwoParamAdvice**: 2 ByteBuf params (positions 0-3). Packs two identity hashes into single ThreadLocal<Long> (high 32 bits: hash1, low 32: hash2). Zero Object[] allocation. Bitwise operations for pack/unpack.
+4. **ByteBufGeneralAdvice**: 3+ ByteBuf params OR params at positions 4+. Uses `@AllArguments` (allocates Object[]). Hybrid fast-path: fixed int[8] array for ≤8 params, HashSet overflow for 9+. Rare case (~5% of calls), acceptable allocation cost.
+5. **GenericTrackingAdvice**: Methods with custom tracked objects (non-ByteBuf). Uses `@AllArguments` and checks all registered handlers. Slower path, but custom object methods are rare.
+
+**Shared Logic**:
+- All advice classes share `ByteBufTrackingAdvice.IS_TRACKING` ThreadLocal for re-entrance guard
+- Re-entrance guard prevents infinite recursion when tracking code triggers instrumented methods
+- `AdviceCacheAccess` provides public accessor methods for string caches ("_return" suffix) because ByteBuddy inlines advice into target classes (requires public access)
+
+**Performance**: Zero allocations for 0-2 param methods (~90% of calls). Benchmark: ~752 B/op total (includes ByteBuf itself), ~0 bytes tracker overhead.
 
 **Suffixes**: `methodName` (entry), `methodName_return` (exit), `<init>`, `<init>_return`. Special: `release()` only tracked when refCnt→0.
 

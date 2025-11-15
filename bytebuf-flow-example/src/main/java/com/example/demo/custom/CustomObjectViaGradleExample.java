@@ -22,27 +22,36 @@ import java.sql.DriverManager;
  *   ./gradlew runCustomObjectViaGradle
  *
  * The build.gradle configures the tracker via:
- *   -Dobject.tracker.handler=com.example.demo.custom.DatabaseConnectionTracker
+ *   -Dobject.tracker.handlers=com.example.demo.custom.DatabaseConnectionTracker
  *
  * This is the RECOMMENDED approach for real projects because:
  *   1. No code changes required
  *   2. Easy to enable/disable tracking
  *   3. Can be configured per environment (dev/staging/prod)
  *   4. Works with legacy code that can't be modified
+ *
+ * NOTE: Handlers must be registered at build/launch time via the system property.
+ * Runtime registration is not supported because the agent analyzes methods at
+ * instrumentation time to determine which advice to apply.
  */
 public class CustomObjectViaGradleExample {
 
     public static void main(String[] args) throws Exception {
         System.out.println("=== Custom Object Tracking via Gradle Configuration ===\n");
 
-        // NOTE: We don't call ObjectTrackerRegistry.setHandler() here!
-        // The handler is set via system property in build.gradle
+        // NOTE: Handlers are registered automatically by the agent during premain()
+        // from the -Dobject.tracker.handlers system property in build.gradle
 
-        // Verify the handler was set by Gradle
-        String handlerClass = System.getProperty("object.tracker.handler");
-        System.out.println("Handler configured via Gradle: " + handlerClass);
-        System.out.println("Handler currently active: " +
-            ObjectTrackerRegistry.getHandler().getClass().getName());
+        // Verify the handler was registered by Gradle
+        String handlersConfig = System.getProperty("object.tracker.handlers");
+        System.out.println("Handlers configured via Gradle: " + handlersConfig);
+        System.out.println("Custom handlers registered: " +
+            ObjectTrackerRegistry.getCustomHandlers().size());
+        if (!ObjectTrackerRegistry.getCustomHandlers().isEmpty()) {
+            ObjectTrackerRegistry.getCustomHandlers().forEach(h ->
+                System.out.println("  - " + h.getClass().getName() + " tracking " + h.getObjectType())
+            );
+        }
         System.out.println();
 
         // Now use the application normally - tracking happens automatically
@@ -134,5 +143,9 @@ public class CustomObjectViaGradleExample {
         System.out.println();
         System.out.println("KEY INSIGHT: This tracking was configured ENTIRELY via Gradle!");
         System.out.println("No code changes were needed - just system property configuration.");
+        System.out.println();
+        System.out.println("ARCHITECTURE NOTE: Handlers must be registered at launch time via");
+        System.out.println("-Dobject.tracker.handlers system property. Runtime registration is not");
+        System.out.println("supported because the agent analyzes methods during instrumentation.");
     }
 }

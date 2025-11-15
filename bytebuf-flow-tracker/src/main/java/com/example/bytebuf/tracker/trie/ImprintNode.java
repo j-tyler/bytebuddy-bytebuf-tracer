@@ -37,7 +37,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ImprintNode {
 
     // Immutable identity (interned for memory efficiency)
-    // Store only methodSignature (className.methodName) to save 8 bytes per node
+    // Store only methodSignature (className.methodName) to save 16 bytes per node
+    // Previously stored: className (8 bytes) + methodName (8 bytes) + methodSignature (8 bytes) = 24 bytes
+    // Now stores: methodSignature (8 bytes) = 8 bytes
+    // Savings: 16 bytes per node (eliminated 2 redundant string references)
     private final String methodSignature;  // 8 bytes (reference to interned string)
     private final byte refCountBucket;     // 1 byte (0=zero, 1=low, 2=med, 3=high)
 
